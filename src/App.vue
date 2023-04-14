@@ -61,11 +61,21 @@ setInterval(collectPubkeys, 60000);
 </script>
 
 <template>
+  <h1>Feeds from relay.nostr.wirednet.jp.</h1>
+  <p>はじめに：<br>
+    Nostrを始めて見たくなった方は <a
+      href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91">はじめてのNostr【はじめての方はこちら】</a>を参照ください。<br>
+    また、日本向けリレーとしてこのページの裏側にある <code>wss://relay-jp.nostr.wirednet.jp</code> をお使いください。
+  </p>
+  <hr>
   <div v-for="e in events">
+    <p>
+      <img class="profilePicture" v-bind:src="profiles.get(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'">
+    </p>
     <p>
       <a target="_blank" v-bind:href="
         'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
-      ">{{ profiles.get(e.pubkey)?.display_name ?? "" }} (@{{
+      ">{{ profiles.get(e.pubkey)?.display_name ?? "noname" }}<br> (@{{
   profiles.get(e.pubkey)?.name ?? ""
 }}) </a><br />
       <span class="content">{{ e.content.replace('\n', "\n") }}</span><br />
@@ -88,5 +98,14 @@ p {
   width: 100%;
   word-wrap: break-word;
   word-break: break-all;
+}
+
+.profilePicture {
+  max-height: 2em;
+  max-width: 2em;
+  float: left;
+  height: 2em;
+  margin: 0.5em;
+  object-fit: cover;
 }
 </style>
