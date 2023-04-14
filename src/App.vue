@@ -55,14 +55,9 @@ function collectPubkeys() {
   prof.on('eose', () => {
     prof.unsub()
   })
-
-  console.log(profiles.value)
 }
-const intervalId = setInterval(collectPubkeys, 1000);
-
-// 必要に応じて、以下のようにしてsetIntervalを停止できます。
-// clearInterval(intervalId);
-
+setTimeout(collectPubkeys, 1000)
+setInterval(collectPubkeys, 15000);
 </script>
 
 <template>
