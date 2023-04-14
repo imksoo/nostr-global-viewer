@@ -293,6 +293,7 @@ setInterval(collectPubkeys, 60000);
   word-break: break-all;
   padding: 0.4rem 0 0 0;
   margin: 0;
+  color: #213547;
 }
 .c-feed-date {
   font-size: 14px;
