@@ -5,8 +5,8 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  background: rgb(14,36,121);
+  background: linear-gradient(90deg, rgba(14,36,121,1) 0%, rgba(9,9,121,1) 35%, rgba(125,61,243,1) 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -61,7 +61,7 @@ button:focus-visible {
 
 #app {
   margin: 0 auto;
-  padding: 1rem;
+  padding: 0;
 }
 
 @media (prefers-color-scheme: light) {
