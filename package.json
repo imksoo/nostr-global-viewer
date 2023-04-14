@@ -9,7 +9,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.2.47"
+    "nostr-tools": "^1.8.4",
+    "vue": "^3.2.47",
+    "websocket-polyfill": "^0.0.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.1.0",

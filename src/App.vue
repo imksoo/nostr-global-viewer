@@ -1,30 +1,87 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
+import { ref, Ref } from 'vue';
+import * as nostr from 'nostr-tools'
+
+const pool = new nostr.SimplePool()
+const relays = [
+  "wss://relay-jp.nostr.wirednet.jp",
+  /*  "wss://relay.nostr.wirednet.jp",
+    "wss://relay.snort.social",
+    "wss://eden.nostr.land",
+    "wss://relay.nostr.info",
+    "wss://relay.current.fyi",
+    "wss://nostr-relay.nokotaro.com",*/
+];
+const global = pool.sub(
+  relays,
+  [
+    {
+      kinds: [1],
+      limit: 100
+    }
+  ]
+)
+
+const events = ref(new Array<nostr.Event>())
+const profiles = ref(new Map<string, any>())
+
+global.on('event', async (ev) => {
+  events.value.push(ev)
+  events.value.sort((a, b) => {
+    return a.created_at === b.created_at
+      ? (a.id === b.id ? 0 : a.id < b.id ? 1 : -1)
+      : (a.created_at < b.created_at ? 1 : -1);
+  });
+  events.value = events.value.filter((event, index, array) => {
+    return index === 0 || event.id !== array[index - 1].id;
+  });
+})
+
+function collectPubkeys() {
+  const pubkeys = events.value.map(event => event.pubkey);
+  const prof = pool.sub(
+    relays,
+    [
+      {
+        kinds: [0],
+        authors: pubkeys
+      }
+    ]
+  )
+  prof.on('event', async (ev) => {
+    const content = JSON.parse(ev.content)
+    profiles.value.set(ev.pubkey, content)
+  })
+  prof.on('eose', () => {
+    prof.unsub()
+  })
+
+  console.log(profiles.value)
+}
+const intervalId = setInterval(collectPubkeys, 1000);
+
+// 必要に応じて、以下のようにしてsetIntervalを停止できます。
+// clearInterval(intervalId);
+
 </script>
 
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div v-for="e in events">
+    <p>
+      <span>{{ new Date(e.created_at * 1000).toLocaleString() }}</span> &nbsp;
+      <a v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)">{{
+        profiles.get(e.pubkey)?.display_name ?? '' }} (@{{ profiles.get(e.pubkey)?.name ?? '' }})
+      </a><br>
+      <span class="content">{{ e.content }}</span><br>
+      <a v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)">{{
+        'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id) }}</a>
+    </p>
+    <hr>
   </div>
-  <HelloWorld msg="Vite + Vue" />
 </template>
 
 <style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+.content {
+  font-size: 1.2em;
 }
 </style>
