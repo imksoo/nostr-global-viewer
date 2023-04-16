@@ -71,9 +71,9 @@ setInterval(collectPubkeys, 60000);
     <div class="p-index-heading">
       <div class="p-index-heading__inner">
         <h1 class="p-index-title">
+          <span class="p-index-title__main">Nostr</span>
           <span class="p-index-title__main">Feeds</span>
-          <span class="p-index-title__main">from</span>
-          <span class="p-index-title__sub">relay.nostr.wirednet.jp.</span>
+          <span class="p-index-title__sub">from relay.nostr.wirednet.jp.</span>
         </h1>
         <div class="p-index-intro">
           <h2 class="p-index-intro__head">はじめに</h2>
