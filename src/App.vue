@@ -96,7 +96,7 @@ setInterval(collectProfiles, 3000);
         <h1 class="p-index-title">
           <span class="p-index-title__main">Nostr</span>
           <span class="p-index-title__main">Feeds</span>
-          <span class="p-index-title__sub">from relay.nostr.wirednet.jp.</span>
+          <span class="p-index-title__sub">from relay-jp.nostr.wirednet.jp.</span>
         </h1>
         <div class="p-index-intro">
           <h2 class="p-index-intro__head">はじめに</h2>
