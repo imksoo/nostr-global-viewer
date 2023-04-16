@@ -49,7 +49,7 @@ global.on("eose", async () => {
 const profiles = ref(new Map<string, any>());
 let oldProfileCacheMismatch = false;
 
-function getProfiles(pubkey: string): any {
+function getProfile(pubkey: string): any {
   if (!profiles.value.has(pubkey)) {
     oldProfileCacheMismatch = true;
   }
@@ -83,8 +83,8 @@ async function collectProfiles() {
   });
   prof.on("eose", async () => {
     prof.unsub();
+    oldProfileCacheMismatch = false;
   });
-  oldProfileCacheMismatch = false;
 }
 setInterval(collectProfiles, 3000);
 </script>
@@ -121,7 +121,7 @@ setInterval(collectProfiles, 3000);
         <div class="c-feed-profile">
           <p class="c-feed-profile__avatar">
             <img class="profilePicture" v-bind:src="
-              getProfiles(e.pubkey)?.picture ??
+              getProfile(e.pubkey)?.picture ??
               'https://placehold.jp/60x60.png'
             " />
           </p>
@@ -130,13 +130,13 @@ setInterval(collectProfiles, 3000);
           " class="c-feed-profile__detail">
             <span class="c-feed-profile__display-name">
               {{
-                getProfiles(e.pubkey)?.display_name ??
-                getProfiles(e.pubkey)?.name ??
+                getProfile(e.pubkey)?.display_name ??
+                getProfile(e.pubkey)?.name ??
                 "loading"
               }}
             </span>
             <span class="c-feed-profile__user-name">
-              @{{ getProfiles(e.pubkey)?.name ?? "" }}
+              @{{ getProfile(e.pubkey)?.name ?? "" }}
             </span>
           </a>
         </div>
