@@ -87,6 +87,9 @@ setInterval(collectPubkeys, 60000);
             また、日本向けリレーとしてこのページの裏側にある
             <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
           </p>
+          <p class="p-index-intro_text">
+            このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" target="_blank">GitHub</a>にあります。
+          </p>
         </div>
       </div>
     </div>
