@@ -3,16 +3,22 @@ import { ref } from "vue";
 import * as nostr from "nostr-tools";
 
 const pool = new nostr.SimplePool();
-const relays = [
-  "wss://relay-jp.nostr.wirednet.jp",
-  /*  "wss://relay.nostr.wirednet.jp",
-    "wss://relay.snort.social",
-    "wss://eden.nostr.land",
-    "wss://relay.nostr.info",
-    "wss://relay.current.fyi",
-    "wss://nostr-relay.nokotaro.com",*/
+const feedRelays = [
+  "wss://relay-jp.nostr.wirednet.jp"
 ];
-const global = pool.sub(relays, [
+const profileRelays = [
+  "wss://nos.lol",
+  "wss://nostr-relay.nokotaro.com",
+  "wss://nostr.h3z.jp",
+  "wss://relay-jp.nostr.wirednet.jp",
+  "wss://relay.current.fyi",
+  "wss://relay.damus.io",
+  "wss://relay.nostr.info",
+  "wss://relay.nostr.wirednet.jp",
+  "wss://relay.snort.social",
+];
+
+const global = pool.sub(feedRelays, [
   {
     kinds: [1],
     limit: 100,
@@ -20,7 +26,6 @@ const global = pool.sub(relays, [
 ]);
 
 const events = ref(new Array<nostr.Event>());
-const profiles = ref(new Map<string, any>());
 
 global.on("event", async (ev) => {
   events.value.push(ev);
@@ -43,13 +48,18 @@ global.on("eose", async () => {
   collectPubkeys();
 });
 
+type NostrProfile = {
+  created_at: number,
+  content: any
+}
+const profiles = ref(new Map<string, NostrProfile>());
 async function collectPubkeys() {
   const pubkeySet = new Set<string>();
   for (const e of events.value) {
     pubkeySet.add(e.pubkey);
   }
   const pubkeys = Array.from(pubkeySet);
-  const prof = pool.sub(relays, [
+  const prof = pool.sub(profileRelays, [
     {
       kinds: [0],
       authors: pubkeys,
@@ -57,7 +67,13 @@ async function collectPubkeys() {
   ]);
   prof.on("event", async (ev) => {
     const content = JSON.parse(ev.content);
-    profiles.value.set(ev.pubkey, content);
+    if (profiles.value.has(ev.pubkey)) {
+      const cat = profiles.value.get(ev.pubkey)?.created_at ?? 0
+      if (cat < ev.created_at) {
+        profiles.value.set(ev.pubkey, { created_at: ev.created_at, content: content });
+      }
+    }
+    profiles.value.set(ev.pubkey, { created_at: ev.created_at, content: content });
   });
   prof.on("eose", async () => {
     prof.unsub();
@@ -98,7 +114,7 @@ setInterval(collectPubkeys, 60000);
         <div class="c-feed-profile">
           <p class="c-feed-profile__avatar">
             <img class="profilePicture" v-bind:src="
-              profiles.get(e.pubkey)?.picture ??
+              profiles.get(e.pubkey)?.content.picture ??
               'https://placehold.jp/60x60.png'
             " />
           </p>
@@ -106,10 +122,10 @@ setInterval(collectPubkeys, 60000);
             'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
           " class="c-feed-profile__detail">
             <span class="c-feed-profile__display-name">
-              {{ profiles.get(e.pubkey)?.display_name ?? "noname" }}
+              {{ profiles.get(e.pubkey)?.content.display_name ?? profiles.get(e.pubkey)?.content.name ?? "noname" }}
             </span>
             <span class="c-feed-profile__user-name">
-              @{{ profiles.get(e.pubkey)?.name ?? "" }}
+              @{{ profiles.get(e.pubkey)?.content.name ?? "" }}
             </span>
           </a>
         </div>
