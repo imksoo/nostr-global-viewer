@@ -3,9 +3,7 @@ import { ref } from "vue";
 import * as nostr from "nostr-tools";
 
 const pool = new nostr.SimplePool();
-const feedRelays = [
-  "wss://relay-jp.nostr.wirednet.jp"
-];
+const feedRelays = ["wss://relay-jp.nostr.wirednet.jp"];
 const profileRelays = [
   "wss://nos.lol",
   "wss://nostr-relay.nokotaro.com",
@@ -45,11 +43,23 @@ global.on("event", async (ev) => {
   });
 });
 global.on("eose", async () => {
-  collectPubkeys();
+  collectProfiles();
 });
 
 const profiles = ref(new Map<string, any>());
-async function collectPubkeys() {
+let oldProfileCacheMismatch = false;
+
+function getProfiles(pubkey: string): any {
+  if (!profiles.value.has(pubkey)) {
+    oldProfileCacheMismatch = true;
+  }
+  return profiles.value.get(pubkey);
+}
+async function collectProfiles() {
+  if (!oldProfileCacheMismatch) {
+    return;
+  }
+
   const pubkeySet = new Set<string>();
   for (const e of events.value) {
     pubkeySet.add(e.pubkey);
@@ -63,16 +73,20 @@ async function collectPubkeys() {
   ]);
   prof.on("event", async (ev) => {
     const content = JSON.parse(ev.content);
-    if (!profiles.value.has(ev.pubkey) || profiles.value.get(ev.pubkey)?.created_at < ev.created_at) {
-      content.created_at = ev.created_at
+    if (
+      !profiles.value.has(ev.pubkey) ||
+      profiles.value.get(ev.pubkey)?.created_at < ev.created_at
+    ) {
+      content.created_at = ev.created_at;
       profiles.value.set(ev.pubkey, content);
     }
   });
   prof.on("eose", async () => {
     prof.unsub();
   });
+  oldProfileCacheMismatch = false;
 }
-setInterval(collectPubkeys, 60000);
+setInterval(collectProfiles, 3000);
 </script>
 
 <template>
@@ -107,7 +121,7 @@ setInterval(collectPubkeys, 60000);
         <div class="c-feed-profile">
           <p class="c-feed-profile__avatar">
             <img class="profilePicture" v-bind:src="
-              profiles.get(e.pubkey)?.picture ??
+              getProfiles(e.pubkey)?.picture ??
               'https://placehold.jp/60x60.png'
             " />
           </p>
@@ -115,10 +129,14 @@ setInterval(collectPubkeys, 60000);
             'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
           " class="c-feed-profile__detail">
             <span class="c-feed-profile__display-name">
-              {{ profiles.get(e.pubkey)?.display_name ?? profiles.get(e.pubkey)?.name ?? "noname" }}
+              {{
+                getProfiles(e.pubkey)?.display_name ??
+                getProfiles(e.pubkey)?.name ??
+                "loading"
+              }}
             </span>
             <span class="c-feed-profile__user-name">
-              @{{ profiles.get(e.pubkey)?.name ?? "" }}
+              @{{ getProfiles(e.pubkey)?.name ?? "" }}
             </span>
           </a>
         </div>
@@ -220,8 +238,6 @@ setInterval(collectPubkeys, 60000);
     margin-top: 0rem;
   }
 }
-
-
 
 .p-index-intro__head {
   font-size: 1.5rem;
