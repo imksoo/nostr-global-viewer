@@ -48,11 +48,7 @@ global.on("eose", async () => {
   collectPubkeys();
 });
 
-type NostrProfile = {
-  created_at: number,
-  content: any
-}
-const profiles = ref(new Map<string, NostrProfile>());
+const profiles = ref(new Map<string, any>());
 async function collectPubkeys() {
   const pubkeySet = new Set<string>();
   for (const e of events.value) {
@@ -67,13 +63,10 @@ async function collectPubkeys() {
   ]);
   prof.on("event", async (ev) => {
     const content = JSON.parse(ev.content);
-    if (profiles.value.has(ev.pubkey)) {
-      const cat = profiles.value.get(ev.pubkey)?.created_at ?? 0
-      if (cat < ev.created_at) {
-        profiles.value.set(ev.pubkey, { created_at: ev.created_at, content: content });
-      }
+    if (!profiles.value.has(ev.pubkey) || profiles.value.get(ev.pubkey)?.created_at < ev.created_at) {
+      content.created_at = ev.created_at
+      profiles.value.set(ev.pubkey, content);
     }
-    profiles.value.set(ev.pubkey, { created_at: ev.created_at, content: content });
   });
   prof.on("eose", async () => {
     prof.unsub();
@@ -114,7 +107,7 @@ setInterval(collectPubkeys, 60000);
         <div class="c-feed-profile">
           <p class="c-feed-profile__avatar">
             <img class="profilePicture" v-bind:src="
-              profiles.get(e.pubkey)?.content.picture ??
+              profiles.get(e.pubkey)?.picture ??
               'https://placehold.jp/60x60.png'
             " />
           </p>
@@ -122,10 +115,10 @@ setInterval(collectPubkeys, 60000);
             'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
           " class="c-feed-profile__detail">
             <span class="c-feed-profile__display-name">
-              {{ profiles.get(e.pubkey)?.content.display_name ?? profiles.get(e.pubkey)?.content.name ?? "noname" }}
+              {{ profiles.get(e.pubkey)?.display_name ?? profiles.get(e.pubkey)?.name ?? "noname" }}
             </span>
             <span class="c-feed-profile__user-name">
-              @{{ profiles.get(e.pubkey)?.content.name ?? "" }}
+              @{{ profiles.get(e.pubkey)?.name ?? "" }}
             </span>
           </a>
         </div>
