@@ -116,7 +116,6 @@ async function speakNote(event: nostr.Event) {
       ""
     );
 
-    console.log(utterText);
     const utter = new SpeechSynthesisUtterance(utterText);
     utter.lang = "ja-JP";
     utter.volume = volume;
