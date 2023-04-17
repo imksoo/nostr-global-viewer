@@ -26,7 +26,7 @@ const global = pool.sub(feedRelays, [
 const events = ref(new Array<nostr.Event>());
 let firstFetching = true;
 let autoSpeech = false;
-let volume = 1.0;
+let volume = 0.5;
 
 global.on("event", async (ev) => {
   events.value.push(ev);
@@ -102,8 +102,9 @@ const synth = window.speechSynthesis;
 async function speakNote(event: nostr.Event) {
   setTimeout(() => {
     const text = event.content;
+
     const display_name = profiles.value.get(event.pubkey)?.display_name ?? "";
-    const username = display_name ? display_name + "さん " : "";
+    const username = display_name ? display_name + "さん..." : "...";
 
     let utterText = username + text;
     utterText = utterText.replace(
@@ -115,11 +116,28 @@ async function speakNote(event: nostr.Event) {
       ""
     );
 
+    console.log(utterText);
     const utter = new SpeechSynthesisUtterance(utterText);
     utter.lang = "ja-JP";
     utter.volume = volume;
     synth.speak(utter);
   }, 1500);
+}
+
+function getReplies(event: nostr.Event): string[] {
+  const filteredTags = event.tags.filter(([tagType]) => tagType === 'p');
+  const pubkeys = filteredTags.map(e => e[1]).sort().filter((value, index, array) => {
+    return index === 0 || value !== array[index - 1];
+  });
+  return pubkeys
+}
+function getReplyPrevNote(event: nostr.Event): string {
+  const filteredTags = event.tags.filter(([tagType]) => tagType === 'e');
+  if (filteredTags.length) {
+    const tags = filteredTags[filteredTags.length - 1]
+    return tags[1]
+  }
+  return ""
 }
 </script>
 
@@ -179,6 +197,26 @@ async function speakNote(event: nostr.Event) {
             </span>
           </a>
         </div>
+        <p class="c-feed-reply" v-if="getReplies(e).length || getReplyPrevNote(e)">
+          <span v-for="p in getReplies(e)" :key="p">
+            <a target="_blank" v-bind:href="
+              'https://nostx.shino3.net/' + nostr.nip19.npubEncode(p)
+            ">
+              <span class="c-feed-reply-profile__display-name">
+                {{
+                  getProfile(p)?.display_name ??
+                  getProfile(p)?.name ??
+                  "loading"
+                }}
+              </span>
+            </a>
+          </span>
+          <a target="_blank" v-if="getReplyPrevNote(e)"
+            v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">
+            投稿
+          </a>
+          への返信
+        </p>
         <p class="c-feed-content">
           {{ e.content.replace("\\n", "\n") }}
         </p>
@@ -352,8 +390,23 @@ async function speakNote(event: nostr.Event) {
   font-size: 14px;
 }
 
+.c-feed-reply-profile__display-name {
+  display: inline-block;
+}
+
+
 .c-feed-content {
   font-size: 1.2em;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+  padding: 0.4rem 0 0 0;
+  margin: 0;
+  color: #213547;
+}
+
+.c-feed-reply {
+  font-size: 0.8em;
   white-space: pre-wrap;
   word-wrap: break-word;
   word-break: break-all;
