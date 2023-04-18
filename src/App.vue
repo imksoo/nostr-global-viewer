@@ -148,6 +148,7 @@ let myPubkey = ""
 let myRelaysCreatedAt = 0
 let myRelays: string[] = []
 async function login() {
+  // @ts-ignore
   myPubkey = await window.nostr?.getPublicKey() ?? ''
   logined.value = true;
 
