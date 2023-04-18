@@ -219,28 +219,6 @@ async function collectRelay() {
           <span class="p-index-title__sub">from relay-jp.nostr.wirednet.jp.</span>
         </h1>
         <div class="p-index-intro">
-          <h2 class="p-index-intro__head">はじめに</h2>
-          <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
-          <p class="p-index-intro__text">
-            <a href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
-              rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
-          </p>
-          <p class="p-index-intro__text">を参照ください。<br /></p>
-          <p class="p-index-intro__text">
-            また、日本向けリレーとしてこのページの裏側にある
-            <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
-          </p>
-          <p class="p-index-intro_text">
-            このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" target="_blank">GitHub</a>にあります。
-          </p>
-        </div>
-        <div class="p-index-intro">
-          <h2 class="p-index-intro__head">読み上げ</h2>
-          <input type="checkbox" id="speech" v-model="autoSpeech" />
-          <label for="speech">自動読み上げをする</label><br />
-          <label for="volume">音量</label><input type="range" id="volume" v-model="volume" min="0" max="1" step="0.1" />
-        </div>
-        <div class="p-index-intro">
           <h2 class="p-index-intro__head">つぶやく</h2>
           <div class="c-note-backgroud">
             <input class="b-login" type="button" value="NIP-07でログイン" v-if="!logined" v-on:click="$event => login()">
@@ -271,6 +249,28 @@ async function collectRelay() {
               <input class="b-post" type="button" value="投稿" v-on:click="post()">
             </div>
           </div>
+        </div>
+        <div class="p-index-intro">
+          <h2 class="p-index-intro__head">読み上げ</h2>
+          <input type="checkbox" id="speech" v-model="autoSpeech" />
+          <label for="speech">自動読み上げをする</label><br />
+          <label for="volume">音量</label><input type="range" id="volume" v-model="volume" min="0" max="1" step="0.1" />
+        </div>
+        <div class="p-index-intro" v-if="!logined">
+          <h2 class="p-index-intro__head">はじめに</h2>
+          <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
+          <p class="p-index-intro__text">
+            <a href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
+              rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
+          </p>
+          <p class="p-index-intro__text">を参照ください。<br /></p>
+          <p class="p-index-intro__text">
+            また、日本向けリレーとしてこのページの裏側にある
+            <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
+          </p>
+          <p class="p-index-intro_text">
+            このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" target="_blank">GitHub</a>にあります。
+          </p>
         </div>
       </div>
     </div>
@@ -377,10 +377,11 @@ async function collectRelay() {
   position: relative;
 }
 
+/* 
 .p-index-heading__inner {
   position: sticky;
   top: 0;
-}
+} */
 
 @media screen and (max-width: 880px) {
   .p-index-heading {
