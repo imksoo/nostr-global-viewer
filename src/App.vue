@@ -104,7 +104,7 @@ async function speakNote(event: nostr.Event) {
     const text = event.content;
 
     const display_name = profiles.value.get(event.pubkey)?.display_name ?? "";
-    const username = display_name ? display_name + "さん..." : "...";
+    const username = display_name ? display_name + "さん " : " ";
 
     let utterText = username + text;
     utterText = utterText.replace(
@@ -117,19 +117,23 @@ async function speakNote(event: nostr.Event) {
     );
 
     const utter = new SpeechSynthesisUtterance(utterText);
-    utter.lang = "ja-JP";
+    if (utterText.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+      utter.lang = "ja-JP";
+    }
     utter.volume = volume;
     synth.speak(utter);
   }, 1500);
 }
 
-function getReplies(event: nostr.Event): string[] {
+function getReplyPrevUser(event: nostr.Event): string {
   const filteredTags = event.tags.filter(([tagType]) => tagType === 'p');
-  const pubkeys = filteredTags.map(e => e[1]).sort().filter((value, index, array) => {
-    return index === 0 || value !== array[index - 1];
-  });
-  return pubkeys
+  if (filteredTags.length) {
+    const tags = filteredTags[filteredTags.length - 1]
+    return tags[1]
+  }
+  return ""
 }
+
 function getReplyPrevNote(event: nostr.Event): string {
   const filteredTags = event.tags.filter(([tagType]) => tagType === 'e');
   if (filteredTags.length) {
@@ -137,6 +141,71 @@ function getReplyPrevNote(event: nostr.Event): string {
     return tags[1]
   }
   return ""
+}
+
+let logined = ref(false);
+let myPubkey = ""
+let myRelaysCreatedAt = 0
+let myRelays: string[] = []
+async function login() {
+  myPubkey = await window.nostr?.getPublicKey() ?? ''
+  logined.value = true;
+
+  collectRelay()
+}
+
+let note = ""
+async function post() {
+  const myPool = new nostr.SimplePool();
+  let event = {
+    kind: 1,
+    tags: [],
+    pubkey: myPubkey,
+    content: note,
+    created_at: Math.floor(Date.now() / 1000),
+  };
+  // @ts-ignore
+  event = await window.nostr?.signEvent(event)
+  console.log(myRelays)
+  console.log(event)
+
+  // @ts-ignore
+  const submit = myPool.publish(myRelays, event)
+  submit.on('ok', () => {
+    console.log('ok')
+  })
+  submit.on('failed', () => {
+    console.log('NG')
+  })
+
+  note = ""
+}
+
+async function collectRelay() {
+  const relays = pool.sub(profileRelays, [
+    {
+      kinds: [3],
+      authors: [myPubkey]
+    },
+  ]);
+  relays.on("event", async (ev) => {
+    if (
+      ev.content &&
+      myRelaysCreatedAt < ev.created_at
+    ) {
+      const content = JSON.parse(ev.content);
+      console.log(content)
+      myRelaysCreatedAt = ev.created_at;
+      for (const r in content) {
+        if (content[r].write) {
+          myRelays.push(r)
+        }
+      }
+    }
+  });
+  relays.on("eose", async () => {
+    relays.unsub();
+  });
 }
 </script>
 
@@ -166,9 +235,42 @@ function getReplyPrevNote(event: nostr.Event): string {
           </p>
         </div>
         <div class="p-index-intro">
+          <h2 class="p-index-intro__head">読み上げ</h2>
           <input type="checkbox" id="speech" v-model="autoSpeech" />
           <label for="speech">自動読み上げをする</label><br />
           <label for="volume">音量</label><input type="range" id="volume" v-model="volume" min="0" max="1" step="0.1" />
+        </div>
+        <div class="p-index-intro">
+          <h2 class="p-index-intro__head">つぶやく</h2>
+          <div class="c-note-backgroud">
+            <input class="b-login" type="button" value="NIP-07でログイン" v-if="!logined" v-on:click="$event => login()">
+            <div v-if="logined">
+              <div class="c-feed-profile">
+                <p class="c-feed-profile__avatar">
+                  <img class="profilePicture" v-bind:src="
+                    getProfile(myPubkey)?.picture ??
+                    'https://placehold.jp/60x60.png'
+                  " />
+                </p>
+                <a target="_blank" v-bind:href="
+                  'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)
+                " class="c-feed-profile__detail">
+                  <span class="c-feed-profile__display-name">
+                    {{
+                      getProfile(myPubkey)?.display_name ??
+                      getProfile(myPubkey)?.name ??
+                      "loading"
+                    }}
+                  </span>
+                  <span class="c-feed-profile__user-name">
+                    @{{ getProfile(myPubkey)?.name ?? "" }}
+                  </span>
+                </a>
+              </div>
+              <textarea class="i-note" id="note" rows="5" v-model="note"></textarea>
+              <input class="b-post" type="button" value="投稿" v-on:click="post()">
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -196,24 +298,20 @@ function getReplyPrevNote(event: nostr.Event): string {
             </span>
           </a>
         </div>
-        <p class="c-feed-reply" v-if="getReplies(e).length || getReplyPrevNote(e)">
-          <span v-for="p in getReplies(e)" :key="p">
-            <a target="_blank" v-bind:href="
-              'https://nostx.shino3.net/' + nostr.nip19.npubEncode(p)
-            ">
-              <span class="c-feed-reply-profile__display-name">
-                {{
-                  getProfile(p)?.display_name ??
-                  getProfile(p)?.name ??
-                  "loading"
-                }}
-              </span>
-            </a>
-          </span>
-          <a target="_blank" v-if="getReplyPrevNote(e)"
-            v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">
-            投稿
+        <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
+          <a target="_blank" v-if="getReplyPrevUser(e)"
+            v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))">
+            <span class="c-feed-reply-profile__display-name">
+              {{
+                getProfile(getReplyPrevUser(e))?.display_name ??
+                getProfile(getReplyPrevUser(e))?.name ??
+                "loading"
+              }}
+            </span>
           </a>
+          の
+          <a target="_blank" v-if="getReplyPrevNote(e)"
+            v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">投稿</a>
           への返信
         </p>
         <p class="c-feed-content">
@@ -243,6 +341,34 @@ function getReplyPrevNote(event: nostr.Event): string {
   .p-index-wrap {
     display: block;
   }
+}
+
+.i-note {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px;
+  background-color: #213547;
+  color: #ffffff
+}
+
+.c-note-backgroud {
+  margin-top: 5px;
+  background-color: #ffffff;
+  color: #213547;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+
+.b-login {
+  background-color: #ffffff;
+  color: #213547;
+}
+
+.b-post {
+  background-color: #ffffff;
+  color: #213547;
 }
 
 .p-index-heading {
