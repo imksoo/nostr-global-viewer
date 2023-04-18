@@ -157,7 +157,6 @@ async function login() {
 
 let note = ""
 async function post() {
-  const myPool = new nostr.SimplePool();
   let event = {
     kind: 1,
     tags: [],
@@ -171,7 +170,7 @@ async function post() {
   console.log(event)
 
   // @ts-ignore
-  const submit = myPool.publish(myRelays, event)
+  const submit = pool.publish(myRelays, event)
   submit.on('ok', () => {
     console.log('ok')
   })
