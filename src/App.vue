@@ -25,8 +25,8 @@ const global = pool.sub(feedRelays, [
 
 const events = ref(new Array<nostr.Event>());
 let firstFetching = true;
-let autoSpeech = false;
-let volume = 0.5;
+let autoSpeech = ref(false);
+let volume = ref(0.5);
 
 global.on("event", async (ev) => {
   events.value.push(ev);
@@ -45,7 +45,7 @@ global.on("event", async (ev) => {
     return index === 0 || event.id !== array[index - 1].id;
   });
 
-  if (!firstFetching && autoSpeech) {
+  if (!firstFetching && autoSpeech.value) {
     speakNote(ev);
   }
 });
@@ -118,7 +118,7 @@ async function speakNote(event: nostr.Event) {
     } else {
       utterUserName.lang = 'en-US'
     }
-    utterUserName.volume = volume;
+    utterUserName.volume = volume.value;
     synth.speak(utterUserName)
 
     let utterEventContent = event.content;
@@ -136,7 +136,7 @@ async function speakNote(event: nostr.Event) {
     } else {
       utterContent.lang = 'en-US'
     }
-    utterContent.volume = volume;
+    utterContent.volume = volume.value;
     synth.speak(utterContent)
   }, 1500);
 }
