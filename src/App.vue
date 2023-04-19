@@ -308,14 +308,14 @@ function checkSend(event: KeyboardEvent) {
       <div class="p-index-post">
         <div class="p-index-post--signin" v-if="!logined">
           <h2 class="p-index-post__head">この画面からつぶやく</h2>
-          <div class="p-p-index-post__signin-btn">
+          <div class="p-index-post__signin-btn">
             <input class="b-login" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
           </div>
         </div>
         <div class="p-index-post--isLogin" v-if="logined">
           <div class="c-feed-profile">
             <p class="c-feed-profile__avatar">
-              <img class="profilePicture"
+              <img class="c-feed-profile__picture"
                 v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
             </p>
             <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)"
@@ -326,12 +326,12 @@ function checkSend(event: KeyboardEvent) {
               <span class="c-feed-profile__user-name"> @{{ getProfile(myPubkey)?.name ?? "" }} </span>
             </a>
           </div>
-          <div class="p-p-index-post__editer">
-            <div class="p-p-index-post__textarea">
+          <div class="p-index-post__editer">
+            <div class="p-index-post__textarea">
               <textarea class="i-note" id="note" rows="5" v-model="note"
                 @keydown.enter="$event => checkSend($event)"></textarea>
             </div>
-            <div class="p-p-index-post__post-btn">
+            <div class="p-index-post__post-btn">
               <input class="b-post" type="button" value="投稿" v-on:click="post()" />
             </div>
           </div>
@@ -341,7 +341,7 @@ function checkSend(event: KeyboardEvent) {
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <div class="c-feed-profile">
             <p class="c-feed-profile__avatar">
-              <img class="profilePicture"
+              <img class="c-feed-profile__picture"
                 v-bind:src="getProfile(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
             </p>
             <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)"
@@ -390,413 +390,9 @@ function checkSend(event: KeyboardEvent) {
   </div>
 </template>
 
-<style scoped>
-.p-index-wrap {
-  box-sizing: border-box;
-  max-width: 1200px;
-  width: 100%;
-  padding: 0 10px;
-  display: flex;
-  gap: 20px;
-}
 
-@media screen and (max-width: 880px) {
-  .p-index-wrap {
-    display: block;
-  }
-}
-
-.c-note-backgroud {
-  margin-top: 5px;
-  background-color: #ffffff;
-  color: #213547;
-  border-radius: 4px;
-  box-sizing: border-box;
-  padding: 10px;
-}
-
-.p-index-heading {
-  width: 360px;
-  flex-shrink: 0;
-  position: relative;
-}
-
-.p-index-body {
-  flex-grow: 1;
-}
-
-.p-index-heading__inner {
-  position: sticky;
-  top: 0;
-}
-
-@media screen and (max-width: 880px) {
-  .p-index-heading {
-    width: 100%;
-  }
-
-  .p-index-heading__inner {
-    position: relative;
-  }
-}
-
-.p-index-feeds {
-  padding: 2rem 0;
-}
-
-.p-index-title {
-  font-family: "Anton", sans-serif;
-  color: #ffffff;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0;
-  padding: 2rem 0;
-}
-
-.p-index-title__main {
-  font-size: 4rem;
-}
-
-.p-index-title__sub {
-  font-size: 1.5rem;
-}
-
-@media screen and (max-width: 880px) {
-  .p-index-title {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-  }
-
-  .p-index-title__main {
-    font-size: 3rem;
-  }
-
-  .p-index-title__sub {
-    font-size: 1.5rem;
-    width: 100%;
-  }
-}
-
-.p-index-intro {
-  margin-top: 2rem;
-}
-
-@media screen and (max-width: 880px) {
-  .p-index-intro {
-    margin-top: 0rem;
-  }
-}
-
-.p-index-intro__head {
-  font-size: 1.5rem;
-  color: #ffffff;
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-}
-
-.p-index-intro__head::after {
-  content: "";
-  width: 3em;
-  height: 2px;
-  background-color: #ffffff;
-}
-
-.p-index-intro__text {
-  color: #ffffff;
-  margin: 0;
-  line-height: 1.8;
-  margin-top: 0.3rem;
-}
-
-.p-index-intro__text-link {
-  color: #fc5fa1;
-  font-weight: bold;
-}
-
-.p-index-intro__text code {
-  display: inline-block;
-}
-
-.p-index-intro__btn {
-  background-color: #fc5fa1;
-  color: #ffffff;
-  display: inline-block;
-  padding: 0.5rem 1.4rem;
-  border-radius: 2rem;
-  transition: all 0.4s;
-}
-
-.p-index-intro__btn:hover {
-  background-color: #df3d81;
-}
-
-.p-index-speech {
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 6px;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 1rem;
-}
-
-.p-index-speech__head {
-  color: #ffffff;
-  font-size: 14px;
-}
-
-.p-index-speech__body {
-  flex-grow: 1;
-  border-left: 1px solid #fff;
-  padding-left: 10px;
-}
-
-.p-index-speech-cb {
-  padding: 12px 8px;
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-}
-
-.p-index-speech-cb__input {
-  margin: 0;
-  width: 0;
-  opacity: 0;
-}
-
-.p-index-speech-cb:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-.p-index-speech-cb:hover>.p-index-speech-cb__dummy {
-  transform: scale(1.1);
-}
-
-.p-index-speech-cb__input:focus+.p-index-speech-cb__dummy {
-  transform: scale(1.1);
-}
-
-.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy {
-  background: #df3d81;
-}
-
-.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 35%;
-  height: 4px;
-  border-radius: 2px;
-  transform: translate(-4px, 2px) rotateZ(-135deg);
-  transform-origin: 2px 2px;
-  background: #ffffff;
-}
-
-.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy::after {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 70%;
-  height: 4px;
-  border-radius: 2px;
-  transform: translate(-4px, 2px) rotateZ(-45deg);
-  transform-origin: 2px 2px;
-  background: #ffffff;
-}
-
-.p-index-speech-cb__dummy {
-  position: relative;
-  top: 0;
-  left: 0;
-  display: block;
-  width: 20px;
-  height: 20px;
-  border: solid 2px transparent;
-  background: rgba(255, 255, 255, 1);
-  border-radius: 50%;
-  transition: all 0.15s linear;
-}
-
-.p-index-speech-cb__text-label {
-  margin-left: 12px;
-  display: block;
-  font-size: 18px;
-  font-weight: bold;
-  color: #fff;
-}
-
-.p-index-speech-volume {
-  color: #fff;
-}
-
-.c-feed-item {
-  margin-top: 5px;
-  background-color: #ffffff;
-  border-radius: 4px;
-  box-sizing: border-box;
-  padding: 10px;
-}
-
-.c-feed-profile {
-  display: flex;
-  gap: 10px;
-}
-
-.c-feed-profile__avatar {
-  padding: 0;
-  margin: 0;
-  flex-grow: 0;
-  flex-shrink: 0;
-  max-width: 3rem;
-}
-
-.c-feed-profile__detail {
-  flex-grow: 1;
-}
-
-.c-feed-profile__display-name {
-  display: block;
-  color: #213547;
-}
-
-.c-feed-profile__user-name {
-  display: block;
-  font-size: 14px;
-}
-
-.c-feed-reply-profile__display-name {
-  display: inline-block;
-}
-
-.c-feed-content {
-  font-size: 1.2em;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  color: #213547;
-}
-
-.c-feed-reply {
-  font-size: 0.8em;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  color: #213547;
-}
-
-.c-feed-date {
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  text-align: right;
-}
-
-p {
-  width: 100%;
-  word-wrap: break-word;
-  word-break: break-all;
-}
-
-.profilePicture {
-  max-height: 3rem;
-  max-width: 3rem;
-  height: 3rem;
-  margin: 0;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.p-index-post {
-  background-color: #050a30;
-  padding: 8px;
-  position: sticky;
-  top: 0;
-}
-
-.p-index-post--isLogin {
-  background: #fff;
-  padding: 8px;
-  border-radius: 4px;
-}
-
-@media screen and (max-width: 880px) {
-  .p-index-post {
-    position: fixed;
-    top: auto;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .p-index-post--signin {
-    padding: 12px 0;
-  }
-}
-
-.p-index-post__head {
-  margin: 0;
-  text-align: center;
-  font-size: 18px;
-  color: #fff;
-}
-
-.p-p-index-post__signin-btn {
-  text-align: center;
-  margin-top: 12px;
-}
-
-.p-p-index-post__post-btn {
-  text-align: right;
-}
-
-.p-p-index-post__editer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.p-p-index-post__textarea {
-  flex-grow: 1;
-}
-
-.b-login,
-.b-post {
-  background-color: #fc5fa1;
-  color: #ffffff;
-  display: inline-block;
-  padding: 0.5rem 1.4rem;
-  border-radius: 2rem;
-  transition: all 0.4s;
-  border: none;
-  cursor: pointer;
-}
-
-.b-login:hover,
-.b-post:hover {
-  background-color: #df3d81;
-}
-
-.i-note {
-  width: 100%;
-  box-sizing: border-box;
-  font-size: 16px;
-  padding: 5px;
-  background-color: #213547;
-  color: #ffffff;
-}
+<style lang="scss" scoped>
+@import "./assets/scss/project/index.scss";
+@import "./assets/scss/component/feed.scss";
+@import "./assets/scss/component/post.scss";
 </style>

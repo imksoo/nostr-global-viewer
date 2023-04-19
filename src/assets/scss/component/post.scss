@@ -1,0 +1,25 @@
+.b-login,
+.b-post {
+  background-color: #fc5fa1;
+  color: #ffffff;
+  display: inline-block;
+  padding: 0.5rem 1.4rem;
+  border-radius: 2rem;
+  transition: all 0.4s;
+  border: none;
+  cursor: pointer;
+}
+
+.b-login:hover,
+.b-post:hover {
+  background-color: #df3d81;
+}
+
+.i-note {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px;
+  padding: 5px;
+  background-color: #213547;
+  color: #ffffff;
+}

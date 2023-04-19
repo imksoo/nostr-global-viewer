@@ -1,0 +1,261 @@
+.p-index-wrap {
+  box-sizing: border-box;
+  max-width: 1200px;
+  width: 100%;
+  padding: 0 10px;
+  display: flex;
+  gap: 20px;
+  @media screen and (max-width: 880px) {
+    display: block;
+  }
+}
+
+.p-index-heading {
+  width: 360px;
+  flex-shrink: 0;
+  position: relative;
+  @media screen and (max-width: 880px) {
+    width: 100%;
+  }
+  &__inner {
+    position: sticky;
+    top: 0;
+    @media screen and (max-width: 880px) {
+      position: relative;
+    }
+  }
+}
+
+.p-index-body {
+  flex-grow: 1;
+}
+
+.p-index-feeds {
+  padding: 2rem 0;
+}
+
+.p-index-title {
+  font-family: "Anton", sans-serif;
+  color: #ffffff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 2rem 0;
+  @media screen and (max-width: 880px) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  &__main {
+    font-size: 4rem;
+    @media screen and (max-width: 880px) {
+      font-size: 3rem;
+    }
+  }
+  &__sub {
+    font-size: 1.5rem;
+    @media screen and (max-width: 880px) {
+      font-size: 1.5rem;
+      width: 100%;
+    }
+  }
+}
+
+.p-index-intro {
+  margin-top: 2rem;
+  @media screen and (max-width: 880px) {
+    margin-top: 0rem;
+  }
+  &__head {
+    font-size: 1.5rem;
+    color: #ffffff;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    &::after {
+      content: "";
+      width: 3em;
+      height: 2px;
+      background-color: #ffffff;
+    }
+  }
+  &__text {
+    color: #ffffff;
+    margin: 0;
+    line-height: 1.8;
+    margin-top: 0.3rem;
+  }
+
+  &__text-link {
+    color: #fc5fa1;
+    font-weight: bold;
+  }
+
+  &__text code {
+    display: inline-block;
+  }
+
+  &__btn {
+    background-color: #fc5fa1;
+    color: #ffffff;
+    display: inline-block;
+    padding: 0.5rem 1.4rem;
+    border-radius: 2rem;
+    transition: all 0.4s;
+  }
+
+  &__btn:hover {
+    background-color: #df3d81;
+  }
+}
+
+.p-index-speech {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.p-index-speech__head {
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.p-index-speech__body {
+  flex-grow: 1;
+  border-left: 1px solid #fff;
+  padding-left: 10px;
+}
+
+.p-index-speech-cb {
+  padding: 12px 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.p-index-speech-cb__input {
+  margin: 0;
+  width: 0;
+  opacity: 0;
+}
+
+.p-index-speech-cb:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.p-index-speech-cb:hover > .p-index-speech-cb__dummy {
+  transform: scale(1.1);
+}
+
+.p-index-speech-cb__input:focus + .p-index-speech-cb__dummy {
+  transform: scale(1.1);
+}
+
+.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy {
+  background: #df3d81;
+}
+
+.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 35%;
+  height: 4px;
+  border-radius: 2px;
+  transform: translate(-4px, 2px) rotateZ(-135deg);
+  transform-origin: 2px 2px;
+  background: #ffffff;
+}
+
+.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70%;
+  height: 4px;
+  border-radius: 2px;
+  transform: translate(-4px, 2px) rotateZ(-45deg);
+  transform-origin: 2px 2px;
+  background: #ffffff;
+}
+
+.p-index-speech-cb__dummy {
+  position: relative;
+  top: 0;
+  left: 0;
+  display: block;
+  width: 20px;
+  height: 20px;
+  border: solid 2px transparent;
+  background: rgba(255, 255, 255, 1);
+  border-radius: 50%;
+  transition: all 0.15s linear;
+}
+
+.p-index-speech-cb__text-label {
+  margin-left: 12px;
+  display: block;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.p-index-speech-volume {
+  color: #fff;
+}
+.p-index-post {
+  background-color: #050a30;
+  padding: 8px;
+  position: sticky;
+  top: 0;
+  @media screen and (max-width: 880px) {
+    position: fixed;
+    top: auto;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  &__head {
+    margin: 0;
+    text-align: center;
+    font-size: 18px;
+    color: #fff;
+  }
+  &__signin-btn {
+    text-align: center;
+    margin-top: 12px;
+  }
+  &__post-btn {
+    text-align: right;
+  }
+  &__editer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  &__textarea {
+    flex-grow: 1;
+  }
+}
+
+.p-index-post--isLogin {
+  background: #fff;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+@media screen and (max-width: 880px) {
+  .p-index-post--signin {
+    padding: 12px 0;
+  }
+}
