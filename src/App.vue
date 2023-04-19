@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
+import { ref } from "vue"
 import * as nostr from "nostr-tools"
 
 const pool = new nostr.SimplePool()
@@ -60,7 +60,8 @@ global.on("eose", async () => {
   }
 })
 
-const profiles = ref(new Map<string, any>())
+// ローカルストレージからプロフィール情報を読み出しておく
+const profiles = ref(new Map<string, any>(JSON.parse(localStorage.getItem('profiles') ?? '[]')))
 let oldProfileCacheMismatch = false
 let cacheMissHitPubkeys: string[] = []
 
@@ -115,6 +116,9 @@ async function collectProfiles() {
   prof.on("eose", async () => {
     prof.unsub()
     oldProfileCacheMismatch = false
+
+    // ローカルストレージにプロフィール情報を保存しておく
+    localStorage.setItem('profiles', JSON.stringify(Array.from(profiles.value.entries())))
   })
 }
 setInterval(collectProfiles, 1000)
@@ -244,7 +248,7 @@ async function collectMyRelay() {
   })
 }
 
-function checkSend(event:KeyboardEvent) {
+function checkSend(event: KeyboardEvent) {
   if (event.ctrlKey || event.metaKey) {
     post()
   }
@@ -318,7 +322,8 @@ function checkSend(event:KeyboardEvent) {
           </div>
           <div class="p-p-index-post__editer">
             <div class="p-p-index-post__textarea">
-              <textarea class="i-note" id="note" rows="5" v-model="note" @keydown="$event => checkSend($event)"></textarea>
+              <textarea class="i-note" id="note" rows="5" v-model="note"
+                @keydown="$event => checkSend($event)"></textarea>
             </div>
             <div class="p-p-index-post__post-btn">
               <input class="b-post" type="button" value="投稿" v-on:click="post()" />
