@@ -323,7 +323,7 @@ function checkSend(event: KeyboardEvent) {
           <div class="p-p-index-post__editer">
             <div class="p-p-index-post__textarea">
               <textarea class="i-note" id="note" rows="5" v-model="note"
-                @keydown="$event => checkSend($event)"></textarea>
+                @keydown.enter="$event => checkSend($event)"></textarea>
             </div>
             <div class="p-p-index-post__post-btn">
               <input class="b-post" type="button" value="投稿" v-on:click="post()" />
