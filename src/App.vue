@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { computed, ref } from "vue"
 import * as nostr from "nostr-tools"
 
 const pool = new nostr.SimplePool()
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp"]
-const profileRelays = [
+let profileRelays = [
   "wss://nos.lol",
+  "wss://nostr-pub.wellorder.net",
   "wss://nostr-relay.nokotaro.com",
   "wss://nostr.h3z.jp",
+  "wss://nostr.holybea.com",
+  "wss://offchain.pub",
   "wss://relay-jp.nostr.wirednet.jp",
+  "wss://relay.austrich.net",
   "wss://relay.current.fyi",
   "wss://relay.damus.io",
-  "wss://relay.nostr.info",
+  "wss://relay.nostr.band",
   "wss://relay.nostr.wirednet.jp",
   "wss://relay.snort.social",
 ]
@@ -58,13 +62,16 @@ global.on("eose", async () => {
 
 const profiles = ref(new Map<string, any>())
 let oldProfileCacheMismatch = false
+let cacheMissHitPubkeys: string[] = []
 
 function getProfile(pubkey: string): any {
   if (!profiles.value.has(pubkey)) {
     oldProfileCacheMismatch = true
+    cacheMissHitPubkeys.push(pubkey)
   }
   return profiles.value.get(pubkey)
 }
+
 async function collectProfiles() {
   if (!oldProfileCacheMismatch) {
     return
@@ -74,18 +81,35 @@ async function collectProfiles() {
   for (const e of events.value) {
     pubkeySet.add(e.pubkey)
   }
+  for (const p of cacheMissHitPubkeys) {
+    pubkeySet.add(p)
+  }
+  cacheMissHitPubkeys.length = 0
   const pubkeys = Array.from(pubkeySet)
   const prof = pool.sub(profileRelays, [
     {
-      kinds: [0],
+      kinds: [0, 3],
       authors: pubkeys,
     },
   ])
   prof.on("event", async (ev) => {
-    const content = JSON.parse(ev.content)
-    if (!profiles.value.has(ev.pubkey) || profiles.value.get(ev.pubkey)?.created_at < ev.created_at) {
-      content.created_at = ev.created_at
-      profiles.value.set(ev.pubkey, content)
+    if (ev.kind === 0) {
+      const content = JSON.parse(ev.content)
+      if (!profiles.value.has(ev.pubkey) || profiles.value.get(ev.pubkey)?.created_at < ev.created_at) {
+        content.created_at = ev.created_at
+        profiles.value.set(ev.pubkey, content)
+      }
+    } else if (ev.kind === 3) {
+      if (false && ev.content) { // プロフィール情報を取得するリレーを各人のものから拾おうとしたが、非常に多くなりすぎるのでやめた
+        const content = JSON.parse(ev.content)
+        for (const r in content) {
+          if (content[r].write && !profileRelays.find(e => e === r)) {
+            profileRelays.push(r)
+            profileRelays.sort()
+          }
+        }
+        console.log(profileRelays)
+      }
     }
   })
   prof.on("eose", async () => {
@@ -165,7 +189,7 @@ async function login() {
 
   if (myPubkey) {
     logined.value = true
-    collectRelay()
+    collectMyRelay()
   }
 }
 
@@ -183,8 +207,6 @@ async function post() {
   }
   // @ts-ignore
   event = await window.nostr?.signEvent(event)
-  console.log(myRelays)
-  console.log(event)
 
   // @ts-ignore
   const submit = pool.publish(myRelays, event)
@@ -198,7 +220,7 @@ async function post() {
   note = ""
 }
 
-async function collectRelay() {
+async function collectMyRelay() {
   const relays = pool.sub(profileRelays, [
     {
       kinds: [3],
