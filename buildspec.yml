@@ -8,4 +8,5 @@ phases:
       - npm run build
 artifacts:
   files:
-    - dist/**
+    - dist/*
+    - dist/**/*
