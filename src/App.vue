@@ -48,7 +48,7 @@ global.on("event", async (ev) => {
   events.value = events.value.filter((event, index, array) => {
     return index === 0 || event.id !== array[index - 1].id
   })
-
+  events.value = events.value.slice(0, 200);
   if (!firstFetching && autoSpeech.value) {
     speakNote(ev);
   }
