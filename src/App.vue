@@ -97,8 +97,14 @@ async function collectProfiles() {
     if (ev.kind === 0) {
       const content = JSON.parse(ev.content)
       if (!profiles.value.has(ev.pubkey) || profiles.value.get(ev.pubkey)?.created_at < ev.created_at) {
-        content.created_at = ev.created_at
-        profiles.value.set(ev.pubkey, content)
+        const press = {
+          picture: content.picture,
+          display_name: content.display_name,
+          name: content.name,
+          created_at: ev.created_at,
+        }
+        // content.created_at = ev.created_at
+        profiles.value.set(ev.pubkey, press)
       }
     } else if (ev.kind === 3) {
       if (false && ev.content) { // プロフィール情報を取得するリレーを各人のものから拾おうとしたが、非常に多くなりすぎるのでやめた
