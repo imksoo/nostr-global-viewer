@@ -27,10 +27,10 @@ const global = pool.sub(feedRelays, [
   },
 ])
 
-const events = ref(new Array<nostr.Event>());
-let firstFetching = true;
-let autoSpeech = ref(false);
-let volume = ref(0.5);
+const events = ref(new Array<nostr.Event>())
+let firstFetching = true
+let autoSpeech = ref(false)
+let volume = ref(0.5)
 
 global.on("event", async (ev) => {
   events.value.push(ev)
@@ -39,18 +39,18 @@ global.on("event", async (ev) => {
       ? a.id === b.id
         ? 0
         : a.id < b.id
-          ? 1
-          : -1
-      : a.created_at < b.created_at
         ? 1
         : -1
+      : a.created_at < b.created_at
+      ? 1
+      : -1
   })
   events.value = events.value.filter((event, index, array) => {
     return index === 0 || event.id !== array[index - 1].id
   })
-  events.value = events.value.slice(0, 200);
+  events.value = events.value.slice(0, 200)
   if (!firstFetching && autoSpeech.value) {
-    speakNote(ev);
+    speakNote(ev)
   }
 })
 global.on("eose", async () => {
@@ -61,7 +61,7 @@ global.on("eose", async () => {
 })
 
 // ローカルストレージからプロフィール情報を読み出しておく
-const profiles = ref(new Map<string, any>(JSON.parse(localStorage.getItem('profiles') ?? '[]')))
+const profiles = ref(new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]")))
 let oldProfileCacheMismatch = false
 let cacheMissHitPubkeys: string[] = []
 
@@ -107,10 +107,11 @@ async function collectProfiles() {
         profiles.value.set(ev.pubkey, press)
       }
     } else if (ev.kind === 3) {
-      if (false && ev.content) { // プロフィール情報を取得するリレーを各人のものから拾おうとしたが、非常に多くなりすぎるのでやめた
+      if (false && ev.content) {
+        // プロフィール情報を取得するリレーを各人のものから拾おうとしたが、非常に多くなりすぎるのでやめた
         const content = JSON.parse(ev.content)
         for (const r in content) {
-          if (content[r].write && !profileRelays.find(e => e === r)) {
+          if (content[r].write && !profileRelays.find((e) => e === r)) {
             profileRelays.push(r)
             profileRelays.sort()
           }
@@ -124,7 +125,7 @@ async function collectProfiles() {
     oldProfileCacheMismatch = false
 
     // ローカルストレージにプロフィール情報を保存しておく
-    localStorage.setItem('profiles', JSON.stringify(Array.from(profiles.value.entries())))
+    localStorage.setItem("profiles", JSON.stringify(Array.from(profiles.value.entries())))
   })
 }
 setInterval(collectProfiles, 1000)
@@ -149,7 +150,7 @@ async function speakNote(event: nostr.Event) {
     } else {
       utterUserName.lang = "en-US"
     }
-    utterUserName.volume = volume.value;
+    utterUserName.volume = volume.value
     synth.speak(utterUserName)
 
     let utterEventContent = event.content
@@ -166,7 +167,7 @@ async function speakNote(event: nostr.Event) {
     } else {
       utterContent.lang = "en-US"
     }
-    utterContent.volume = volume.value;
+    utterContent.volume = volume.value
     synth.speak(utterContent)
   }, 1500)
 }
@@ -190,6 +191,7 @@ function getReplyPrevNote(event: nostr.Event): string {
 }
 
 let logined = ref(false)
+let isPostOpen = ref(false)
 let myPubkey = ""
 let myRelaysCreatedAt = 0
 let myRelays: string[] = []
@@ -226,7 +228,7 @@ async function post() {
   submit.on("failed", () => {
     console.log("NG")
   })
-
+  isPostOpen.value = false
   note = ""
 }
 
@@ -274,8 +276,13 @@ function checkSend(event: KeyboardEvent) {
           <h2 class="p-index-intro__head">はじめに</h2>
           <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
           <p class="p-index-intro__text">
-            <a href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
-              rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
+            <a
+              href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
+              rel="noopener"
+              target="_blank"
+              class="p-index-intro__btn"
+              >はじめてのNostr【はじめての方はこちら】</a
+            >
           </p>
           <p class="p-index-intro__text">を参照ください。<br /></p>
           <p class="p-index-intro__text">
@@ -283,8 +290,12 @@ function checkSend(event: KeyboardEvent) {
             <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
           </p>
           <p class="p-index-intro__text">
-            このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
-              target="_blank">GitHub</a>にあります。
+            このサイトのソースコードは<a
+              href="https://github.com/imksoo/nostr-global-viewer"
+              class="p-index-intro__text-link"
+              target="_blank"
+              >GitHub</a
+            >にあります。
           </p>
         </div>
 
@@ -302,50 +313,35 @@ function checkSend(event: KeyboardEvent) {
             </div>
           </div>
         </div>
+
+        <div class="p-index-signin" v-if="!logined">
+          <h2 class="p-index-signin__head">この画面からつぶやく</h2>
+          <div class="p-index-signin__body">
+            <input
+              class="p-index-signin__btn"
+              type="button"
+              value="NIP-07でログイン"
+              v-on:click="($event) => login()"
+            />
+          </div>
+        </div>
       </div>
     </div>
     <div class="p-index-body">
-      <div class="p-index-post">
-        <div class="p-index-post--signin" v-if="!logined">
-          <h2 class="p-index-post__head">この画面からつぶやく</h2>
-          <div class="p-index-post__signin-btn">
-            <input class="b-login" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
-          </div>
-        </div>
-        <div class="p-index-post--isLogin" v-if="logined">
-          <div class="c-feed-profile">
-            <p class="c-feed-profile__avatar">
-              <img class="c-feed-profile__picture"
-                v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
-            </p>
-            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)"
-              class="c-feed-profile__detail">
-              <span class="c-feed-profile__display-name">
-                {{ getProfile(myPubkey)?.display_name ?? getProfile(myPubkey)?.name ?? "loading" }}
-              </span>
-              <span class="c-feed-profile__user-name"> @{{ getProfile(myPubkey)?.name ?? "" }} </span>
-            </a>
-          </div>
-          <div class="p-index-post__editer">
-            <div class="p-index-post__textarea">
-              <textarea class="i-note" id="note" rows="5" v-model="note"
-                @keydown.enter="$event => checkSend($event)"></textarea>
-            </div>
-            <div class="p-index-post__post-btn">
-              <input class="b-post" type="button" value="投稿" v-on:click="post()" />
-            </div>
-          </div>
-        </div>
-      </div>
       <div class="p-index-feeds">
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <div class="c-feed-profile">
             <p class="c-feed-profile__avatar">
-              <img class="c-feed-profile__picture"
-                v-bind:src="getProfile(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
+              <img
+                class="c-feed-profile__picture"
+                v-bind:src="getProfile(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'"
+              />
             </p>
-            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)"
-              class="c-feed-profile__detail">
+            <a
+              target="_blank"
+              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)"
+              class="c-feed-profile__detail"
+            >
               <span class="c-feed-profile__display-name">
                 {{ getProfile(e.pubkey)?.display_name ?? getProfile(e.pubkey)?.name ?? "loading" }}
               </span>
@@ -354,7 +350,10 @@ function checkSend(event: KeyboardEvent) {
           </div>
           <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
             <span v-if="getReplyPrevUser(e)">
-              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))">
+              <a
+                target="_blank"
+                v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))"
+              >
                 <span class="c-feed-reply-profile__display-name">
                   {{
                     getProfile(getReplyPrevUser(e))?.display_name ?? getProfile(getReplyPrevUser(e))?.name ?? "loading"
@@ -372,8 +371,9 @@ function checkSend(event: KeyboardEvent) {
               の
             </span>
             <span v-if="getReplyPrevNote(e)">
-              <a target="_blank"
-                v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">投稿</a>
+              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))"
+                >投稿</a
+              >
             </span>
             への返信
           </p>
@@ -382,14 +382,61 @@ function checkSend(event: KeyboardEvent) {
           </p>
           <p class="c-feed-date">
             <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)">
-              {{ new Date(e.created_at * 1000).toLocaleString() }}</a>
+              {{ new Date(e.created_at * 1000).toLocaleString() }}</a
+            >
           </p>
         </div>
       </div>
     </div>
   </div>
+  <div class="p-index-post-btn" v-if="logined">
+    <button @click="isPostOpen = !isPostOpen" class="p-index-post-btn__btn">
+      <span class="p-index-post-btn__icon">+</span>
+    </button>
+  </div>
+  <div class="c-post-wrap" v-if="isPostOpen">
+    <label class="c-post-wrap__bg" @click="isPostOpen = !isPostOpen"></label>
+    <div class="c-post-body">
+      <div class="c-post-cancel">
+        <button @click="isPostOpen = !isPostOpen" class="c-post-cancel__btn">
+          <span class="c-post-cancel__icon">☓</span>
+        </button>
+      </div>
+      <div class="c-feed-profile">
+        <p class="c-feed-profile__avatar">
+          <img
+            class="c-feed-profile__picture"
+            v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'"
+          />
+        </p>
+        <a
+          target="_blank"
+          v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)"
+          class="c-feed-profile__detail"
+        >
+          <span class="c-feed-profile__display-name">
+            {{ getProfile(myPubkey)?.display_name ?? getProfile(myPubkey)?.name ?? "loading" }}
+          </span>
+          <span class="c-feed-profile__user-name"> @{{ getProfile(myPubkey)?.name ?? "" }} </span>
+        </a>
+      </div>
+      <div class="p-index-post__editer">
+        <div class="p-index-post__textarea">
+          <textarea
+            class="i-note"
+            id="note"
+            rows="8"
+            v-model="note"
+            @keydown.enter="($event) => checkSend($event)"
+          ></textarea>
+        </div>
+        <div class="p-index-post__post-btn">
+          <input class="b-post" type="button" value="投稿" v-on:click="post()" />
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
-
 
 <style lang="scss" scoped>
 @import "./assets/scss/project/index.scss";

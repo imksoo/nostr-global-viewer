@@ -31,7 +31,7 @@
 }
 
 .p-index-feeds {
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .p-index-title {
@@ -41,7 +41,7 @@
   flex-wrap: wrap;
   gap: 0.4rem;
   margin: 0;
-  padding: 2rem 0;
+  padding: 1rem 0;
   @media screen and (max-width: 880px) {
     flex-direction: row;
     flex-wrap: wrap;
@@ -73,6 +73,7 @@
     display: flex;
     gap: 0.4rem;
     align-items: center;
+    margin: 0;
     &::after {
       content: "";
       width: 3em;
@@ -132,7 +133,7 @@
 }
 
 .p-index-speech-cb {
-  padding: 12px 8px;
+  padding: 0 4px;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -211,6 +212,7 @@
 
 .p-index-speech-volume {
   color: #fff;
+  margin-top: 8px;
 }
 .p-index-post {
   background-color: #050a30;
@@ -257,5 +259,78 @@
 @media screen and (max-width: 880px) {
   .p-index-post--signin {
     padding: 12px 0;
+  }
+}
+
+.p-index-signin {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1rem;
+  &__head {
+    color: #ffffff;
+    font-size: 14px;
+  }
+
+  &__body {
+    flex-grow: 1;
+    border-left: 1px solid #fff;
+    padding-left: 10px;
+  }
+
+  &__btn {
+    background-color: #fc5fa1;
+    color: #ffffff;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 1.4rem;
+    border-radius: 2rem;
+    transition: all 0.4s;
+    border: none;
+    cursor: pointer;
+    &:hover {
+      background-color: #df3d81;
+    }
+  }
+}
+
+.p-index-post-btn {
+  position: fixed;
+  right: 40px;
+  bottom: 40px;
+  @media screen and (max-width: 880px) {
+    right: 20px;
+    bottom: 20px;
+  }
+  &__btn {
+    border: solid 2px #fff;
+    margin: 0;
+    padding: 0;
+    background: #fc5fa1;
+    width: 60px;
+    height: 60px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    @media screen and (max-width: 880px) {
+      width: 48px;
+      height: 48px;
+    }
+  }
+  &__icon {
+    font-size: 40px;
+    color: #fff;
+    font-weight: bold;
+    display: block;
+    line-height: 1;
+    @media screen and (max-width: 880px) {
+      font-size: 20px;
+    }
   }
 }
