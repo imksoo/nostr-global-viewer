@@ -35,11 +35,11 @@ global.on("event", async (ev) => {
       ? a.id === b.id
         ? 0
         : a.id < b.id
+          ? 1
+          : -1
+      : a.created_at < b.created_at
         ? 1
         : -1
-      : a.created_at < b.created_at
-      ? 1
-      : -1
   })
   events.value = events.value.filter((event, index, array) => {
     return index === 0 || event.id !== array[index - 1].id
@@ -162,9 +162,11 @@ let myRelays: string[] = []
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? ""
-  logined.value = true
 
-  collectRelay()
+  if (myPubkey) {
+    logined.value = true
+    collectRelay()
+  }
 }
 
 let note = ""
@@ -234,13 +236,8 @@ async function collectRelay() {
           <h2 class="p-index-intro__head">はじめに</h2>
           <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
           <p class="p-index-intro__text">
-            <a
-              href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
-              rel="noopener"
-              target="_blank"
-              class="p-index-intro__btn"
-              >はじめてのNostr【はじめての方はこちら】</a
-            >
+            <a href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
+              rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
           </p>
           <p class="p-index-intro__text">を参照ください。<br /></p>
           <p class="p-index-intro__text">
@@ -248,12 +245,8 @@ async function collectRelay() {
             <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
           </p>
           <p class="p-index-intro__text">
-            このサイトのソースコードは<a
-              href="https://github.com/imksoo/nostr-global-viewer"
-              class="p-index-intro__text-link"
-              target="_blank"
-              >GitHub</a
-            >にあります。
+            このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
+              target="_blank">GitHub</a>にあります。
           </p>
         </div>
 
@@ -284,16 +277,11 @@ async function collectRelay() {
         <div class="p-index-post--isLogin" v-if="logined">
           <div class="c-feed-profile">
             <p class="c-feed-profile__avatar">
-              <img
-                class="profilePicture"
-                v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'"
-              />
+              <img class="profilePicture"
+                v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
             </p>
-            <a
-              target="_blank"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)"
-              class="c-feed-profile__detail"
-            >
+            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)"
+              class="c-feed-profile__detail">
               <span class="c-feed-profile__display-name">
                 {{ getProfile(myPubkey)?.display_name ?? getProfile(myPubkey)?.name ?? "loading" }}
               </span>
@@ -314,16 +302,11 @@ async function collectRelay() {
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <div class="c-feed-profile">
             <p class="c-feed-profile__avatar">
-              <img
-                class="profilePicture"
-                v-bind:src="getProfile(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'"
-              />
+              <img class="profilePicture"
+                v-bind:src="getProfile(e.pubkey)?.picture ?? 'https://placehold.jp/60x60.png'" />
             </p>
-            <a
-              target="_blank"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)"
-              class="c-feed-profile__detail"
-            >
+            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)"
+              class="c-feed-profile__detail">
               <span class="c-feed-profile__display-name">
                 {{ getProfile(e.pubkey)?.display_name ?? getProfile(e.pubkey)?.name ?? "loading" }}
               </span>
@@ -331,11 +314,8 @@ async function collectRelay() {
             </a>
           </div>
           <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
-            <a
-              target="_blank"
-              v-if="getReplyPrevUser(e)"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))"
-            >
+            <a target="_blank" v-if="getReplyPrevUser(e)"
+              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))">
               <span class="c-feed-reply-profile__display-name">
                 {{
                   getProfile(getReplyPrevUser(e))?.display_name ?? getProfile(getReplyPrevUser(e))?.name ?? "loading"
@@ -343,12 +323,8 @@ async function collectRelay() {
               </span>
             </a>
             の
-            <a
-              target="_blank"
-              v-if="getReplyPrevNote(e)"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))"
-              >投稿</a
-            >
+            <a target="_blank" v-if="getReplyPrevNote(e)"
+              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">投稿</a>
             への返信
           </p>
           <p class="c-feed-content">
@@ -356,8 +332,7 @@ async function collectRelay() {
           </p>
           <p class="c-feed-date">
             <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)">
-              {{ new Date(e.created_at * 1000).toLocaleString() }}</a
-            >
+              {{ new Date(e.created_at * 1000).toLocaleString() }}</a>
           </p>
         </div>
       </div>
@@ -395,6 +370,7 @@ async function collectRelay() {
   flex-shrink: 0;
   position: relative;
 }
+
 .p-index-body {
   flex-grow: 1;
 }
@@ -506,6 +482,7 @@ async function collectRelay() {
 .p-index-intro__btn:hover {
   background-color: #df3d81;
 }
+
 .p-index-speech {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
@@ -515,10 +492,12 @@ async function collectRelay() {
   gap: 10px;
   margin-top: 1rem;
 }
+
 .p-index-speech__head {
   color: #ffffff;
   font-size: 14px;
 }
+
 .p-index-speech__body {
   flex-grow: 1;
   border-left: 1px solid #fff;
@@ -531,24 +510,30 @@ async function collectRelay() {
   align-items: center;
   cursor: pointer;
 }
+
 .p-index-speech-cb__input {
   margin: 0;
   width: 0;
   opacity: 0;
 }
+
 .p-index-speech-cb:hover {
   background: rgba(0, 0, 0, 0.05) !important;
 }
-.p-index-speech-cb:hover > .p-index-speech-cb__dummy {
+
+.p-index-speech-cb:hover>.p-index-speech-cb__dummy {
   transform: scale(1.1);
 }
-.p-index-speech-cb__input:focus + .p-index-speech-cb__dummy {
+
+.p-index-speech-cb__input:focus+.p-index-speech-cb__dummy {
   transform: scale(1.1);
 }
-.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy {
+
+.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy {
   background: #df3d81;
 }
-.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy::before {
+
+.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy::before {
   content: "";
   display: block;
   position: absolute;
@@ -561,7 +546,8 @@ async function collectRelay() {
   transform-origin: 2px 2px;
   background: #ffffff;
 }
-.p-index-speech-cb__input:checked + .p-index-speech-cb__dummy::after {
+
+.p-index-speech-cb__input:checked+.p-index-speech-cb__dummy::after {
   content: "";
   display: block;
   position: absolute;
@@ -574,6 +560,7 @@ async function collectRelay() {
   transform-origin: 2px 2px;
   background: #ffffff;
 }
+
 .p-index-speech-cb__dummy {
   position: relative;
   top: 0;
@@ -586,6 +573,7 @@ async function collectRelay() {
   border-radius: 50%;
   transition: all 0.15s linear;
 }
+
 .p-index-speech-cb__text-label {
   margin-left: 12px;
   display: block;
@@ -593,9 +581,11 @@ async function collectRelay() {
   font-weight: bold;
   color: #fff;
 }
+
 .p-index-speech-volume {
   color: #fff;
 }
+
 .c-feed-item {
   margin-top: 5px;
   background-color: #ffffff;
@@ -692,6 +682,7 @@ p {
   padding: 8px;
   border-radius: 4px;
 }
+
 @media screen and (max-width: 880px) {
   .p-index-post {
     position: fixed;
@@ -701,6 +692,7 @@ p {
     width: 100%;
     box-sizing: border-box;
   }
+
   .p-index-post--signin {
     padding: 12px 0;
   }
@@ -712,18 +704,22 @@ p {
   font-size: 18px;
   color: #fff;
 }
+
 .p-p-index-post__signin-btn {
   text-align: center;
   margin-top: 12px;
 }
+
 .p-p-index-post__post-btn {
   text-align: right;
 }
+
 .p-p-index-post__editer {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .p-p-index-post__textarea {
   flex-grow: 1;
 }
