@@ -1,5 +1,11 @@
+version: 0.2
 phases:
+  pre_build:
+    commands:
+      - npm i
   build:
     commands:
-      - npm install
       - npm run build
+artifacts:
+  files:
+    - dist/**
