@@ -347,17 +347,28 @@ function checkSend(event: KeyboardEvent) {
             </a>
           </div>
           <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
-            <a target="_blank" v-if="getReplyPrevUser(e)"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))">
-              <span class="c-feed-reply-profile__display-name">
-                {{
-                  getProfile(getReplyPrevUser(e))?.display_name ?? getProfile(getReplyPrevUser(e))?.name ?? "loading"
-                }}
-              </span>
-            </a>
-            の
-            <a target="_blank" v-if="getReplyPrevNote(e)"
-              v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">投稿</a>
+            <span v-if="getReplyPrevUser(e)">
+              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(getReplyPrevUser(e))">
+                <span class="c-feed-reply-profile__display-name">
+                  {{
+                    getProfile(getReplyPrevUser(e))?.display_name ?? getProfile(getReplyPrevUser(e))?.name ?? "loading"
+                  }}
+                </span>
+              </a>
+              の
+            </span>
+            <span v-else>
+              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)">
+                <span class="c-feed-reply-profile__display-name">
+                  {{ getProfile(e.pubkey)?.display_name ?? getProfile(e.pubkey)?.name ?? "loading" }}
+                </span>
+              </a>
+              の
+            </span>
+            <span v-if="getReplyPrevNote(e)">
+              <a target="_blank"
+                v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(getReplyPrevNote(e))">投稿</a>
+            </span>
             への返信
           </p>
           <p class="c-feed-content">
