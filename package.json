@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mdi/js": "^7.2.96",
+    "mdi-vue": "^3.0.13",
     "nostr-tools": "^1.8.4",
     "vue": "^3.2.47",
     "websocket-polyfill": "^0.0.3"

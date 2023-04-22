@@ -131,7 +131,7 @@ async function collectProfiles() {
 setInterval(collectProfiles, 1000)
 
 const synth = window.speechSynthesis
-async function speakNote(event: nostr.Event) {
+async function speakNote(event: nostr.Event, waitTime: number = 1500) {
   setTimeout(() => {
     const display_name =
       profiles.value.get(event.pubkey)?.display_name + "さん" ?? profiles.value.get(event.pubkey)?.name + "-san"
@@ -169,7 +169,7 @@ async function speakNote(event: nostr.Event) {
     }
     utterContent.volume = volume.value
     synth.speak(utterContent)
-  }, 1500)
+  }, waitTime)
 }
 
 function getReplyPrevUser(event: nostr.Event): string {
@@ -365,10 +365,17 @@ function checkSend(event: KeyboardEvent) {
           <p class="c-feed-content">
             {{ e.content.replace("\\n", "\n") }}
           </p>
-          <p class="c-feed-date">
-            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)">
-              {{ new Date(e.created_at * 1000).toLocaleString() }}</a>
-          </p>
+          <div class="c-feed-footer">
+            <p class="c-feed-speak">
+              <span @click="$event => speakNote(e, 0)">
+                <mdicon name="play" />読み上げ
+              </span>
+            </p>
+            <p class="c-feed-date">
+              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)">
+                {{ new Date(e.created_at * 1000).toLocaleString() }}</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
