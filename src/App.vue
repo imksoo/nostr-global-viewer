@@ -409,7 +409,8 @@ function checkSend(event: KeyboardEvent) {
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
-            @keydown.enter="($event) => checkSend($event)"></textarea>
+            @keydown.enter="($event) => checkSend($event)"
+            @keydown.esc="($event) => {isPostOpen = false}"></textarea>
         </div>
         <div class="p-index-post__post-btn">
           <input class="b-post" type="button" value="投稿" v-on:click="post()" />
