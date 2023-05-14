@@ -296,6 +296,10 @@ function checkSend(event: KeyboardEvent) {
             このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
               target="_blank">GitHub</a>にあります。
           </p>
+          <p class="p-index-intro__text">
+            なお、私が管理するNostrリレーの利用規約は <a href="https://relay.nostr.wirednet.jp/index.html" class="p-index-intro__text-link"
+              target="_blank">relay.nostr.wirendet.jp</a> に掲示してあります。
+          </p>
         </div>
 
         <div class="p-index-speech">
@@ -409,8 +413,7 @@ function checkSend(event: KeyboardEvent) {
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
-            @keydown.enter="($event) => checkSend($event)"
-            @keydown.esc="($event) => {isPostOpen = false}"></textarea>
+            @keydown.enter="($event) => checkSend($event)" @keydown.esc="($event) => { isPostOpen = false }"></textarea>
         </div>
         <div class="p-index-post__post-btn">
           <input class="b-post" type="button" value="投稿" v-on:click="post()" />
