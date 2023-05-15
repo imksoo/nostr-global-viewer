@@ -23,7 +23,7 @@ let profileRelays = [
 const global = pool.sub(feedRelays, [
   {
     kinds: [1],
-    limit: 100,
+    limit: 200,
   },
 ])
 
