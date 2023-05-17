@@ -428,7 +428,7 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
             <p class="c-feed-profile__avatar">
               <img class="c-feed-profile__picture" v-bind:src="getProfile(e.pubkey)?.picture ??
                 'https://placehold.jp/60x60.png'
-                " />
+                " referrerpolicy="no-referrer" />
             </p>
             <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
               " class="c-feed-profile__detail">
@@ -514,7 +514,7 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
       <div class="c-feed-profile">
         <p class="c-feed-profile__avatar">
           <img class="c-feed-profile__picture" v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'
-            " />
+            " referrerpolicy="no-referrer" />
         </p>
         <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)
           " class="c-feed-profile__detail">
