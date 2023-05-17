@@ -20,23 +20,26 @@ let profileRelays = [
   "wss://relay.snort.social",
 ];
 
-const global = pool.sub(feedRelays, [
-  {
-    kinds: [1],
-    limit: 1000,
-  },
-]);
-
 const events = ref(new Array<nostr.Event>());
-const eventsBackup = ref(new Array<nostr.Event>());
+const eventsToSearch = ref(new Array<nostr.Event>());
 let firstFetching = true;
 let autoSpeech = ref(false);
 let volume = ref(0.5);
 let searchWords = ref("");
 
+const totalNumberOfEventsToKeep = 2000;
+const countOfDisplayEvents = 100;
+
+const global = pool.sub(feedRelays, [
+  {
+    kinds: [1],
+    limit: totalNumberOfEventsToKeep,
+  },
+]);
+
 global.on("event", async (ev) => {
-  eventsBackup.value.push(ev);
-  eventsBackup.value.slice(-1000);
+  eventsToSearch.value.push(ev);
+  eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   search();
   if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
     speakNote(ev);
@@ -81,7 +84,7 @@ async function collectProfiles() {
   const pubkeys = Array.from(pubkeySet);
   const prof = pool.sub(profileRelays, [
     {
-      kinds: [0, 3],
+      kinds: [0],
       authors: pubkeys,
     },
   ]);
@@ -100,18 +103,6 @@ async function collectProfiles() {
         };
         // content.created_at = ev.created_at
         profiles.value.set(ev.pubkey, press);
-      }
-    } else if (ev.kind === 3) {
-      if (false && ev.content) {
-        // プロフィール情報を取得するリレーを各人のものから拾おうとしたが、非常に多くなりすぎるのでやめた
-        const content = JSON.parse(ev.content);
-        for (const r in content) {
-          if (content[r].write && !profileRelays.find((e) => e === r)) {
-            profileRelays.push(r);
-            profileRelays.sort();
-          }
-        }
-        console.log(profileRelays);
       }
     }
   });
@@ -222,14 +213,18 @@ async function post() {
   };
   // @ts-ignore
   event = await window.nostr?.signEvent(event);
+  // @ts-ignore
+  const postStatus = { id: event.id, OK: 0, NG: 0 };
 
   // @ts-ignore
   const submit = pool.publish(myRelays, event);
   submit.on("ok", () => {
-    console.log("ok");
+    postStatus.OK++;
+    console.log(JSON.stringify(postStatus))
   });
   submit.on("failed", () => {
-    console.log("NG");
+    postStatus.NG++;
+    console.log(JSON.stringify(postStatus))
   });
   isPostOpen.value = false;
   note.value = "";
@@ -248,10 +243,12 @@ async function collectMyRelay() {
     {
       kinds: [3],
       authors: [myPubkey],
+      limit: 1,
     },
   ]);
   relays.on("event", async (ev) => {
-    if (ev.content && myRelaysCreatedAt < ev.created_at) {
+    if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
+      myRelays.slice(0);
       const content = JSON.parse(ev.content);
       myRelaysCreatedAt = ev.created_at;
       for (const r in content) {
@@ -263,6 +260,18 @@ async function collectMyRelay() {
   });
   relays.on("eose", async () => {
     relays.unsub();
+
+    const warmup = pool.sub(myRelays, [
+      {
+        kinds: [1],
+        authors: [myPubkey],
+        limit: 1,
+      },
+    ]);
+    warmup.on("event", (ev) => {
+      eventsToSearch.value.push(ev);
+    });
+    warmup.on("eose", () => console.log("warmed up."));
   });
 }
 
@@ -276,7 +285,7 @@ function search() {
   events.value = events.value.filter((e) => {
     return searchSubstring(e.content, searchWords.value);
   });
-  events.value = eventsBackup.value.filter((e) => {
+  events.value = eventsToSearch.value.filter((e) => {
     return searchSubstring(e.content, searchWords.value);
   });
   events.value.sort((a, b) => {
@@ -293,7 +302,7 @@ function search() {
   events.value = events.value.filter((event, index, array) => {
     return index === 0 || event.id !== array[index - 1].id;
   });
-  events.value = events.value.slice(0, 100);
+  events.value = events.value.slice(0, countOfDisplayEvents);
   if (events.value.length === 0) {
     events.value[0] = {
       id: "",
