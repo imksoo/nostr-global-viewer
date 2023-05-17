@@ -334,3 +334,27 @@
     }
   }
 }
+
+
+.p-index-search {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1rem;
+  &__head {
+    color: #ffffff;
+    font-size: 14px;
+  }
+
+  &__body {
+    flex-grow: 1;
+    border-left: 1px solid #fff;
+    padding-left: 10px;
+  }
+  &__input {
+    font-size: 18px;
+  }
+}
