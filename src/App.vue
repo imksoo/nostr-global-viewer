@@ -39,6 +39,10 @@ const global = pool.sub(feedRelays, [
 
 global.on("event", async (ev) => {
   const now = new Date().getTime();
+  const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
+  if (delay > 0) {
+    console.log(JSON.stringify({ delay, id: ev.id, created_at: new Date(ev.created_at * 1000) }));
+  }
   setTimeout(() => {
     eventsToSearch.value.push(ev);
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
@@ -46,7 +50,7 @@ global.on("event", async (ev) => {
     if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
       speakNote(ev);
     }
-  }, Math.max(0, ev.created_at * 1000 - now));
+  }, delay);
 });
 
 global.on("eose", async () => {
