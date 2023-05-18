@@ -38,12 +38,15 @@ const global = pool.sub(feedRelays, [
 ]);
 
 global.on("event", async (ev) => {
-  eventsToSearch.value.push(ev);
-  eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
-  search();
-  if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
-    speakNote(ev);
-  }
+  const now = new Date().getTime();
+  setTimeout(() => {
+    eventsToSearch.value.push(ev);
+    eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+    search();
+    if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
+      speakNote(ev);
+    }
+  }, Math.max(0, ev.created_at * 1000 - now));
 });
 
 global.on("eose", async () => {
