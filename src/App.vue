@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, nextTick } from "vue";
 import * as nostr from "nostr-tools";
+import { RelayPool } from "nostr-relaypool";
 
-const pool = new nostr.SimplePool();
+const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp"];
 let profileRelays = [
   "wss://nos.lol",
@@ -18,6 +19,7 @@ let profileRelays = [
   "wss://relay.nostr.band",
   "wss://relay.nostr.wirednet.jp",
   "wss://relay.snort.social",
+  "wss://yabu.me",
 ];
 
 const events = ref(new Array<nostr.Event>());
@@ -30,35 +32,35 @@ let searchWords = ref("");
 const totalNumberOfEventsToKeep = 2000;
 const countOfDisplayEvents = 100;
 
-const global = pool.sub(feedRelays, [
+pool.subscribe([
   {
     kinds: [1],
     limit: totalNumberOfEventsToKeep,
-  },
-]);
-
-global.on("event", async (ev) => {
-  const now = new Date().getTime();
-  const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
-  if (delay > 0) {
-    console.log(JSON.stringify({ delay, id: ev.id, created_at: new Date(ev.created_at * 1000) }));
-  }
-  setTimeout(() => {
-    eventsToSearch.value.push(ev);
-    eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
-    search();
-    if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
-      speakNote(ev);
+  }],
+  feedRelays,
+  async (ev, isAfterEose, relayURL) => {
+    const now = new Date().getTime();
+    const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
+    if (delay > 0) {
+      console.log(JSON.stringify({ delay, id: ev.id, created_at: new Date(ev.created_at * 1000) }));
     }
-  }, delay);
-});
-
-global.on("eose", async () => {
-  collectProfiles();
-  if (firstFetching) {
-    firstFetching = false;
+    setTimeout(() => {
+      eventsToSearch.value.push(ev);
+      eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+      search();
+      if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
+        speakNote(ev);
+      }
+    }, delay);
+  },
+  undefined,
+  async () => {
+    collectProfiles();
+    if (firstFetching) {
+      firstFetching = false;
+    }
   }
-});
+);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -89,40 +91,41 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  const prof = pool.sub(profileRelays, [
+  const prof = pool.subscribe([
     {
       kinds: [0],
       authors: pubkeys,
-    },
-  ]);
-  prof.on("event", async (ev) => {
-    if (ev.kind === 0) {
-      const content = JSON.parse(ev.content);
-      if (
-        !profiles.value.has(ev.pubkey) ||
-        profiles.value.get(ev.pubkey)?.created_at < ev.created_at
-      ) {
-        const press = {
-          picture: content.picture,
-          display_name: content.display_name,
-          name: content.name,
-          created_at: ev.created_at,
-        };
-        // content.created_at = ev.created_at
-        profiles.value.set(ev.pubkey, press);
+    }],
+    profileRelays,
+    async (ev, isAfterEose, relayURL) => {
+      if (ev.kind === 0) {
+        const content = JSON.parse(ev.content);
+        if (
+          !profiles.value.has(ev.pubkey) ||
+          profiles.value.get(ev.pubkey)?.created_at < ev.created_at
+        ) {
+          const press = {
+            picture: content.picture,
+            display_name: content.display_name,
+            name: content.name,
+            created_at: ev.created_at,
+          };
+          // content.created_at = ev.created_at
+          profiles.value.set(ev.pubkey, press);
+        }
       }
-    }
-  });
-  prof.on("eose", async () => {
-    prof.unsub();
-    oldProfileCacheMismatch = false;
+    },
+    undefined,
+    async () => {
+      oldProfileCacheMismatch = false;
 
-    // ローカルストレージにプロフィール情報を保存しておく
-    localStorage.setItem(
-      "profiles",
-      JSON.stringify(Array.from(profiles.value.entries()))
-    );
-  });
+      // ローカルストレージにプロフィール情報を保存しておく
+      localStorage.setItem(
+        "profiles",
+        JSON.stringify(Array.from(profiles.value.entries()))
+      );
+    },
+    { unsubscribeOnEose: true });
 }
 setInterval(collectProfiles, 1000);
 
@@ -224,15 +227,7 @@ async function post() {
   const postStatus = { id: event.id, OK: 0, NG: 0 };
 
   // @ts-ignore
-  const submit = pool.publish(myRelays, event);
-  submit.on("ok", () => {
-    postStatus.OK++;
-    console.log(JSON.stringify(postStatus))
-  });
-  submit.on("failed", () => {
-    postStatus.NG++;
-    console.log(JSON.stringify(postStatus))
-  });
+  pool.publish(event, myRelays);
   isPostOpen.value = false;
   note.value = "";
 }
@@ -246,40 +241,27 @@ watch(isPostOpen, async (isPostOpened) => {
 });
 
 async function collectMyRelay() {
-  const relays = pool.sub(profileRelays, [
+  pool.subscribe([
     {
       kinds: [3],
       authors: [myPubkey],
       limit: 1,
-    },
-  ]);
-  relays.on("event", async (ev) => {
-    if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
-      myRelays.slice(0);
-      const content = JSON.parse(ev.content);
-      myRelaysCreatedAt = ev.created_at;
-      for (const r in content) {
-        if (content[r].write) {
-          myRelays.push(r);
+    }],
+    profileRelays,
+    async (ev, relayURL) => {
+      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
+        myRelays.slice(0);
+        const content = JSON.parse(ev.content);
+        myRelaysCreatedAt = ev.created_at;
+        for (const r in content) {
+          if (content[r].write) {
+            myRelays.push(r);
+          }
         }
       }
-    }
-  });
-  relays.on("eose", async () => {
-    relays.unsub();
-
-    const warmup = pool.sub(myRelays, [
-      {
-        kinds: [1],
-        authors: [myPubkey],
-        limit: 1,
-      },
-    ]);
-    warmup.on("event", (ev) => {
-      eventsToSearch.value.push(ev);
-    });
-    warmup.on("eose", () => console.log("warmed up."));
-  });
+    },
+    undefined
+  );
 }
 
 function checkSend(event: KeyboardEvent) {
