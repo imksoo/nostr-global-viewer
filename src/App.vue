@@ -379,7 +379,7 @@ function getRelayStatuses(): [url: string, status: number][] {
           <p class="p-index-intro__text">
             なお、私が管理するNostrリレーの利用規約は
             <a href="https://relay.nostr.wirednet.jp/index.html" class="p-index-intro__text-link"
-              target="_blank">relay.nostr.wirendet.jp</a>
+              target="_blank">relay.nostr.wirednet.jp</a>
             に掲示してあります。
           </p>
         </div>
