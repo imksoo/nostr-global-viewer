@@ -358,3 +358,46 @@
     font-size: 18px;
   }
 }
+
+.p-index-relay {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 12px;
+  gap: 10px;
+  margin-top: 1rem;
+
+  &__head {
+    color: #ffffff;
+    font-size: 14px;
+  }
+  &-list {
+    font-size: 4px;
+  }
+  &-status-0 ::before {
+    content: "🆖 "
+  }
+  &-status-0 { // Connecting
+    font-size: 4px;
+    color: red;
+  }
+  &-status-1 ::before {
+    content: "🆗 ";
+  }
+  &-status-1 { // OPEN
+    font-size: 4px;
+  }
+  &-status-2 ::before {
+    content: "🆖 "
+  }
+  &-status-2 { // Closing
+    font-size: 4px;
+    color: red;
+  }
+  &-status-3 ::before {
+    content: "🆖 "
+  }
+  &-status-3 { // Closed
+    font-size: 4px;
+    color: red;
+  }
+}

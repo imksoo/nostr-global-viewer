@@ -345,6 +345,10 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
   // If all conditions are met, return true
   return true;
 }
+
+function getRelayStatuses(): [url: string, status: number][] {
+  return pool.getRelayStatuses();
+}
 </script>
 
 <template>
@@ -399,6 +403,16 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
           <h2 class="p-index-search__head">フィルタ</h2>
           <div class="p-index-search__body">
             <input class="p-index-search__input" type="search" id="search" v-model="searchWords" v-on:change="search()" />
+          </div>
+        </div>
+
+        <div class="p-index-relay">
+          <h2 class="p-index-relay__head">リレーの接続状態 (プロフィール取得＆投稿用)</h2>
+          <div class="p-index-relay-status-list">
+            <p v-for="[url, status] in getRelayStatuses()" v-bind:key="url"
+              v-bind:class="'p-index-relay-status-' + status">
+              <span>{{ url }}</span>
+            </p>
           </div>
         </div>
 
