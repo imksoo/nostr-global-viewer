@@ -230,6 +230,10 @@ async function post() {
   pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
+
+  setTimeout(()=>{
+    relayStatus.value = pool.getRelayStatuses();
+  }, 200)
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -346,9 +350,10 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
   return true;
 }
 
-function getRelayStatuses(): [url: string, status: number][] {
-  return pool.getRelayStatuses();
-}
+let relayStatus = ref(pool.getRelayStatuses());
+setInterval(()=>{
+  relayStatus.value = pool.getRelayStatuses();
+}, 1000)
 
 function normalizeUrls(urls: string[]): string[] {
     return urls.map(url => {
@@ -426,7 +431,7 @@ function normalizeUrls(urls: string[]): string[] {
         <div class="p-index-relay">
           <h2 class="p-index-relay__head">リレーの接続状態 (プロフィール取得＆投稿用)</h2>
           <div class="p-index-relay-status-list">
-            <p v-for="[url, status] in getRelayStatuses()" v-bind:key="url"
+            <p v-for="[url, status] in relayStatus" v-bind:key="url"
               v-bind:class="'p-index-relay-status-' + status">
               <span>{{ url }}</span>
             </p>
