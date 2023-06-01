@@ -4,22 +4,22 @@ import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 
 const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
-const feedRelays = ["wss://relay-jp.nostr.wirednet.jp"];
+const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
-  "wss://nos.lol",
-  "wss://nostr-pub.wellorder.net",
-  "wss://nostr-relay.nokotaro.com",
-  "wss://nostr.h3z.jp",
-  "wss://nostr.holybea.com",
-  "wss://offchain.pub",
-  "wss://relay-jp.nostr.wirednet.jp",
-  "wss://relay.austrich.net",
-  "wss://relay.current.fyi",
-  "wss://relay.damus.io",
-  "wss://relay.nostr.band",
-  "wss://relay.nostr.wirednet.jp",
-  "wss://relay.snort.social",
-  "wss://yabu.me",
+  "wss://nos.lol/",
+  "wss://nostr-pub.wellorder.net/",
+  "wss://nostr-relay.nokotaro.com/",
+  "wss://nostr.h3z.jp/",
+  "wss://nostr.holybea.com/",
+  "wss://offchain.pub/",
+  "wss://relay-jp.nostr.wirednet.jp/",
+  "wss://relay.austrich.net/",
+  "wss://relay.current.fyi/",
+  "wss://relay.damus.io/",
+  "wss://relay.nostr.band/",
+  "wss://relay.nostr.wirednet.jp/",
+  "wss://relay.snort.social/",
+  "wss://yabu.me/",
 ];
 
 const events = ref(new Array<nostr.Event>());
@@ -227,7 +227,7 @@ async function post() {
   const postStatus = { id: event.id, OK: 0, NG: 0 };
 
   // @ts-ignore
-  pool.publish(event, myRelays);
+  pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
 }
@@ -348,6 +348,17 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
 
 function getRelayStatuses(): [url: string, status: number][] {
   return pool.getRelayStatuses();
+}
+
+function normalizeUrls(urls: string[]): string[] {
+    return urls.map(url => {
+        let urlObject = new URL(url);
+        // If there's no pathname, add a slash
+        if (urlObject.pathname === '') {
+            urlObject.pathname = '/';
+        }
+        return urlObject.toString();
+    });
 }
 </script>
 
