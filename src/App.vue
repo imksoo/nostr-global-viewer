@@ -231,7 +231,7 @@ async function post() {
   isPostOpen.value = false;
   note.value = "";
 
-  setTimeout(()=>{
+  setTimeout(() => {
     relayStatus.value = pool.getRelayStatuses();
   }, 200)
 }
@@ -351,19 +351,19 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
 }
 
 let relayStatus = ref(pool.getRelayStatuses());
-setInterval(()=>{
+setInterval(() => {
   relayStatus.value = pool.getRelayStatuses();
 }, 1000)
 
 function normalizeUrls(urls: string[]): string[] {
-    return urls.map(url => {
-        let urlObject = new URL(url);
-        // If there's no pathname, add a slash
-        if (urlObject.pathname === '') {
-            urlObject.pathname = '/';
-        }
-        return urlObject.toString();
-    });
+  return urls.map(url => {
+    let urlObject = new URL(url);
+    // If there's no pathname, add a slash
+    if (urlObject.pathname === '') {
+      urlObject.pathname = '/';
+    }
+    return urlObject.toString();
+  });
 }
 </script>
 
@@ -431,8 +431,7 @@ function normalizeUrls(urls: string[]): string[] {
         <div class="p-index-relay">
           <h2 class="p-index-relay__head">リレーの接続状態 (プロフィール取得＆投稿用)</h2>
           <div class="p-index-relay-status-list">
-            <p v-for="[url, status] in relayStatus" v-bind:key="url"
-              v-bind:class="'p-index-relay-status-' + status">
+            <p v-for="[url, status] in relayStatus" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
               <span>{{ url }}</span>
             </p>
           </div>
