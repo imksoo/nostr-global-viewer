@@ -11,8 +11,7 @@
     "esModuleInterop": true,
     "lib": ["ES2022", "DOM"],
     "skipLibCheck": true,
-    "noEmit": true,
-    "noImplicitAny": false
+    "noEmit": true
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "references": [{ "path": "./tsconfig.node.json" }]

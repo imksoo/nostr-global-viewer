@@ -360,6 +360,12 @@ function getRelayStatuses(): [url: string, status: number][] {
           <span class="p-index-title__main">Feeds</span>
           <span class="p-index-title__sub">from relay-jp.nostr.wirednet.jp.</span>
         </h1>
+        <div class="p-index-signin" v-if="!logined">
+          <h2 class="p-index-signin__head">この画面からつぶやく</h2>
+          <div class="p-index-signin__body">
+            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
+          </div>
+        </div>
         <div class="p-index-intro" v-if="!logined">
           <h2 class="p-index-intro__head">はじめに</h2>
           <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
@@ -413,13 +419,6 @@ function getRelayStatuses(): [url: string, status: number][] {
               v-bind:class="'p-index-relay-status-' + status">
               <span>{{ url }}</span>
             </p>
-          </div>
-        </div>
-
-        <div class="p-index-signin" v-if="!logined">
-          <h2 class="p-index-signin__head">この画面からつぶやく</h2>
-          <div class="p-index-signin__body">
-            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
           </div>
         </div>
       </div>
