@@ -38,7 +38,7 @@ pool.subscribe([
     limit: totalNumberOfEventsToKeep,
   }],
   feedRelays,
-  async (ev, isAfterEose, relayURL) => {
+  async (ev, _isAfterEose, _relayURL) => {
     const now = new Date().getTime();
     const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
     if (delay > 0) {
@@ -97,7 +97,7 @@ async function collectProfiles() {
       authors: pubkeys,
     }],
     profileRelays,
-    async (ev, isAfterEose, relayURL) => {
+    async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
         if (
@@ -206,6 +206,20 @@ async function login() {
   if (myPubkey) {
     logined.value = true;
     collectMyRelay();
+
+    setTimeout(() => {
+      relayStatus.value = pool.getRelayStatuses();
+      pool.subscribe([
+        { kinds: [1], "#p": [myPubkey], limit: 1 }
+      ],
+        normalizeUrls(myRelays),
+        (ev, _isAfterEose, _relayURL) => {
+          if (ev.pubkey !== myPubkey) {
+            console.log("たぶんふぁぼとかりぷらいをもらった", ev)
+          }
+        }
+      )
+    }, 1000)
   }
 }
 
@@ -223,17 +237,22 @@ async function post() {
   };
   // @ts-ignore
   event = await window.nostr?.signEvent(event);
-  // @ts-ignore
-  const postStatus = { id: event.id, OK: 0, NG: 0 };
 
   // @ts-ignore
   pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
 
-  setTimeout(() => {
-    relayStatus.value = pool.getRelayStatuses();
-  }, 200)
+  // @ts-ignore
+  const ev: nostr.Event = event;
+  pool.subscribe([
+    { kinds: [1], ids: [ev.id], limit: 1 },
+  ],
+    normalizeUrls(myRelays),
+    (ev, _isAfterEose, relayURL) => {
+      console.log("たぶん投稿に成功した", relayURL, ev)
+    }
+    , 60 * 1000, undefined, { unsubscribeOnEose: true })
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -252,7 +271,7 @@ async function collectMyRelay() {
       limit: 1,
     }],
     profileRelays,
-    async (ev, relayURL) => {
+    async (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
         myRelays.slice(0);
         const content = JSON.parse(ev.content);
@@ -379,7 +398,7 @@ function normalizeUrls(urls: string[]): string[] {
         <div class="p-index-signin" v-if="!logined">
           <h2 class="p-index-signin__head">この画面からつぶやく</h2>
           <div class="p-index-signin__body">
-            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
+            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="(_$event) => login()" />
           </div>
         </div>
         <div class="p-index-intro" v-if="!logined">
@@ -501,7 +520,7 @@ function normalizeUrls(urls: string[]): string[] {
           </p>
           <div class="c-feed-footer">
             <p class="c-feed-speak">
-              <span @click="($event) => speakNote(e, 0)">
+              <span @click="(_$event) => speakNote(e, 0)">
                 <mdicon name="play" />読み上げ
               </span>
             </p>
@@ -550,7 +569,7 @@ function normalizeUrls(urls: string[]): string[] {
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
-            @keydown.enter="($event) => checkSend($event)" @keydown.esc="($event) => {
+            @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
             }
               "></textarea>
