@@ -91,12 +91,12 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  const prof = pool.subscribe([
+  const _prof = pool.subscribe([
     {
       kinds: [0],
       authors: pubkeys,
     }],
-    profileRelays,
+    normalizeUrls([...profileRelays, ...myRelays]),
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
@@ -252,7 +252,9 @@ async function post() {
     (ev, _isAfterEose, relayURL) => {
       console.log("たぶん投稿に成功した", relayURL, ev)
     }
-    , 60 * 1000, undefined, { unsubscribeOnEose: true })
+    , 60 * 1000,
+    undefined,
+    { unsubscribeOnEose: true })
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -283,7 +285,9 @@ async function collectMyRelay() {
         }
       }
     },
-    undefined
+    60 * 1000,
+    undefined,
+    { unsubscribeOnEose: true }
   );
 }
 
