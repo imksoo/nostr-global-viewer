@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "vue-tsc"
+    "check": "vue-tsc",
+    "bump": "npm version patch -m 'Bump version %s'"
   },
   "dependencies": {
     "@mdi/js": "^7.2.96",
