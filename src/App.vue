@@ -4,22 +4,22 @@ import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 
 const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
-const feedRelays = ["wss://relay-jp.nostr.wirednet.jp"];
+const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
-  "wss://nos.lol",
-  "wss://nostr-pub.wellorder.net",
-  "wss://nostr-relay.nokotaro.com",
-  "wss://nostr.h3z.jp",
-  "wss://nostr.holybea.com",
-  "wss://offchain.pub",
-  "wss://relay-jp.nostr.wirednet.jp",
-  "wss://relay.austrich.net",
-  "wss://relay.current.fyi",
-  "wss://relay.damus.io",
-  "wss://relay.nostr.band",
-  "wss://relay.nostr.wirednet.jp",
-  "wss://relay.snort.social",
-  "wss://yabu.me",
+  "wss://nos.lol/",
+  "wss://nostr-pub.wellorder.net/",
+  "wss://nostr-relay.nokotaro.com/",
+  "wss://nostr.h3z.jp/",
+  "wss://nostr.holybea.com/",
+  "wss://offchain.pub/",
+  "wss://relay-jp.nostr.wirednet.jp/",
+  "wss://relay.austrich.net/",
+  "wss://relay.current.fyi/",
+  "wss://relay.damus.io/",
+  "wss://relay.nostr.band/",
+  "wss://relay.nostr.wirednet.jp/",
+  "wss://relay.snort.social/",
+  "wss://yabu.me/",
 ];
 
 const events = ref(new Array<nostr.Event>());
@@ -38,7 +38,7 @@ pool.subscribe([
     limit: totalNumberOfEventsToKeep,
   }],
   feedRelays,
-  async (ev, isAfterEose, relayURL) => {
+  async (ev, _isAfterEose, _relayURL) => {
     const now = new Date().getTime();
     const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
     if (delay > 0) {
@@ -91,13 +91,13 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  const prof = pool.subscribe([
+  const _prof = pool.subscribe([
     {
       kinds: [0],
       authors: pubkeys,
     }],
-    profileRelays,
-    async (ev, isAfterEose, relayURL) => {
+    normalizeUrls([...profileRelays, ...myRelays]),
+    async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
         if (
@@ -206,6 +206,20 @@ async function login() {
   if (myPubkey) {
     logined.value = true;
     collectMyRelay();
+
+    setTimeout(() => {
+      relayStatus.value = pool.getRelayStatuses();
+      pool.subscribe([
+        { kinds: [1], "#p": [myPubkey], limit: 1 }
+      ],
+        normalizeUrls(myRelays),
+        (ev, _isAfterEose, _relayURL) => {
+          if (ev.pubkey !== myPubkey) {
+            console.log("たぶんふぁぼとかりぷらいをもらった", ev)
+          }
+        }
+      )
+    }, 1000)
   }
 }
 
@@ -223,13 +237,24 @@ async function post() {
   };
   // @ts-ignore
   event = await window.nostr?.signEvent(event);
-  // @ts-ignore
-  const postStatus = { id: event.id, OK: 0, NG: 0 };
 
   // @ts-ignore
-  pool.publish(event, myRelays);
+  pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
+
+  // @ts-ignore
+  const ev: nostr.Event = event;
+  pool.subscribe([
+    { kinds: [1], ids: [ev.id], limit: 1 },
+  ],
+    normalizeUrls(myRelays),
+    (ev, _isAfterEose, relayURL) => {
+      console.log("たぶん投稿に成功した", relayURL, ev)
+    }
+    , 60 * 1000,
+    undefined,
+    { unsubscribeOnEose: true })
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -248,7 +273,7 @@ async function collectMyRelay() {
       limit: 1,
     }],
     profileRelays,
-    async (ev, relayURL) => {
+    async (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
         myRelays.slice(0);
         const content = JSON.parse(ev.content);
@@ -260,7 +285,9 @@ async function collectMyRelay() {
         }
       }
     },
-    undefined
+    60 * 1000,
+    undefined,
+    { unsubscribeOnEose: true }
   );
 }
 
@@ -346,8 +373,20 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
   return true;
 }
 
-function getRelayStatuses(): [url: string, status: number][] {
-  return pool.getRelayStatuses();
+let relayStatus = ref(pool.getRelayStatuses());
+setInterval(() => {
+  relayStatus.value = pool.getRelayStatuses();
+}, 1000)
+
+function normalizeUrls(urls: string[]): string[] {
+  return urls.map(url => {
+    let urlObject = new URL(url);
+    // If there's no pathname, add a slash
+    if (urlObject.pathname === '') {
+      urlObject.pathname = '/';
+    }
+    return urlObject.toString();
+  });
 }
 </script>
 
@@ -360,6 +399,12 @@ function getRelayStatuses(): [url: string, status: number][] {
           <span class="p-index-title__main">Feeds</span>
           <span class="p-index-title__sub">from relay-jp.nostr.wirednet.jp.</span>
         </h1>
+        <div class="p-index-signin" v-if="!logined">
+          <h2 class="p-index-signin__head">この画面からつぶやく</h2>
+          <div class="p-index-signin__body">
+            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="(_$event) => login()" />
+          </div>
+        </div>
         <div class="p-index-intro" v-if="!logined">
           <h2 class="p-index-intro__head">はじめに</h2>
           <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
@@ -409,17 +454,9 @@ function getRelayStatuses(): [url: string, status: number][] {
         <div class="p-index-relay">
           <h2 class="p-index-relay__head">リレーの接続状態 (プロフィール取得＆投稿用)</h2>
           <div class="p-index-relay-status-list">
-            <p v-for="[url, status] in getRelayStatuses()" v-bind:key="url"
-              v-bind:class="'p-index-relay-status-' + status">
+            <p v-for="[url, status] in relayStatus" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
               <span>{{ url }}</span>
             </p>
-          </div>
-        </div>
-
-        <div class="p-index-signin" v-if="!logined">
-          <h2 class="p-index-signin__head">この画面からつぶやく</h2>
-          <div class="p-index-signin__body">
-            <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="($event) => login()" />
           </div>
         </div>
       </div>
@@ -487,7 +524,7 @@ function getRelayStatuses(): [url: string, status: number][] {
           </p>
           <div class="c-feed-footer">
             <p class="c-feed-speak">
-              <span @click="($event) => speakNote(e, 0)">
+              <span @click="(_$event) => speakNote(e, 0)">
                 <mdicon name="play" />読み上げ
               </span>
             </p>
@@ -536,7 +573,7 @@ function getRelayStatuses(): [url: string, status: number][] {
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
-            @keydown.enter="($event) => checkSend($event)" @keydown.esc="($event) => {
+            @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
             }
               "></textarea>

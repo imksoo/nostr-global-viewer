@@ -5,14 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "vue-tsc"
   },
   "dependencies": {
     "@mdi/js": "^7.2.96",
     "mdi-vue": "^3.0.13",
-    "nostr-relaypool": "^0.6.27",
-    "nostr-tools": "^1.8.4",
+    "nostr-relaypool": "^0.6.28",
+    "nostr-tools": "^1.10.1",
     "vue": "^3.2.47",
     "websocket-polyfill": "^0.0.3"
   },
