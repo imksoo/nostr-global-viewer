@@ -9,7 +9,7 @@ const sushiMode = computed(() => { return route.query.sushi === "on" })
 import sushiDataJSON from "./assets/sushiyuki.json";
 const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
-const sushiRandom = (new Date()).getUTCDay() * sushiDataLength * 7;
+const sushiRandom = (new Date()).getUTCDate();
 
 const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
@@ -83,8 +83,9 @@ function getProfile(pubkey: string): any {
     cacheMissHitPubkeys.push(pubkey);
   }
   if (sushiMode.value) {
-    const pubkeyNumber = sushiRandom + parseInt(pubkey, 16);
-    return sushiData.value[pubkeyNumber % sushiDataLength];
+    const pubkeyNumber = sushiRandom + parseInt(pubkey.substring(0, 3), 29);
+    const randomNumber = pubkeyNumber % sushiDataLength;
+    return sushiData.value[randomNumber];
   }
   return profiles.value.get(pubkey);
 }
@@ -402,6 +403,7 @@ function normalizeUrls(urls: string[]): string[] {
 }
 
 function appVersion() {
+  // @ts-ignore
   return __APP_VERSION__;
 }
 </script>
@@ -441,7 +443,8 @@ function appVersion() {
               target="_blank">GitHub</a>にあります。
           </p>
           <p class="p-index-intro__text">
-            一部箇所で <a href="https://awayuki.github.io/emojis.html">SUSHIYUKI emojis</a>( ©awayuki ) を利用しています。
+            一部箇所で <a href="https://awayuki.github.io/emojis.html" target="_blank"
+              class="p-index-intro__text-link">SUSHIYUKI emojis (©awayuki)</a> を利用しています。
           </p>
           <p class="p-index-intro__text">
             なお、私が管理するNostrリレーの利用規約は
