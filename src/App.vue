@@ -9,7 +9,7 @@ const sushiMode = computed(() => { return route.query.sushi === "on" })
 import sushiDataJSON from "./assets/sushiyuki.json";
 const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
-const sushiRandom = Math.random() * sushiDataLength * 7;
+const sushiRandom = (new Date()).getUTCDay() * sushiDataLength * 7;
 
 const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
