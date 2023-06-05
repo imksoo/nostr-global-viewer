@@ -441,6 +441,9 @@ function appVersion() {
               target="_blank">GitHub</a>にあります。
           </p>
           <p class="p-index-intro__text">
+            一部箇所で <a href="https://awayuki.github.io/emojis.html">SUSHIYUKI emojis</a>( ©awayuki ) を利用しています。
+          </p>
+          <p class="p-index-intro__text">
             なお、私が管理するNostrリレーの利用規約は
             <a href="https://relay.nostr.wirednet.jp/index.html" class="p-index-intro__text-link"
               target="_blank">relay.nostr.wirednet.jp</a>
