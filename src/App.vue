@@ -388,6 +388,10 @@ function normalizeUrls(urls: string[]): string[] {
     return urlObject.toString();
   });
 }
+
+function appVersion() {
+  return __APP_VERSION__;
+}
 </script>
 
 <template>
@@ -395,9 +399,12 @@ function normalizeUrls(urls: string[]): string[] {
     <div class="p-index-heading">
       <div class="p-index-heading__inner">
         <h1 class="p-index-title">
-          <span class="p-index-title__main">Nostr</span>
-          <span class="p-index-title__main">Feeds</span>
-          <span class="p-index-title__sub">from relay-jp.nostr.wirednet.jp.</span>
+          <span class="p-index-title__main">Nostr Feeds</span>
+          <span class="p-index-title__sub">From {{ feedRelays.map((s) => {
+            return s.replace(/wss?:\/\/(.*)\//, "$1")
+          }).join(",")
+          }}</span>
+          <span class="p-index-title__sub">Version: {{ appVersion() }}</span>
         </h1>
         <div class="p-index-signin" v-if="!logined">
           <h2 class="p-index-signin__head">この画面からつぶやく</h2>
