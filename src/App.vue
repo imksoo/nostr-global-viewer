@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, computed } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
+import { useRoute } from "vue-router"
+
+const route = useRoute();
+const sushiMode = computed(() => { return route.query.sushi === "on" })
+import sushiDataJSON from "./assets/sushiyuki.json";
+const sushiData = ref(sushiDataJSON);
+const sushiDataLength = sushiData.value.length;
+const sushiRandom = Math.random() * sushiDataLength * 7;
 
 const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
@@ -73,6 +81,10 @@ function getProfile(pubkey: string): any {
   if (!profiles.value.has(pubkey)) {
     oldProfileCacheMismatch = true;
     cacheMissHitPubkeys.push(pubkey);
+  }
+  if (sushiMode.value) {
+    const pubkeyNumber = sushiRandom + parseInt(pubkey, 16);
+    return sushiData.value[pubkeyNumber % sushiDataLength];
   }
   return profiles.value.get(pubkey);
 }
