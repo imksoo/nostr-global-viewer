@@ -1,4 +1,4 @@
-# Simple Nostr Relay Feed Reader with Vue 3
+# Nostr Feeds, in Japanese it's called のぞき窓
 
 This web page is a simple and interactive Nostr relay feed reader built using Vue 3, allowing users to view and explore events from various relays. By connecting to relay-jp.nostr.wirednet.jp (this is my relay), the page displays a list of events sorted by their creation date, along with the author's display name, username, and a link to their Nostr profile.
 
