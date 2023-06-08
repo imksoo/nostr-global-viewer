@@ -2,16 +2,21 @@
 import { ref, watch, nextTick, computed } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
-import { useRoute } from "vue-router"
+import { useRoute } from "vue-router";
 
 const route = useRoute();
-const sushiMode = computed(() => { return route.query.sushi === "on" })
+const sushiMode = computed(() => {
+  return route.query.sushi === "on";
+});
 import sushiDataJSON from "./assets/sushiyuki.json";
 const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
-const sushiRandom = (new Date()).getUTCDate();
+const sushiRandom = new Date().getUTCDate();
 
-const pool = new RelayPool(undefined, { autoReconnect: true, logErrorsAndNotices: true });
+const pool = new RelayPool(undefined, {
+  autoReconnect: true,
+  logErrorsAndNotices: true,
+});
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
   "wss://nos.lol/",
@@ -40,23 +45,37 @@ let searchWords = ref("");
 const totalNumberOfEventsToKeep = 2000;
 const countOfDisplayEvents = 100;
 
-pool.subscribe([
-  {
-    kinds: [1],
-    limit: totalNumberOfEventsToKeep,
-  }],
+pool.subscribe(
+  [
+    {
+      kinds: [1],
+      limit: totalNumberOfEventsToKeep,
+    },
+  ],
   feedRelays,
   async (ev, _isAfterEose, _relayURL) => {
     const now = new Date().getTime();
     const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
     if (delay > 0) {
-      console.log(JSON.stringify({ delay, id: ev.id, created_at: new Date(ev.created_at * 1000) }));
+      console.log(
+        JSON.stringify({
+          delay,
+          id: ev.id,
+          created_at: new Date(ev.created_at * 1000),
+        })
+      );
     }
     setTimeout(() => {
       eventsToSearch.value.push(ev);
       eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
       search();
-      if (!firstFetching && autoSpeech.value && events.value.some((obj) => { return obj.id === ev.id })) {
+      if (
+        !firstFetching &&
+        autoSpeech.value &&
+        events.value.some((obj) => {
+          return obj.id === ev.id;
+        })
+      ) {
         speakNote(ev);
       }
     }, delay);
@@ -104,11 +123,13 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  const _prof = pool.subscribe([
-    {
-      kinds: [0],
-      authors: pubkeys,
-    }],
+  const _prof = pool.subscribe(
+    [
+      {
+        kinds: [0],
+        authors: pubkeys,
+      },
+    ],
     normalizeUrls([...profileRelays, ...myRelays]),
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
@@ -138,7 +159,8 @@ async function collectProfiles() {
         JSON.stringify(Array.from(profiles.value.entries()))
       );
     },
-    { unsubscribeOnEose: true });
+    { unsubscribeOnEose: true }
+  );
 }
 setInterval(collectProfiles, 1000);
 
@@ -173,10 +195,7 @@ async function speakNote(event: nostr.Event, waitTime: number = 1500) {
         /(?:[\u2700-\u27bf]|(?:\ud83c[\udde6-\uddff]){2}|[\ud800-\udbff][\udc00-\udfff]|[\u0023-\u0039]\ufe0f?\u20e3|\u3299|\u3297|\u303d|\u3030|\u24c2|\ud83c[\udd70-\udd71]|\ud83c[\udd7e-\udd7f]|\ud83c\udd8e|\ud83c[\udd91-\udd9a]|\ud83c[\udde6-\uddff]|[\ud83c[\ude01-\ude02]|\ud83c\ude1a|\ud83c\ude2f|[\ud83c[\ude32-\ude3a]|[\ud83c[\ude50-\ude51]|\u203c|\u2049|[\u25aa-\u25ab]|\u25b6|\u25c0|[\u25fb-\u25fe]|\u00a9|\u00ae|\u2122|\u2139|\ud83c\udc04|[\u2600-\u26FF]|\u2b05|\u2b06|\u2b07|\u2b1b|\u2b1c|\u2b50|\u2b55|\u231a|\u231b|\u2328|\u23cf|[\u23e9-\u23f3]|[\u23f8-\u23fa]|\ud83c\udccf|\u2934|\u2935|[\u2190-\u21ff])/g,
         ""
       )
-      .replace(
-        /nostr:(nprofile|nrelay|nevent|naddr|nsec|npub|note)\S*/g,
-        ""
-      );
+      .replace(/nostr:(nprofile|nrelay|nevent|naddr|nsec|npub|note)\S*/g, "");
 
     const utterContent = new SpeechSynthesisUtterance(utterEventContent);
     if (utterEventContent.match(/[亜-熙ぁ-んァ-ヶ]/)) {
@@ -190,21 +209,26 @@ async function speakNote(event: nostr.Event, waitTime: number = 1500) {
 }
 
 function getReplyPrevUser(event: nostr.Event): string {
-  const filteredTags = event.tags.filter(([tagType]) => tagType === "p");
-  if (filteredTags.length) {
-    const tags = filteredTags[filteredTags.length - 1];
-    return tags[1];
+  const parsedTags = nostr.nip10.parse(event);
+  if (parsedTags.profiles.length) {
+    return parsedTags.profiles[parsedTags.profiles.length - 1].pubkey;
   }
   return "";
 }
 
 function getReplyPrevNote(event: nostr.Event): string {
-  const filteredTags = event.tags.filter(([tagType]) => tagType === "e");
-  if (filteredTags.length) {
-    const tags = filteredTags[filteredTags.length - 1];
-    return tags[1];
+  const parsedTags = nostr.nip10.parse(event);
+  const q = event.tags.filter((t) => {
+    return t[0] === "q";
+  });
+  if (parsedTags.reply) {
+    return parsedTags.reply.id;
+  } else if (parsedTags.mentions.length) {
+    return parsedTags.mentions[parsedTags.mentions.length - 1].id;
+  } else if (q.length) {
+    return q[0][1];
   }
-  return "";
+  return parsedTags.root?.id ?? "";
 }
 
 let logined = ref(false);
@@ -222,17 +246,16 @@ async function login() {
 
     setTimeout(() => {
       relayStatus.value = pool.getRelayStatuses();
-      pool.subscribe([
-        { kinds: [1], "#p": [myPubkey], limit: 1 }
-      ],
+      pool.subscribe(
+        [{ kinds: [1], "#p": [myPubkey], limit: 1 }],
         normalizeUrls(myRelays),
         (ev, _isAfterEose, _relayURL) => {
           if (ev.pubkey !== myPubkey) {
-            console.log("たぶんふぁぼとかりぷらいをもらった", ev)
+            console.log("たぶんふぁぼとかりぷらいをもらった", ev);
           }
         }
-      )
-    }, 1000)
+      );
+    }, 1000);
   }
 }
 
@@ -258,16 +281,16 @@ async function post() {
 
   // @ts-ignore
   const ev: nostr.Event = event;
-  pool.subscribe([
-    { kinds: [1], ids: [ev.id], limit: 1 },
-  ],
+  pool.subscribe(
+    [{ kinds: [1], ids: [ev.id], limit: 1 }],
     normalizeUrls(myRelays),
     (ev, _isAfterEose, relayURL) => {
-      console.log("たぶん投稿に成功した", relayURL, ev)
-    }
-    , 60 * 1000,
+      console.log("たぶん投稿に成功した", relayURL, ev);
+    },
+    60 * 1000,
     undefined,
-    { unsubscribeOnEose: true })
+    { unsubscribeOnEose: true }
+  );
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -279,12 +302,14 @@ watch(isPostOpen, async (isPostOpened) => {
 });
 
 async function collectMyRelay() {
-  pool.subscribe([
-    {
-      kinds: [3],
-      authors: [myPubkey],
-      limit: 1,
-    }],
+  pool.subscribe(
+    [
+      {
+        kinds: [3],
+        authors: [myPubkey],
+        limit: 1,
+      },
+    ],
     profileRelays,
     async (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
@@ -389,14 +414,14 @@ function searchSubstring(inputString: string, searchWords: string): boolean {
 let relayStatus = ref(pool.getRelayStatuses());
 setInterval(() => {
   relayStatus.value = pool.getRelayStatuses();
-}, 1000)
+}, 1000);
 
 function normalizeUrls(urls: string[]): string[] {
-  return urls.map(url => {
+  return urls.map((url) => {
     let urlObject = new URL(url);
     // If there's no pathname, add a slash
-    if (urlObject.pathname === '') {
-      urlObject.pathname = '/';
+    if (urlObject.pathname === "") {
+      urlObject.pathname = "/";
     }
     return urlObject.toString();
   });
@@ -414,10 +439,14 @@ function appVersion() {
       <div class="p-index-heading__inner">
         <h1 class="p-index-title">
           <span class="p-index-title__main">Nostr Feeds</span>
-          <span class="p-index-title__sub">From {{ feedRelays.map((s) => {
-            return s.replace(/wss?:\/\/(.*)\//, "$1")
-          }).join(",")
-          }}</span>
+          <span class="p-index-title__sub">From
+            {{
+              feedRelays
+                .map((s) => {
+                  return s.replace(/wss?:\/\/(.*)\//, "$1");
+                })
+                .join(",")
+            }}</span>
           <span class="p-index-title__sub">Version: {{ appVersion() }}</span>
         </h1>
         <div class="p-index-signin" v-if="!logined">
@@ -443,8 +472,10 @@ function appVersion() {
               target="_blank">GitHub</a>にあります。
           </p>
           <p class="p-index-intro__text">
-            一部箇所で <a href="https://awayuki.github.io/emojis.html" target="_blank"
-              class="p-index-intro__text-link">SUSHIYUKI emojis (©awayuki)</a> を利用しています。
+            一部箇所で
+            <a href="https://awayuki.github.io/emojis.html" target="_blank" class="p-index-intro__text-link">SUSHIYUKI
+              emojis (©awayuki)</a>
+            を利用しています。
           </p>
           <p class="p-index-intro__text">
             なお、私が管理するNostrリレーの利用規約は
@@ -477,7 +508,9 @@ function appVersion() {
         </div>
 
         <div class="p-index-relay">
-          <h2 class="p-index-relay__head">リレーの接続状態 (プロフィール取得＆投稿用)</h2>
+          <h2 class="p-index-relay__head">
+            リレーの接続状態 (プロフィール取得＆投稿用)
+          </h2>
           <div class="p-index-relay-status-list">
             <p v-for="[url, status] in relayStatus" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
               <span>{{ url }}</span>
@@ -599,8 +632,8 @@ function appVersion() {
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
-              isPostOpen = false;
-            }
+                isPostOpen = false;
+              }
               "></textarea>
         </div>
         <div class="p-index-post__post-btn">
