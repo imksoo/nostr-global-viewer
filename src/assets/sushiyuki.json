@@ -1,412 +1,412 @@
 [
-    {
-        "name": "sushiyuki_maguro",
-        "display_name": "まぐろ",
-        "picture": "https://awayuki.github.io/emoji/v1-001.png"
-    },
-    {
-        "name": "sushiyuki_tamago",
-        "display_name": "たまご",
-        "picture": "https://awayuki.github.io/emoji/v1-002.png"
-    },
-    {
-        "name": "sushiyuki_ebi",
-        "display_name": "えび",
-        "picture": "https://awayuki.github.io/emoji/v1-003.png"
-    },
-    {
-        "name": "sushiyuki_ikura",
-        "display_name": "いくら",
-        "picture": "https://awayuki.github.io/emoji/v1-004.png"
-    },
-    {
-        "name": "sushiyuki_hamachi",
-        "display_name": "はまち",
-        "picture": "https://awayuki.github.io/emoji/v1-005.png"
-    },
-    {
-        "name": "sushiyuki_salmon",
-        "display_name": "さーもん",
-        "picture": "https://awayuki.github.io/emoji/v1-006.png"
-    },
-    {
-        "name": "sushiyuki_kohada",
-        "display_name": "こはだ",
-        "picture": "https://awayuki.github.io/emoji/v1-007.png"
-    },
-    {
-        "name": "sushiyuki_ika",
-        "display_name": "いか",
-        "picture": "https://awayuki.github.io/emoji/v1-008.png"
-    },
-    {
-        "name": "sushiyuki_uni",
-        "display_name": "うに",
-        "picture": "https://awayuki.github.io/emoji/v1-009.png"
-    },
-    {
-        "name": "sushiyuki_anago",
-        "display_name": "あなご",
-        "picture": "https://awayuki.github.io/emoji/v1-010.png"
-    },
-    {
-        "name": "sushiyuki_shari",
-        "display_name": "しゃり",
-        "picture": "https://awayuki.github.io/emoji/v1-011.png"
-    },
-    {
-        "name": "sushiyuki_toro",
-        "display_name": "とろ",
-        "picture": "https://awayuki.github.io/emoji/v1-012.png"
-    },
-    {
-        "name": "sushiyuki_amaebi",
-        "display_name": "あまえび",
-        "picture": "https://awayuki.github.io/emoji/v1-013.png"
-    },
-    {
-        "name": "sushiyuki_negitoro",
-        "display_name": "ねぎとろ",
-        "picture": "https://awayuki.github.io/emoji/v1-014.png"
-    },
-    {
-        "name": "sushiyuki_menegi",
-        "display_name": "めねぎ",
-        "picture": "https://awayuki.github.io/emoji/v1-015.png"
-    },
-    {
-        "name": "sushiyuki_inari",
-        "display_name": "いなり",
-        "picture": "https://awayuki.github.io/emoji/v1-016.png"
-    },
-    {
-        "name": "sushiyuki_saba",
-        "display_name": "さば",
-        "picture": "https://awayuki.github.io/emoji/v1-017.png"
-    },
-    {
-        "name": "sushiyuki_futomaki",
-        "display_name": "ふとまき",
-        "picture": "https://awayuki.github.io/emoji/v1-018.png"
-    },
-    {
-        "name": "sushiyuki_tekkamaki",
-        "display_name": "てっかまき",
-        "picture": "https://awayuki.github.io/emoji/v1-019.png"
-    },
-    {
-        "name": "sushiyuki_kappamaki",
-        "display_name": "かっぱまき",
-        "picture": "https://awayuki.github.io/emoji/v1-020.png"
-    },
-    {
-        "name": "sushiyuki_sushiroll",
-        "display_name": "すしろーる",
-        "picture": "https://awayuki.github.io/emoji/v1-021.png"
-    },
-    {
-        "name": "sushiyuki_kappa",
-        "display_name": "かっぱまき",
-        "picture": "https://awayuki.github.io/emoji/v1-022.png"
-    },
-    {
-        "name": "sushiyuki_agari",
-        "display_name": "あがり",
-        "picture": "https://awayuki.github.io/emoji/v1-023.png"
-    },
-    {
-        "name": "sushiyuki_twinkle",
-        "display_name": "きらぼし",
-        "picture": "https://awayuki.github.io/emoji/v1-024.png"
-    },
-    {
-        "name": "sushiyuki_flower",
-        "display_name": "おはな",
-        "picture": "https://awayuki.github.io/emoji/v1-025.png"
-    },
-    {
-        "name": "sushiyuki_star",
-        "display_name": "ほし",
-        "picture": "https://awayuki.github.io/emoji/v1-026.png"
-    },
-    {
-        "name": "sushiyuki_heart",
-        "display_name": "はーと",
-        "picture": "https://awayuki.github.io/emoji/v1-027.png"
-    },
-    {
-        "name": "sushiyuki_musical_notes",
-        "display_name": "おんぷ",
-        "picture": "https://awayuki.github.io/emoji/v1-028.png"
-    },
-    {
-        "name": "sushiyuki_tear_drop",
-        "display_name": "なみだ",
-        "picture": "https://awayuki.github.io/emoji/v1-029.png"
-    },
-    {
-        "name": "sushiyuki_sweat",
-        "display_name": "あせ",
-        "picture": "https://awayuki.github.io/emoji/v1-030.png"
-    },
-    {
-        "name": "sushiyuki_anger",
-        "display_name": "ぷんぷん",
-        "picture": "https://awayuki.github.io/emoji/v1-031.png"
-    },
-    {
-        "name": "sushiyuki_surprised",
-        "display_name": "えっ",
-        "picture": "https://awayuki.github.io/emoji/v1-032.png"
-    },
-    {
-        "name": "susyiyuki_question",
-        "display_name": "はてな",
-        "picture": "https://awayuki.github.io/emoji/v1-033.png"
-    },
-    {
-        "name": "sushiyuki_exclamation",
-        "display_name": "びっくり",
-        "picture": "https://awayuki.github.io/emoji/v1-034.png"
-    },
-    {
-        "name": "sushiyuki_double_exclamation",
-        "display_name": "ちょーびっくり",
-        "picture": "https://awayuki.github.io/emoji/v1-035.png"
-    },
-    {
-        "name": "sushiyuki_exclamation_question",
-        "display_name": "えええ",
-        "picture": "https://awayuki.github.io/emoji/v1-036.png"
-    },
-    {
-        "name": "sushiyuki_belt_maguro",
-        "display_name": "マグロ",
-        "picture": "https://awayuki.github.io/emoji/v1-037.png"
-    },
-    {
-        "name": "sushiyuki_belt_ebi",
-        "display_name": "エビ",
-        "picture": "https://awayuki.github.io/emoji/v1-038.png"
-    },
-    {
-        "name": "sushiyuki_belt_tamago",
-        "display_name": "玉子",
-        "picture": "https://awayuki.github.io/emoji/v1-039.png"
-    },
-    {
-        "name": "sushiyuki_belt",
-        "display_name": "ベルト",
-        "picture": "https://awayuki.github.io/emoji/v1-040.png"
-    },
-    {
-        "name": "sushiyuki_belt_toro",
-        "display_name": "トロ",
-        "picture": "https://awayuki.github.io/emoji/v2-001.png"
-    },
-    {
-        "name": "sushiyuki_belt_ok",
-        "display_name": "OK",
-        "picture": "https://awayuki.github.io/emoji/v2-002.png"
-    },
-    {
-        "name": "sushiyuki_belt_tamago2",
-        "display_name": "上玉子",
-        "picture": "https://awayuki.github.io/emoji/v2-003.png"
-    },
-    {
-        "name": "sushiyuki_belt_ryokai",
-        "display_name": "了解",
-        "picture": "https://awayuki.github.io/emoji/v2-004.png"
-    },
-    {
-        "name": "sushiyuki_belt_hamachi",
-        "display_name": "魬",
-        "picture": "https://awayuki.github.io/emoji/v2-005.png"
-    },
-    {
-        "name": "sushiyuki_belt_hai",
-        "display_name": "はーい",
-        "picture": "https://awayuki.github.io/emoji/v2-006.png"
-    },
-    {
-        "name": "sushiyuki_belt_ikura",
-        "display_name": "イクラ",
-        "picture": "https://awayuki.github.io/emoji/v2-007.png"
-    },
-    {
-        "name": "sushiyuki_belt_arigatou",
-        "display_name": "ありがとう",
-        "picture": "https://awayuki.github.io/emoji/v2-008.png"
-    },
-    {
-        "name": "sushiyuki_belt_ebi",
-        "display_name": "海老",
-        "picture": "https://awayuki.github.io/emoji/v2-009.png"
-    },
-    {
-        "name": "sushiyuki_belt_waai",
-        "display_name": "わーい",
-        "picture": "https://awayuki.github.io/emoji/v2-010.png"
-    },
-    {
-        "name": "sushiyuki_belt_salmon",
-        "display_name": "サーモン",
-        "picture": "https://awayuki.github.io/emoji/v2-011.png"
-    },
-    {
-        "name": "sushiyuki_belt_yoroshiku",
-        "display_name": "よろしく",
-        "picture": "https://awayuki.github.io/emoji/v2-012.png"
-    },
-    {
-        "name": "sushiyuki_belt_kohada",
-        "display_name": "小鰭",
-        "picture": "https://awayuki.github.io/emoji/v2-013.png"
-    },
-    {
-        "name": "sushiyuki_belt_iine",
-        "display_name": "いいね",
-        "picture": "https://awayuki.github.io/emoji/v2-014.png"
-    },
-    {
-        "name": "sushiyuki_belt_ika",
-        "display_name": "烏賊",
-        "picture": "https://awayuki.github.io/emoji/v2-015.png"
-    },
-    {
-        "name": "sushiyuki_belt_otsukare",
-        "display_name": "おつかれ",
-        "picture": "https://awayuki.github.io/emoji/v2-016.png"
-    },
-    {
-        "name": "sushiyuki_belt_uni",
-        "display_name": "雲丹",
-        "picture": "https://awayuki.github.io/emoji/v2-017.png"
-    },
-    {
-        "name": "sushiyuki_belt_ganbare",
-        "display_name": "頑張れ",
-        "picture": "https://awayuki.github.io/emoji/v2-018.png"
-    },
-    {
-        "name": "sushiyuki_belt_anago",
-        "display_name": "穴子",
-        "picture": "https://awayuki.github.io/emoji/v2-019.png"
-    },
-    {
-        "name": "sushiyuki_belt_matane",
-        "display_name": "またね",
-        "picture": "https://awayuki.github.io/emoji/v2-020.png"
-    },
-    {
-        "name": "sushiyuki_belt_shari",
-        "display_name": "シャリ",
-        "picture": "https://awayuki.github.io/emoji/v2-021.png"
-    },
-    {
-        "name": "sushiyuki_belt_ohayou",
-        "display_name": "オハヨウ",
-        "picture": "https://awayuki.github.io/emoji/v2-022.png"
-    },
-    {
-        "name": "sushiyuki_belt_maguro2",
-        "display_name": "マグロ",
-        "picture": "https://awayuki.github.io/emoji/v2-023.png"
-    },
-    {
-        "name": "sushiyuki_belt_oyasumi",
-        "display_name": "おやすみ",
-        "picture": "https://awayuki.github.io/emoji/v2-024.png"
-    },
-    {
-        "name": "sushiyuki_belt_amaebi",
-        "display_name": "甘エビ",
-        "picture": "https://awayuki.github.io/emoji/v2-025.png"
-    },
-    {
-        "name": "sushiyuki_belt_wara",
-        "display_name": "ｗｗｗｗｗ",
-        "picture": "https://awayuki.github.io/emoji/v2-026.png"
-    },
-    {
-        "name": "sushiyuki_belt_negitoro",
-        "display_name": "ネギトロ",
-        "picture": "https://awayuki.github.io/emoji/v2-027.png"
-    },
-    {
-        "name": "sushiyuki_belt_namida",
-        "display_name": "涙",
-        "picture": "https://awayuki.github.io/emoji/v2-028.png"
-    },
-    {
-        "name": "sushiyuki_belt_menegi",
-        "display_name": "芽ネギ",
-        "picture": "https://awayuki.github.io/emoji/v2-029.png"
-    },
-    {
-        "name": "sushiyuki_belt_ase",
-        "display_name": "汗",
-        "picture": "https://awayuki.github.io/emoji/v2-030.png"
-    },
-    {
-        "name": "sushiyuki_belt_inari",
-        "display_name": "いなり寿司",
-        "picture": "https://awayuki.github.io/emoji/v2-031.png"
-    },
-    {
-        "name": "sushiyuki_belt_saba",
-        "display_name": "サーバー",
-        "picture": "https://awayuki.github.io/emoji/v2-032.png"
-    },
-    {
-        "name": "sushiyuki_belt_tekkamaki",
-        "display_name": "鉄火巻き",
-        "picture": "https://awayuki.github.io/emoji/v2-033.png"
-    },
-    {
-        "name": "sushiyuki_belt_kappamaki",
-        "display_name": "カッパ巻き",
-        "picture": "https://awayuki.github.io/emoji/v2-034.png"
-    },
-    {
-        "name": "sushiyuki_belt_kappa",
-        "display_name": "河童",
-        "picture": "https://awayuki.github.io/emoji/v2-035.png"
-    },
-    {
-        "name": "sushiyuki_belt_heart1",
-        "display_name": "ハート",
-        "picture": "https://awayuki.github.io/emoji/v2-036.png"
-    },
-    {
-        "name": "sushiyuki_belt_heart2",
-        "display_name": "はあと",
-        "picture": "https://awayuki.github.io/emoji/v2-037.png"
-    },
-    {
-        "name": "sushiyuki_belt_beer",
-        "display_name": "ビール",
-        "picture": "https://awayuki.github.io/emoji/v2-038.png"
-    },
-    {
-        "name": "sushiyuki_belt_pudding",
-        "display_name": "プリン",
-        "picture": "https://awayuki.github.io/emoji/v2-039.png"
-    },
-    {
-        "name": "sushiyuki_belt_coffee",
-        "display_name": "コーヒー",
-        "picture": "https://awayuki.github.io/emoji/v2-040.png"
-    },
-    {
-        "name": "nostopus_walk",
-        "display_name": "ﾉｽﾀｺ",
-        "picture": "https://awayuki.github.io/emoji/np-001.gif"
-    },
-    {
-        "name": "nostopus_spin",
-        "display_name": "UFO",
-        "picture": "https://awayuki.github.io/emoji/np-002.gif"
-    }
+  {
+    "name": "sushiyuki_maguro",
+    "display_name": "まぐろ",
+    "picture": "https://awayuki.github.io/emoji/v1-001.png"
+  },
+  {
+    "name": "sushiyuki_tamago",
+    "display_name": "たまご",
+    "picture": "https://awayuki.github.io/emoji/v1-002.png"
+  },
+  {
+    "name": "sushiyuki_ebi",
+    "display_name": "えび",
+    "picture": "https://awayuki.github.io/emoji/v1-003.png"
+  },
+  {
+    "name": "sushiyuki_ikura",
+    "display_name": "いくら",
+    "picture": "https://awayuki.github.io/emoji/v1-004.png"
+  },
+  {
+    "name": "sushiyuki_hamachi",
+    "display_name": "はまち",
+    "picture": "https://awayuki.github.io/emoji/v1-005.png"
+  },
+  {
+    "name": "sushiyuki_salmon",
+    "display_name": "さーもん",
+    "picture": "https://awayuki.github.io/emoji/v1-006.png"
+  },
+  {
+    "name": "sushiyuki_kohada",
+    "display_name": "こはだ",
+    "picture": "https://awayuki.github.io/emoji/v1-007.png"
+  },
+  {
+    "name": "sushiyuki_ika",
+    "display_name": "いか",
+    "picture": "https://awayuki.github.io/emoji/v1-008.png"
+  },
+  {
+    "name": "sushiyuki_uni",
+    "display_name": "うに",
+    "picture": "https://awayuki.github.io/emoji/v1-009.png"
+  },
+  {
+    "name": "sushiyuki_anago",
+    "display_name": "あなご",
+    "picture": "https://awayuki.github.io/emoji/v1-010.png"
+  },
+  {
+    "name": "sushiyuki_shari",
+    "display_name": "しゃり",
+    "picture": "https://awayuki.github.io/emoji/v1-011.png"
+  },
+  {
+    "name": "sushiyuki_toro",
+    "display_name": "とろ",
+    "picture": "https://awayuki.github.io/emoji/v1-012.png"
+  },
+  {
+    "name": "sushiyuki_amaebi",
+    "display_name": "あまえび",
+    "picture": "https://awayuki.github.io/emoji/v1-013.png"
+  },
+  {
+    "name": "sushiyuki_negitoro",
+    "display_name": "ねぎとろ",
+    "picture": "https://awayuki.github.io/emoji/v1-014.png"
+  },
+  {
+    "name": "sushiyuki_menegi",
+    "display_name": "めねぎ",
+    "picture": "https://awayuki.github.io/emoji/v1-015.png"
+  },
+  {
+    "name": "sushiyuki_inari",
+    "display_name": "いなり",
+    "picture": "https://awayuki.github.io/emoji/v1-016.png"
+  },
+  {
+    "name": "sushiyuki_saba",
+    "display_name": "さば",
+    "picture": "https://awayuki.github.io/emoji/v1-017.png"
+  },
+  {
+    "name": "sushiyuki_futomaki",
+    "display_name": "ふとまき",
+    "picture": "https://awayuki.github.io/emoji/v1-018.png"
+  },
+  {
+    "name": "sushiyuki_tekkamaki",
+    "display_name": "てっかまき",
+    "picture": "https://awayuki.github.io/emoji/v1-019.png"
+  },
+  {
+    "name": "sushiyuki_kappamaki",
+    "display_name": "かっぱまき",
+    "picture": "https://awayuki.github.io/emoji/v1-020.png"
+  },
+  {
+    "name": "sushiyuki_sushiroll",
+    "display_name": "すしろーる",
+    "picture": "https://awayuki.github.io/emoji/v1-021.png"
+  },
+  {
+    "name": "sushiyuki_kappa",
+    "display_name": "かっぱまき",
+    "picture": "https://awayuki.github.io/emoji/v1-022.png"
+  },
+  {
+    "name": "sushiyuki_agari",
+    "display_name": "あがり",
+    "picture": "https://awayuki.github.io/emoji/v1-023.png"
+  },
+  {
+    "name": "sushiyuki_twinkle",
+    "display_name": "きらぼし",
+    "picture": "https://awayuki.github.io/emoji/v1-024.png"
+  },
+  {
+    "name": "sushiyuki_flower",
+    "display_name": "おはな",
+    "picture": "https://awayuki.github.io/emoji/v1-025.png"
+  },
+  {
+    "name": "sushiyuki_star",
+    "display_name": "ほし",
+    "picture": "https://awayuki.github.io/emoji/v1-026.png"
+  },
+  {
+    "name": "sushiyuki_heart",
+    "display_name": "はーと",
+    "picture": "https://awayuki.github.io/emoji/v1-027.png"
+  },
+  {
+    "name": "sushiyuki_musical_notes",
+    "display_name": "おんぷ",
+    "picture": "https://awayuki.github.io/emoji/v1-028.png"
+  },
+  {
+    "name": "sushiyuki_tear_drop",
+    "display_name": "なみだ",
+    "picture": "https://awayuki.github.io/emoji/v1-029.png"
+  },
+  {
+    "name": "sushiyuki_sweat",
+    "display_name": "あせ",
+    "picture": "https://awayuki.github.io/emoji/v1-030.png"
+  },
+  {
+    "name": "sushiyuki_anger",
+    "display_name": "ぷんぷん",
+    "picture": "https://awayuki.github.io/emoji/v1-031.png"
+  },
+  {
+    "name": "sushiyuki_surprised",
+    "display_name": "えっ",
+    "picture": "https://awayuki.github.io/emoji/v1-032.png"
+  },
+  {
+    "name": "susyiyuki_question",
+    "display_name": "はてな",
+    "picture": "https://awayuki.github.io/emoji/v1-033.png"
+  },
+  {
+    "name": "sushiyuki_exclamation",
+    "display_name": "びっくり",
+    "picture": "https://awayuki.github.io/emoji/v1-034.png"
+  },
+  {
+    "name": "sushiyuki_double_exclamation",
+    "display_name": "ちょーびっくり",
+    "picture": "https://awayuki.github.io/emoji/v1-035.png"
+  },
+  {
+    "name": "sushiyuki_exclamation_question",
+    "display_name": "えええ",
+    "picture": "https://awayuki.github.io/emoji/v1-036.png"
+  },
+  {
+    "name": "sushiyuki_belt_maguro",
+    "display_name": "マグロ",
+    "picture": "https://awayuki.github.io/emoji/v1-037.png"
+  },
+  {
+    "name": "sushiyuki_belt_ebi",
+    "display_name": "エビ",
+    "picture": "https://awayuki.github.io/emoji/v1-038.png"
+  },
+  {
+    "name": "sushiyuki_belt_tamago",
+    "display_name": "玉子",
+    "picture": "https://awayuki.github.io/emoji/v1-039.png"
+  },
+  {
+    "name": "sushiyuki_belt",
+    "display_name": "ベルト",
+    "picture": "https://awayuki.github.io/emoji/v1-040.png"
+  },
+  {
+    "name": "sushiyuki_belt_toro",
+    "display_name": "トロ",
+    "picture": "https://awayuki.github.io/emoji/v2-001.png"
+  },
+  {
+    "name": "sushiyuki_belt_ok",
+    "display_name": "OK",
+    "picture": "https://awayuki.github.io/emoji/v2-002.png"
+  },
+  {
+    "name": "sushiyuki_belt_tamago2",
+    "display_name": "上玉子",
+    "picture": "https://awayuki.github.io/emoji/v2-003.png"
+  },
+  {
+    "name": "sushiyuki_belt_ryokai",
+    "display_name": "了解",
+    "picture": "https://awayuki.github.io/emoji/v2-004.png"
+  },
+  {
+    "name": "sushiyuki_belt_hamachi",
+    "display_name": "魬",
+    "picture": "https://awayuki.github.io/emoji/v2-005.png"
+  },
+  {
+    "name": "sushiyuki_belt_hai",
+    "display_name": "はーい",
+    "picture": "https://awayuki.github.io/emoji/v2-006.png"
+  },
+  {
+    "name": "sushiyuki_belt_ikura",
+    "display_name": "イクラ",
+    "picture": "https://awayuki.github.io/emoji/v2-007.png"
+  },
+  {
+    "name": "sushiyuki_belt_arigatou",
+    "display_name": "ありがとう",
+    "picture": "https://awayuki.github.io/emoji/v2-008.png"
+  },
+  {
+    "name": "sushiyuki_belt_ebi",
+    "display_name": "海老",
+    "picture": "https://awayuki.github.io/emoji/v2-009.png"
+  },
+  {
+    "name": "sushiyuki_belt_waai",
+    "display_name": "わーい",
+    "picture": "https://awayuki.github.io/emoji/v2-010.png"
+  },
+  {
+    "name": "sushiyuki_belt_salmon",
+    "display_name": "サーモン",
+    "picture": "https://awayuki.github.io/emoji/v2-011.png"
+  },
+  {
+    "name": "sushiyuki_belt_yoroshiku",
+    "display_name": "よろしく",
+    "picture": "https://awayuki.github.io/emoji/v2-012.png"
+  },
+  {
+    "name": "sushiyuki_belt_kohada",
+    "display_name": "小鰭",
+    "picture": "https://awayuki.github.io/emoji/v2-013.png"
+  },
+  {
+    "name": "sushiyuki_belt_iine",
+    "display_name": "いいね",
+    "picture": "https://awayuki.github.io/emoji/v2-014.png"
+  },
+  {
+    "name": "sushiyuki_belt_ika",
+    "display_name": "烏賊",
+    "picture": "https://awayuki.github.io/emoji/v2-015.png"
+  },
+  {
+    "name": "sushiyuki_belt_otsukare",
+    "display_name": "おつかれ",
+    "picture": "https://awayuki.github.io/emoji/v2-016.png"
+  },
+  {
+    "name": "sushiyuki_belt_uni",
+    "display_name": "雲丹",
+    "picture": "https://awayuki.github.io/emoji/v2-017.png"
+  },
+  {
+    "name": "sushiyuki_belt_ganbare",
+    "display_name": "頑張れ",
+    "picture": "https://awayuki.github.io/emoji/v2-018.png"
+  },
+  {
+    "name": "sushiyuki_belt_anago",
+    "display_name": "穴子",
+    "picture": "https://awayuki.github.io/emoji/v2-019.png"
+  },
+  {
+    "name": "sushiyuki_belt_matane",
+    "display_name": "またね",
+    "picture": "https://awayuki.github.io/emoji/v2-020.png"
+  },
+  {
+    "name": "sushiyuki_belt_shari",
+    "display_name": "シャリ",
+    "picture": "https://awayuki.github.io/emoji/v2-021.png"
+  },
+  {
+    "name": "sushiyuki_belt_ohayou",
+    "display_name": "オハヨウ",
+    "picture": "https://awayuki.github.io/emoji/v2-022.png"
+  },
+  {
+    "name": "sushiyuki_belt_maguro2",
+    "display_name": "マグロ",
+    "picture": "https://awayuki.github.io/emoji/v2-023.png"
+  },
+  {
+    "name": "sushiyuki_belt_oyasumi",
+    "display_name": "おやすみ",
+    "picture": "https://awayuki.github.io/emoji/v2-024.png"
+  },
+  {
+    "name": "sushiyuki_belt_amaebi",
+    "display_name": "甘エビ",
+    "picture": "https://awayuki.github.io/emoji/v2-025.png"
+  },
+  {
+    "name": "sushiyuki_belt_wara",
+    "display_name": "ｗｗｗｗｗ",
+    "picture": "https://awayuki.github.io/emoji/v2-026.png"
+  },
+  {
+    "name": "sushiyuki_belt_negitoro",
+    "display_name": "ネギトロ",
+    "picture": "https://awayuki.github.io/emoji/v2-027.png"
+  },
+  {
+    "name": "sushiyuki_belt_namida",
+    "display_name": "涙",
+    "picture": "https://awayuki.github.io/emoji/v2-028.png"
+  },
+  {
+    "name": "sushiyuki_belt_menegi",
+    "display_name": "芽ネギ",
+    "picture": "https://awayuki.github.io/emoji/v2-029.png"
+  },
+  {
+    "name": "sushiyuki_belt_ase",
+    "display_name": "汗",
+    "picture": "https://awayuki.github.io/emoji/v2-030.png"
+  },
+  {
+    "name": "sushiyuki_belt_inari",
+    "display_name": "いなり寿司",
+    "picture": "https://awayuki.github.io/emoji/v2-031.png"
+  },
+  {
+    "name": "sushiyuki_belt_saba",
+    "display_name": "サーバー",
+    "picture": "https://awayuki.github.io/emoji/v2-032.png"
+  },
+  {
+    "name": "sushiyuki_belt_tekkamaki",
+    "display_name": "鉄火巻き",
+    "picture": "https://awayuki.github.io/emoji/v2-033.png"
+  },
+  {
+    "name": "sushiyuki_belt_kappamaki",
+    "display_name": "カッパ巻き",
+    "picture": "https://awayuki.github.io/emoji/v2-034.png"
+  },
+  {
+    "name": "sushiyuki_belt_kappa",
+    "display_name": "河童",
+    "picture": "https://awayuki.github.io/emoji/v2-035.png"
+  },
+  {
+    "name": "sushiyuki_belt_heart1",
+    "display_name": "ハート",
+    "picture": "https://awayuki.github.io/emoji/v2-036.png"
+  },
+  {
+    "name": "sushiyuki_belt_heart2",
+    "display_name": "はあと",
+    "picture": "https://awayuki.github.io/emoji/v2-037.png"
+  },
+  {
+    "name": "sushiyuki_belt_beer",
+    "display_name": "ビール",
+    "picture": "https://awayuki.github.io/emoji/v2-038.png"
+  },
+  {
+    "name": "sushiyuki_belt_pudding",
+    "display_name": "プリン",
+    "picture": "https://awayuki.github.io/emoji/v2-039.png"
+  },
+  {
+    "name": "sushiyuki_belt_coffee",
+    "display_name": "コーヒー",
+    "picture": "https://awayuki.github.io/emoji/v2-040.png"
+  },
+  {
+    "name": "nostopus_walk",
+    "display_name": "ﾉｽﾀｺ",
+    "picture": "https://awayuki.github.io/emoji/np-001.gif"
+  },
+  {
+    "name": "nostopus_spin",
+    "display_name": "UFO",
+    "picture": "https://awayuki.github.io/emoji/np-002.gif"
+  }
 ]

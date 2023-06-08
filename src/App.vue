@@ -8,10 +8,16 @@ const route = useRoute();
 const sushiMode = computed(() => {
   return route.query.sushi === "on";
 });
+const mahjongMode = computed(() => {
+  return route.query.mahjong === "on";
+});
 import sushiDataJSON from "./assets/sushiyuki.json";
+import mahjongDataJSON from "./assets/mahjong.json";
 const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
-const sushiRandom = new Date().getUTCDate();
+const mahjongData = ref(mahjongDataJSON);
+const mahjongDataLength = mahjongData.value.length;
+const profileRandom = new Date().getUTCDate();
 
 const pool = new RelayPool(undefined, {
   autoReconnect: true,
@@ -101,10 +107,17 @@ function getProfile(pubkey: string): any {
     oldProfileCacheMismatch = true;
     cacheMissHitPubkeys.push(pubkey);
   }
-  if (sushiMode.value) {
-    const pubkeyNumber = sushiRandom + parseInt(pubkey.substring(0, 3), 29);
-    const randomNumber = pubkeyNumber % sushiDataLength;
+  const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
+  const characters = [...sushiData.value, ...mahjongData.value];
+  if (sushiMode.value && mahjongMode.value) {
+    const randomNumber = pubkeyNumber % (sushiDataLength + mahjongDataLength);
+    return characters[randomNumber];
+  } else if (sushiMode.value) {
+    const randomNumber = pubkeyNumber % (sushiDataLength);
     return sushiData.value[randomNumber];
+  } else if (mahjongMode.value) {
+    const randomNumber = pubkeyNumber % (mahjongDataLength);
+    return mahjongData.value[randomNumber];
   }
   return profiles.value.get(pubkey);
 }
@@ -632,8 +645,8 @@ function appVersion() {
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
-                isPostOpen = false;
-              }
+              isPostOpen = false;
+            }
               "></textarea>
         </div>
         <div class="p-index-post__post-btn">

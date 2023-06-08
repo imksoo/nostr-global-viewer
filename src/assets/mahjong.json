@@ -1,0 +1,172 @@
+[
+  {
+    "name": "mahjong_m1",
+    "display_name": "m1",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m1.png"
+  },
+  {
+    "name": "mahjong_m2",
+    "display_name": "m2",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m2.png"
+  },
+  {
+    "name": "mahjong_m3",
+    "display_name": "m3",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m3.png"
+  },
+  {
+    "name": "mahjong_m4",
+    "display_name": "m4",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m4.png"
+  },
+  {
+    "name": "mahjong_m5",
+    "display_name": "m5",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m5.png"
+  },
+  {
+    "name": "mahjong_m6",
+    "display_name": "m6",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m6.png"
+  },
+  {
+    "name": "mahjong_m7",
+    "display_name": "m7",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m7.png"
+  },
+  {
+    "name": "mahjong_m8",
+    "display_name": "m8",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m8.png"
+  },
+  {
+    "name": "mahjong_m9",
+    "display_name": "m9",
+    "picture": "https://awayuki.github.io/emoji/mahjong-m9.png"
+  },
+  {
+    "name": "mahjong_p1",
+    "display_name": "p1",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p1.png"
+  },
+  {
+    "name": "mahjong_p2",
+    "display_name": "p2",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p2.png"
+  },
+  {
+    "name": "mahjong_p3",
+    "display_name": "p3",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p3.png"
+  },
+  {
+    "name": "mahjong_p4",
+    "display_name": "p4",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p4.png"
+  },
+  {
+    "name": "mahjong_p5",
+    "display_name": "p5",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p5.png"
+  },
+  {
+    "name": "mahjong_p6",
+    "display_name": "p6",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p6.png"
+  },
+  {
+    "name": "mahjong_p7",
+    "display_name": "p7",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p7.png"
+  },
+  {
+    "name": "mahjong_p8",
+    "display_name": "p8",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p8.png"
+  },
+  {
+    "name": "mahjong_p9",
+    "display_name": "p9",
+    "picture": "https://awayuki.github.io/emoji/mahjong-p9.png"
+  },
+  {
+    "name": "mahjong_s1",
+    "display_name": "s1",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s1.png"
+  },
+  {
+    "name": "mahjong_s2",
+    "display_name": "s2",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s2.png"
+  },
+  {
+    "name": "mahjong_s3",
+    "display_name": "s3",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s3.png"
+  },
+  {
+    "name": "mahjong_s4",
+    "display_name": "s4",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s4.png"
+  },
+  {
+    "name": "mahjong_s5",
+    "display_name": "s5",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s5.png"
+  },
+  {
+    "name": "mahjong_s6",
+    "display_name": "s6",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s6.png"
+  },
+  {
+    "name": "mahjong_s7",
+    "display_name": "s7",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s7.png"
+  },
+  {
+    "name": "mahjong_s8",
+    "display_name": "s8",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s8.png"
+  },
+  {
+    "name": "mahjong_s9",
+    "display_name": "s9",
+    "picture": "https://awayuki.github.io/emoji/mahjong-s9.png"
+  },
+  {
+    "name": "mahjong_east",
+    "display_name": "east",
+    "picture": "https://awayuki.github.io/emoji/mahjong-east.png"
+  },
+  {
+    "name": "mahjong_south",
+    "display_name": "south",
+    "picture": "https://awayuki.github.io/emoji/mahjong-south.png"
+  },
+  {
+    "name": "mahjong_west",
+    "display_name": "west",
+    "picture": "https://awayuki.github.io/emoji/mahjong-west.png"
+  },
+  {
+    "name": "mahjong_north",
+    "display_name": "north",
+    "picture": "https://awayuki.github.io/emoji/mahjong-north.png"
+  },
+  {
+    "name": "mahjong_white",
+    "display_name": "white",
+    "picture": "https://awayuki.github.io/emoji/mahjong-white.png"
+  },
+  {
+    "name": "mahjong_green",
+    "display_name": "green",
+    "picture": "https://awayuki.github.io/emoji/mahjong-green.png"
+  },
+  {
+    "name": "mahjong_red",
+    "display_name": "red",
+    "picture": "https://awayuki.github.io/emoji/mahjong-red.png"
+  }
+]
