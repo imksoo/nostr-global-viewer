@@ -12,16 +12,22 @@ const props = defineProps({
     required: true,
   }
 });
+
+function getProfileLink(pubkey: string) {
+  if (pubkey) {
+    return 'https://nostx.shino3.net/' + nostr.nip19.npubEncode(pubkey);
+  } else {
+    return ""
+  }
+}
 </script>
 <template>
   <div class="c-feed-profile">
     <p class="c-feed-profile__avatar">
-      <img class="c-feed-profile__picture" v-bind:src="props.profile.picture ??
-        'https://placehold.jp/60x60.png'
-        " referrerpolicy="no-referrer" />
+      <img class="c-feed-profile__picture" v-bind:src="props.profile.picture ?? 'https://placehold.jp/60x60.png'"
+        referrerpolicy="no-referrer" />
     </p>
-    <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(props.profile.pubkey)
-      " class="c-feed-profile__detail">
+    <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">
         {{
           props.profile.display_name ??

@@ -15,11 +15,22 @@ function getReplyUsers(event: Nostr.Event) {
 
 function getReplyMentions(event: Nostr.Event) {
   const parsedTags = Nostr.nip10.parse(event);
-  const mentions = [];
+  let mentions = [];
+  if (parsedTags.root) {
+    const e = parsedTags.root;
+    mentions.push(e);
+  }
   for (let i = 0; i < parsedTags.mentions.length; ++i) {
     const m = parsedTags.mentions[i];
     mentions.push(m);
   }
+  if (parsedTags.reply) {
+    const e = parsedTags.reply;
+    mentions.push(e);
+  }
+  mentions = mentions.filter((m, i, a) => {
+    return i === 0 || m.id !== a[i - 1].id;
+  })
   return mentions;
 }
 
