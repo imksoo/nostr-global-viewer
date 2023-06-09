@@ -4,15 +4,12 @@ import * as nostr from "nostr-tools";
 const props = defineProps({
   profile: {
     type: Object as () => {
+      pubkey: string,
       picture: string | undefined,
       display_name: string | undefined,
       name: string | undefined,
     },
     required: true,
-  },
-  pubkey: {
-    type: String,
-    required: true
   }
 });
 </script>
@@ -23,7 +20,7 @@ const props = defineProps({
         'https://placehold.jp/60x60.png'
         " referrerpolicy="no-referrer" />
     </p>
-    <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(props.pubkey)
+    <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(props.profile.pubkey)
       " class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">
         {{

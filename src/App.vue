@@ -6,6 +6,7 @@ import { useRoute } from "vue-router";
 
 import RelayStatus from "./components/RelayStatus.vue";
 import FeedProfile from "./components/FeedProfile.vue";
+import FeedReplies from "./components/FeedReplies.vue";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -142,6 +143,7 @@ async function collectProfiles() {
           profiles.value.get(ev.pubkey)?.created_at < ev.created_at
         ) {
           const press = {
+            pubkey: ev.pubkey,
             picture: content.picture,
             display_name: content.display_name,
             name: content.name,
@@ -208,29 +210,6 @@ async function speakNote(event: nostr.Event, waitTime: number = 1500) {
     utterContent.volume = volume.value;
     synth.speak(utterContent);
   }, waitTime);
-}
-
-function getReplyPrevUser(event: nostr.Event): string {
-  const parsedTags = nostr.nip10.parse(event);
-  if (parsedTags.profiles.length) {
-    return parsedTags.profiles[parsedTags.profiles.length - 1].pubkey;
-  }
-  return "";
-}
-
-function getReplyPrevNote(event: nostr.Event): string {
-  const parsedTags = nostr.nip10.parse(event);
-  const q = event.tags.filter((t) => {
-    return t[0] === "q";
-  });
-  if (parsedTags.reply) {
-    return parsedTags.reply.id;
-  } else if (parsedTags.mentions.length) {
-    return parsedTags.mentions[parsedTags.mentions.length - 1].id;
-  } else if (q.length) {
-    return q[0][1];
-  }
-  return parsedTags.root?.id ?? "";
 }
 
 let logined = ref(false);
@@ -512,42 +491,8 @@ function appVersion() {
     <div class="p-index-body">
       <div class="p-index-feeds">
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
-          <FeedProfile v-bind:profile="getProfile(e.pubkey)" v-bind:pubkey="e.pubkey"></FeedProfile>
-          <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
-            <span v-if="getReplyPrevUser(e)">
-              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
-                nostr.nip19.npubEncode(getReplyPrevUser(e))
-                ">
-                <span class="c-feed-reply-profile__display-name">
-                  {{
-                    getProfile(getReplyPrevUser(e))?.display_name ??
-                    getProfile(getReplyPrevUser(e))?.name ??
-                    "loading"
-                  }}
-                </span>
-              </a>
-              の
-            </span>
-            <span v-else>
-              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
-                  ">
-                <span class="c-feed-reply-profile__display-name">
-                  {{
-                    getProfile(e.pubkey)?.display_name ??
-                    getProfile(e.pubkey)?.name ??
-                    "loading"
-                  }}
-                </span>
-              </a>
-              の
-            </span>
-            <span v-if="getReplyPrevNote(e)">
-              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
-                nostr.nip19.noteEncode(getReplyPrevNote(e))
-                ">投稿</a>
-            </span>
-            への返信
-          </p>
+          <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
+          <FeedReplies v-bind:event="e" :get-profile="getProfile"></FeedReplies>
           <p class="c-feed-content">
             {{ e.content.replace("\\n", "\n") }}
           </p>
@@ -580,7 +525,7 @@ function appVersion() {
           <span class="c-post-cancel__icon">☓</span>
         </button>
       </div>
-      <FeedProfile v-bind:profile="getProfile(myPubkey)" v-bind:pubkey="myPubkey"></FeedProfile>
+      <FeedProfile v-bind:profile="getProfile(myPubkey)"></FeedProfile>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
