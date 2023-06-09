@@ -6,35 +6,6 @@
   padding: 10px;
 }
 
-.c-feed-profile {
-  display: flex;
-  gap: 10px;
-}
-
-.c-feed-profile__avatar {
-  padding: 0;
-  margin: 0;
-  flex-grow: 0;
-  flex-shrink: 0;
-  max-width: 3rem;
-  word-wrap: break-word;
-  word-break: break-all;
-}
-
-.c-feed-profile__detail {
-  flex-grow: 1;
-}
-
-.c-feed-profile__display-name {
-  display: block;
-  color: #213547;
-}
-
-.c-feed-profile__user-name {
-  display: block;
-  font-size: 14px;
-}
-
 .c-feed-reply-profile__display-name {
   display: inline-block;
 }
@@ -86,14 +57,4 @@
   padding: 0.4rem 0 0 0;
   margin: 0;
   text-align: right;
-}
-
-.c-feed-profile__picture {
-  max-height: 3rem;
-  max-width: 3rem;
-  height: 3rem;
-  width: 3rem;
-  margin: 0;
-  object-fit: cover;
-  border-radius: 4px;
 }

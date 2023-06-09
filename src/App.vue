@@ -5,6 +5,7 @@ import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
 
 import RelayStatus from "./components/RelayStatus.vue";
+import FeedProfile from "./components/FeedProfile.vue";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -511,26 +512,7 @@ function appVersion() {
     <div class="p-index-body">
       <div class="p-index-feeds">
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
-          <div class="c-feed-profile">
-            <p class="c-feed-profile__avatar">
-              <img class="c-feed-profile__picture" v-bind:src="getProfile(e.pubkey)?.picture ??
-                'https://placehold.jp/60x60.png'
-                " referrerpolicy="no-referrer" />
-            </p>
-            <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(e.pubkey)
-              " class="c-feed-profile__detail">
-              <span class="c-feed-profile__display-name">
-                {{
-                  getProfile(e.pubkey)?.display_name ??
-                  getProfile(e.pubkey)?.name ??
-                  "loading"
-                }}
-              </span>
-              <span class="c-feed-profile__user-name">
-                @{{ getProfile(e.pubkey)?.name ?? "" }}
-              </span>
-            </a>
-          </div>
+          <FeedProfile v-bind:profile="getProfile(e.pubkey)" v-bind:pubkey="e.pubkey"></FeedProfile>
           <p class="c-feed-reply" v-if="getReplyPrevUser(e) || getReplyPrevNote(e)">
             <span v-if="getReplyPrevUser(e)">
               <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
@@ -598,25 +580,7 @@ function appVersion() {
           <span class="c-post-cancel__icon">☓</span>
         </button>
       </div>
-      <div class="c-feed-profile">
-        <p class="c-feed-profile__avatar">
-          <img class="c-feed-profile__picture" v-bind:src="getProfile(myPubkey)?.picture ?? 'https://placehold.jp/60x60.png'
-            " referrerpolicy="no-referrer" />
-        </p>
-        <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.npubEncode(myPubkey)
-          " class="c-feed-profile__detail">
-          <span class="c-feed-profile__display-name">
-            {{
-              getProfile(myPubkey)?.display_name ??
-              getProfile(myPubkey)?.name ??
-              "loading"
-            }}
-          </span>
-          <span class="c-feed-profile__user-name">
-            @{{ getProfile(myPubkey)?.name ?? "" }}
-          </span>
-        </a>
-      </div>
+      <FeedProfile v-bind:profile="getProfile(myPubkey)" v-bind:pubkey="myPubkey"></FeedProfile>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
