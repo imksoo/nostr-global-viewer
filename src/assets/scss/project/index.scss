@@ -13,12 +13,12 @@
 .p-index-heading {
   width: 360px;
   flex-shrink: 0;
-  position: relative;
+  // position: relative;
   @media screen and (max-width: 880px) {
     width: 100%;
   }
   &__inner {
-    position: sticky;
+    // position: sticky;
     top: 0;
     @media screen and (max-width: 880px) {
       position: relative;
