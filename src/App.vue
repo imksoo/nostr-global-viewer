@@ -4,6 +4,8 @@ import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
 
+import RelayStatus from "./components/RelayStatus.vue";
+
 const route = useRoute();
 const sushiMode = computed(() => {
   return route.query.sushi === "on";
@@ -17,7 +19,7 @@ const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
 const mahjongData = ref(mahjongDataJSON);
 const mahjongDataLength = mahjongData.value.length;
-const profileRandom = new Date().getUTCDate();
+const profileRandom = new Date().getUTCDate() + new Date().getUTCMonth();
 
 const pool = new RelayPool(undefined, {
   autoReconnect: true,
@@ -60,31 +62,18 @@ pool.subscribe(
   ],
   feedRelays,
   async (ev, _isAfterEose, _relayURL) => {
-    const now = new Date().getTime();
-    const delay = 0; // Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
-    if (delay > 0) {
-      console.log(
-        JSON.stringify({
-          delay,
-          id: ev.id,
-          created_at: new Date(ev.created_at * 1000),
-        })
-      );
+    eventsToSearch.value.push(ev);
+    eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+    search();
+    if (
+      !firstFetching &&
+      autoSpeech.value &&
+      events.value.some((obj) => {
+        return obj.id === ev.id;
+      })
+    ) {
+      speakNote(ev);
     }
-    setTimeout(() => {
-      eventsToSearch.value.push(ev);
-      eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
-      search();
-      if (
-        !firstFetching &&
-        autoSpeech.value &&
-        events.value.some((obj) => {
-          return obj.id === ev.id;
-        })
-      ) {
-        speakNote(ev);
-      }
-    }, delay);
   },
   undefined,
   async () => {
@@ -136,7 +125,7 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  const _prof = pool.subscribe(
+  pool.subscribe(
     [
       {
         kinds: [0],
@@ -157,7 +146,6 @@ async function collectProfiles() {
             name: content.name,
             created_at: ev.created_at,
           };
-          // content.created_at = ev.created_at
           profiles.value.set(ev.pubkey, press);
         }
       }
@@ -256,6 +244,19 @@ async function login() {
   if (myPubkey) {
     logined.value = true;
     collectMyRelay();
+
+    setTimeout(() => {
+      relayStatus.value = pool.getRelayStatuses();
+      pool.subscribe(
+        [{ kinds: [1], "#p": [myPubkey], limit: 1 }],
+        normalizeUrls(myRelays),
+        (ev, _isAfterEose, relayURL) => {
+          if (ev.pubkey !== myPubkey) {
+            console.log("たぶんふぁぼとかりぷらいをもらった", relayURL, ev);
+          }
+        }
+      );
+    }, 1000);
   }
 }
 
@@ -278,6 +279,19 @@ async function post() {
   pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
+
+  // @ts-ignore
+  const ev: nostr.Event = event;
+  pool.subscribe(
+    [{ kinds: [1], ids: [ev.id], limit: 1 }],
+    normalizeUrls(myRelays),
+    (ev, _isAfterEose, relayURL) => {
+      console.log("たぶん投稿に成功した", relayURL, ev);
+    },
+    60 * 1000,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -310,7 +324,7 @@ async function collectMyRelay() {
         }
       }
     },
-    60 * 1000,
+    undefined,
     undefined,
     { unsubscribeOnEose: true }
   );
@@ -323,9 +337,6 @@ function checkSend(event: KeyboardEvent) {
 }
 
 function search() {
-  events.value = events.value.filter((e) => {
-    return searchSubstring(e.content, searchWords.value);
-  });
   events.value = eventsToSearch.value.filter((e) => {
     return searchSubstring(e.content, searchWords.value);
   });
@@ -494,16 +505,7 @@ function appVersion() {
           </div>
         </div>
 
-        <div class="p-index-relay">
-          <h2 class="p-index-relay__head">
-            リレーの接続状態 (プロフィール取得＆投稿用)
-          </h2>
-          <div class="p-index-relay-status-list">
-            <p v-for="[url, status] in relayStatus" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
-              <span>{{ url }}</span>
-            </p>
-          </div>
-        </div>
+        <RelayStatus v-bind:relays="relayStatus"></RelayStatus>
       </div>
     </div>
     <div class="p-index-body">
