@@ -61,7 +61,7 @@ pool.subscribe(
   feedRelays,
   async (ev, _isAfterEose, _relayURL) => {
     const now = new Date().getTime();
-    const delay = Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
+    const delay = 0; // Math.max(0, ev.created_at * 1000 - now - 30 * 1000);
     if (delay > 0) {
       console.log(
         JSON.stringify({
@@ -256,19 +256,6 @@ async function login() {
   if (myPubkey) {
     logined.value = true;
     collectMyRelay();
-
-    setTimeout(() => {
-      relayStatus.value = pool.getRelayStatuses();
-      pool.subscribe(
-        [{ kinds: [1], "#p": [myPubkey], limit: 1 }],
-        normalizeUrls(myRelays),
-        (ev, _isAfterEose, _relayURL) => {
-          if (ev.pubkey !== myPubkey) {
-            console.log("たぶんふぁぼとかりぷらいをもらった", ev);
-          }
-        }
-      );
-    }, 1000);
   }
 }
 
@@ -291,19 +278,6 @@ async function post() {
   pool.publish(event, normalizeUrls(myRelays));
   isPostOpen.value = false;
   note.value = "";
-
-  // @ts-ignore
-  const ev: nostr.Event = event;
-  pool.subscribe(
-    [{ kinds: [1], ids: [ev.id], limit: 1 }],
-    normalizeUrls(myRelays),
-    (ev, _isAfterEose, relayURL) => {
-      console.log("たぶん投稿に成功した", relayURL, ev);
-    },
-    60 * 1000,
-    undefined,
-    { unsubscribeOnEose: true }
-  );
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
