@@ -59,7 +59,7 @@ const props = defineProps({
       <template v-if="index == 0">投稿 </template>
       <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
         Nostr.nip19.noteEncode(p.id)
-        ">{{ p.id.substring(p.id.length - 8, 8) }}</a>
+        ">{{ p.id.substring(p.id.length - 8) }}</a>
       <template v-if="index != getReplyMentions(props.event).length - 1"> と </template>
       <template v-if="index == getReplyMentions(props.event).length - 1"> への返信</template>
     </span>
