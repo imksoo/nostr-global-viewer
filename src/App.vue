@@ -4,9 +4,13 @@ import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
 
+import sushiDataJSON from "./assets/sushiyuki.json";
+import mahjongDataJSON from "./assets/mahjong.json";
+
 import RelayStatus from "./components/RelayStatus.vue";
 import FeedProfile from "./components/FeedProfile.vue";
 import FeedReplies from "./components/FeedReplies.vue";
+import FeedContent from "./components/FeedContent.vue";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -15,8 +19,6 @@ const sushiMode = computed(() => {
 const mahjongMode = computed(() => {
   return route.query.mahjong === "on";
 });
-import sushiDataJSON from "./assets/sushiyuki.json";
-import mahjongDataJSON from "./assets/mahjong.json";
 const sushiData = ref(sushiDataJSON);
 const sushiDataLength = sushiData.value.length;
 const mahjongData = ref(mahjongDataJSON);
@@ -493,9 +495,7 @@ function appVersion() {
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile"></FeedReplies>
-          <p class="c-feed-content">
-            {{ e.content.replace("\\n", "\n") }}
-          </p>
+          <FeedContent v-bind:event="e"></FeedContent>
           <div class="c-feed-footer">
             <p class="c-feed-speak">
               <span @click="(_$event) => speakNote(e, 0)">
