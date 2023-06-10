@@ -99,6 +99,14 @@ function getProfile(pubkey: string): any {
   if (!profiles.value.has(pubkey)) {
     oldProfileCacheMismatch = true;
     cacheMissHitPubkeys.push(pubkey);
+
+    return {
+      pubkey: "",
+      picture: "",
+      display_name: "",
+      name: "",
+      created_at: 0,
+    };
   }
   const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
   const characters = [...sushiData.value, ...mahjongData.value];
@@ -495,7 +503,7 @@ function appVersion() {
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile"></FeedReplies>
-          <FeedContent v-bind:event="e"></FeedContent>
+          <FeedContent v-bind:event="e" :get-profile="getProfile"></FeedContent>
           <div class="c-feed-footer">
             <p class="c-feed-speak">
               <span @click="(_$event) => speakNote(e, 0)">
