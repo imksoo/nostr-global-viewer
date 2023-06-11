@@ -65,7 +65,7 @@ pool.subscribe(
     },
   ],
   feedRelays,
-  async (ev, _isAfterEose, _relayURL) => {
+  (ev, _isAfterEose, _relayURL) => {
     eventsToSearch.value.push(ev);
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
     search();
@@ -80,7 +80,7 @@ pool.subscribe(
     }
   },
   undefined,
-  async () => {
+  () => {
     collectProfiles();
     if (firstFetching) {
       firstFetching = false;
@@ -100,13 +100,14 @@ function getProfile(pubkey: string): any {
     oldProfileCacheMismatch = true;
     cacheMissHitPubkeys.push(pubkey);
 
-    return {
-      pubkey: "",
+    profiles.value.set(pubkey, {
+      pubkey: pubkey,
       picture: "",
       display_name: "",
       name: "",
       created_at: 0,
-    };
+    });
+
   }
   const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
   const characters = [...sushiData.value, ...mahjongData.value];
@@ -123,7 +124,7 @@ function getProfile(pubkey: string): any {
   return profiles.value.get(pubkey);
 }
 
-async function collectProfiles() {
+function collectProfiles() {
   if (!oldProfileCacheMismatch) {
     return;
   }
@@ -145,7 +146,7 @@ async function collectProfiles() {
       },
     ],
     normalizeUrls([...profileRelays, ...myRelays]),
-    async (ev, _isAfterEose, _relayURL) => {
+    (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
         if (
@@ -164,7 +165,7 @@ async function collectProfiles() {
       }
     },
     undefined,
-    async () => {
+    () => {
       oldProfileCacheMismatch = false;
 
       // ローカルストレージにプロフィール情報を保存しておく
@@ -292,7 +293,7 @@ watch(isPostOpen, async (isPostOpened) => {
   }
 });
 
-async function collectMyRelay() {
+function collectMyRelay() {
   pool.subscribe(
     [
       {
@@ -302,7 +303,7 @@ async function collectMyRelay() {
       },
     ],
     profileRelays,
-    async (ev, _relayURL) => {
+    (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
         myRelays.slice(0);
         const content = JSON.parse(ev.content);
