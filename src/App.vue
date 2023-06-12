@@ -49,19 +49,21 @@ let profileRelays = [
 
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
+
 let firstFetching = true;
 let autoSpeech = ref(false);
 let volume = ref(0.5);
 let searchWords = ref("");
 
-const totalNumberOfEventsToKeep = 2000;
+const totalNumberOfEventsToKeep = 5000;
+const initialNumberOfEventToGet = 500;
 const countOfDisplayEvents = 100;
 
 pool.subscribe(
   [
     {
       kinds: [1],
-      limit: totalNumberOfEventsToKeep,
+      limit: initialNumberOfEventToGet,
     },
   ],
   feedRelays,
@@ -77,9 +79,11 @@ pool.subscribe(
   }
 );
 
+const eventsById = ref(new Map<string, any>());
 function addEvents(event: nostr.Event): void {
   eventsToSearch.value.push(event);
   eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+  eventsById.value.set(event.id, event);
   search();
   if (
     !firstFetching &&
@@ -92,14 +96,55 @@ function addEvents(event: nostr.Event): void {
   }
 }
 
+let oldEventCacheMismatch = false;
+let cacheMissHitEventIds: string[] = [];
+
 function getEvent(id: string): nostr.Event | undefined {
-  const found = eventsToSearch.value.filter((e) => { return e.id === id });
-  if (found.length > 0) {
-    return found[0];
-  } else {
-    return undefined;
+  if (!eventsById.value.has(id)) {
+    oldEventCacheMismatch = true;
+    cacheMissHitEventIds.push(id);
+
+    eventsById.value.set(id, {
+      id: id,
+      kind: 1,
+      tags: [],
+      pubkey: "",
+      content: "",
+      created_at: Math.floor(Date.now() / 1000),
+    })
   }
+  return eventsById.value.get(id);
 }
+
+function collectEvents() {
+  if (!oldEventCacheMismatch) {
+    return;
+  }
+
+  const eventIdsSet = new Set<string>();
+  for (const p of cacheMissHitEventIds) {
+    eventIdsSet.add(p);
+  }
+  cacheMissHitEventIds.length = 0;
+  const eventIds = Array.from(eventIdsSet);
+
+  pool.subscribe(
+    [
+      {
+        kinds: [1],
+        ids: eventIds
+      },
+    ],
+    feedRelays,
+    (ev, _isAfterEose, _relayURL) => {
+      addEvents(ev);
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+}
+setInterval(collectEvents, 1000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -120,7 +165,6 @@ function getProfile(pubkey: string): any {
       name: "",
       created_at: 0,
     });
-
   }
   const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
   const characters = [...sushiData.value, ...mahjongData.value];
