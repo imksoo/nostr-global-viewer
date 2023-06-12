@@ -127,17 +127,16 @@ function collectEvents() {
   pool.subscribe(
     [
       {
-        kinds: [1],
         ids: eventIds
       },
     ],
-    feedRelays,
+    normalizeUrls([...profileRelays, ...myWriteRelays, ...myReadRelays]),
     (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
     },
     undefined,
     undefined,
-    { unsubscribeOnEose: true }
+    { unsubscribeOnEose: true}
   );
 }
 setInterval(collectEvents, 1000);

@@ -47,12 +47,12 @@ const tokens = words.map(word => {
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        const content = props.getEvent(data.data.id)?.content || data.data.id.substring(data.data.id.length - 8);
+        const content = props.getEvent(data.data.id)?.content ?? data.data.id.substring(data.data.id.length - 8);
         return { type: 'nostr-note', content, href }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        const content = props.getEvent(data.data)?.content || data.data.substring(data.data.length - 8);
+        const content = props.getEvent(data.data)?.content ?? data.data.substring(data.data.length - 8);
         return { type: 'nostr-note', content, href }
       }
       case "nprofile": {
