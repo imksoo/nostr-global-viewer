@@ -43,6 +43,10 @@ const props = defineProps({
   getProfile: {
     type: Function,
     require: true,
+  },
+  getEvent: {
+    type: Function,
+    required: true,
   }
 });
 </script>
@@ -69,10 +73,12 @@ const props = defineProps({
   </p>
   <p class="c-feed-reply" v-if="getReplyMentions(props.event).length">
     <span v-for="(p, index) in getReplyMentions(props.event)" :key="index">
-      <template v-if="index == 0">投稿 </template>
+      <template v-if="index == 0">投稿: </template>
       <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
-        Nostr.nip19.noteEncode(p.id)
-        ">{{ p.id.substring(p.id.length - 8) }}</a>
+        Nostr.nip19.noteEncode(p.id)">
+        <span class="c-feed-reply-link" v-if="getEvent(p.id)?.content">{{ getEvent(p.id)?.content }}</span>
+        <span class="c-feed-reply-link" v-else>{{ p.id.substring(p.id.length - 8) }}</span>
+      </a>
       <template v-if="index != getReplyMentions(props.event).length - 1"> と </template>
       <template v-if="index == getReplyMentions(props.event).length - 1"> への返信</template>
     </span>
@@ -87,6 +93,10 @@ const props = defineProps({
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;
+}
+
+.c-feed-reply-link {
+  white-space: normal;
 }
 
 .c-feed-reply-picture {

@@ -92,6 +92,15 @@ function addEvents(event: nostr.Event): void {
   }
 }
 
+function getEvent(id: string): nostr.Event | undefined {
+  const found = eventsToSearch.value.filter((e) => { return e.id === id });
+  if (found.length > 0) {
+    return found[0];
+  } else {
+    return undefined;
+  }
+}
+
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
   new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"))
@@ -494,8 +503,8 @@ function appVersion() {
       <div class="p-index-feeds">
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
-          <FeedReplies v-bind:event="e" :get-profile="getProfile"></FeedReplies>
-          <FeedContent v-bind:event="e" :get-profile="getProfile"></FeedContent>
+          <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
+          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedContent>
           <div class="c-feed-footer">
             <p class="c-feed-speak">
               <span @click="(_$event) => speakNote(e, 0)">

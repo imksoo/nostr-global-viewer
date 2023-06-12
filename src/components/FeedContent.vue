@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import * as Nostr from "nostr-tools";
-import FeedProfile from "./FeedProfile.vue";
 
 const props = defineProps({
   event: {
@@ -10,7 +9,11 @@ const props = defineProps({
   },
   getProfile: {
     type: Function,
-    require: true,
+    required: true,
+  },
+  getEvent: {
+    type: Function,
+    required: true,
   }
 });
 
@@ -44,11 +47,11 @@ const tokens = words.map(word => {
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        return { type: 'nostr', content: word, href }
+        return { type: 'nostr-note', content: props.getEvent(data.data.id)?.content || word, href }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        return { type: 'nostr', content: word, href }
+        return { type: 'nostr-note', content: props.getEvent(data.data)?.content || word, href }
       }
       case "nprofile": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
@@ -101,6 +104,13 @@ const tokens = words.map(word => {
           {{ token?.content }}
         </a>
       </template>
+      <template v-else-if="token?.type === 'nostr-note'">
+        <div class="c-feed-content-repost">
+          <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+            {{ token?.content }}
+          </a>
+        </div>
+      </template>
       <template v-else-if="token?.type === 'nostr-npub'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
           <img :src="token.picture" class="c-feed-content-profile-picture" />{{
@@ -129,6 +139,13 @@ const tokens = words.map(word => {
 
 .c-feed-content-kind7 {
   font-size: 2.0em;
+}
+
+.c-feed-content-repost {
+  border: gray dashed 1px;
+  font-size: 0.8em;
+  margin: 0.2em 1.5em;
+  padding: 0.5em;
 }
 
 .c-feed-content-image {
