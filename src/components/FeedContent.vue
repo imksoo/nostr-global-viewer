@@ -47,11 +47,13 @@ const tokens = words.map(word => {
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        return { type: 'nostr-note', content: props.getEvent(data.data.id)?.content ?? data.data.id, href }
+        const content = props.getEvent(data.data.id)?.content || data.data.id.substring(data.data.id.length - 8);
+        return { type: 'nostr-note', content, href }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        return { type: 'nostr-note', content: props.getEvent(data.data)?.content ?? data.data, href }
+        const content = props.getEvent(data.data)?.content || data.data.substring(data.data.length - 8);
+        return { type: 'nostr-note', content, href }
       }
       case "nprofile": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
@@ -107,7 +109,7 @@ const tokens = words.map(word => {
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
           <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-            {{ token?.content }}
+            <span class="c-feed-reply-link">{{ token.content }}</span>
           </a>
         </div>
       </template>

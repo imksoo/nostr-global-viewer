@@ -68,7 +68,7 @@ pool.subscribe(
   ],
   feedRelays,
   (ev, _isAfterEose, _relayURL) => {
-    addEvents(ev);
+    addEvent(ev);
   },
   undefined,
   () => {
@@ -80,7 +80,7 @@ pool.subscribe(
 );
 
 const eventsById = ref(new Map<string, any>());
-function addEvents(event: nostr.Event): void {
+function addEvent(event: nostr.Event): void {
   eventsToSearch.value.push(event);
   eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   eventsById.value.set(event.id, event);
@@ -97,12 +97,12 @@ function addEvents(event: nostr.Event): void {
 }
 
 let oldEventCacheMismatch = false;
-let cacheMissHitEventIds: string[] = [];
+let cacheMissHitEventIds = new Set<string>();
 
 function getEvent(id: string): nostr.Event | undefined {
   if (!eventsById.value.has(id)) {
     oldEventCacheMismatch = true;
-    cacheMissHitEventIds.push(id);
+    cacheMissHitEventIds.add(id);
 
     eventsById.value.set(id, {
       id: id,
@@ -121,12 +121,8 @@ function collectEvents() {
     return;
   }
 
-  const eventIdsSet = new Set<string>();
-  for (const p of cacheMissHitEventIds) {
-    eventIdsSet.add(p);
-  }
-  cacheMissHitEventIds.length = 0;
-  const eventIds = Array.from(eventIdsSet);
+  const eventIds = Array.from(cacheMissHitEventIds);
+  cacheMissHitEventIds.clear();
 
   pool.subscribe(
     [
@@ -137,7 +133,7 @@ function collectEvents() {
     ],
     feedRelays,
     (ev, _isAfterEose, _relayURL) => {
-      addEvents(ev);
+      addEvent(ev);
     },
     undefined,
     undefined,
@@ -300,7 +296,7 @@ async function login() {
         [{ kinds: [7], "#p": [myPubkey], limit: 10 }],
         normalizeUrls(myReadRelays),
         (ev, _isAfterEose, _relayURL) => {
-          addEvents(ev);
+          addEvent(ev);
         }
       );
     }, 1000);
