@@ -53,11 +53,13 @@ const props = defineProps({
       <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
         Nostr.nip19.npubEncode(u.pubkey)
         ">
+        <img :src="u.picture" class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
-            u.display_name ??
-            u.name ??
-            "loading"
+            u.display_name ||
+            u.name ||
+            u.pubkey.substring(u.pubkey.length - 8)
+
           }}
         </span>
       </a>
@@ -85,6 +87,13 @@ const props = defineProps({
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;
+}
+
+.c-feed-reply-picture {
+  max-width: 1em;
+  max-height: 1em;
+  margin-right: 0.3em;
+  vertical-align: middle;
 }
 
 .c-feed-reply-profile__display-name {

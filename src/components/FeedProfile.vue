@@ -30,9 +30,9 @@ function getProfileLink(pubkey: string) {
     <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">
         {{
-          props.profile.display_name ??
-          props.profile.name ??
-          "loading"
+          props.profile.display_name ||
+          props.profile.name ||
+          props.profile.pubkey.substring(props.profile.pubkey.length - 8)
         }}
       </span>
       <span class="c-feed-profile__user-name">

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as Nostr from "nostr-tools";
+import FeedProfile from "./FeedProfile.vue";
 
 const props = defineProps({
   event: {
@@ -53,8 +54,8 @@ const tokens = words.map(word => {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
         if (props.getProfile) {
           const profile = props.getProfile(data.data.pubkey);
-          const name = profile.display_name ?? profile.name ?? word
-          return { type: 'nostr', content: "@" + name, href }
+          const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
+          return { type: 'nostr-npub', content: "@" + name, href, picture: profile.picture }
         } else {
           return { type: 'nostr', content: word, href }
         }
@@ -63,8 +64,8 @@ const tokens = words.map(word => {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data);
         if (props.getProfile) {
           const profile = props.getProfile(data.data);
-          const name = profile.display_name ?? profile.name ?? word
-          return { type: 'nostr', content: "@" + name, href }
+          const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
+          return { type: 'nostr-npub', content: "@" + name, href, picture: profile.picture }
         } else {
           return { type: 'nostr', content: word, href }
         }
@@ -84,13 +85,31 @@ const tokens = words.map(word => {
   <p class="c-feed-content">
     <template v-for="(token, index) in tokens" :key="index">
       <span style="display: none">{{ JSON.stringify(token) }}</span>
-      <span v-if="token?.type === 'text'">{{ token.content }}</span>
-      <a v-else-if="token?.type === 'link'" :href="token.href" target="_blank" referrerpolicy="no-referrer">{{
-        token.content }}</a>
-      <a v-else-if="token?.type === 'nostr'" :href="token.href" target="_blank" referrerpolicy="no-referrer">{{
-        token?.content }}</a>
-      <img v-else-if="token?.type === 'img'" :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
-      <img v-else-if="token?.type === 'emoji'" :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
+      <template v-if="token?.type === 'text'">
+        <span>{{ token.content }}</span>
+      </template>
+      <template v-else-if="token?.type === 'link'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          {{ token.content }}
+        </a>
+      </template>
+      <template v-else-if="token?.type === 'nostr'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          {{ token?.content }}
+        </a>
+      </template>
+      <template v-else-if="token?.type === 'nostr-npub'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          <img :src="token.picture" class="c-feed-content-profile-picture" />{{
+            token?.content
+          }}</a>
+      </template>
+      <template v-else-if="token?.type === 'img'">
+        <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
+      </template>
+      <template v-else-if="token?.type === 'emoji'">
+        <img :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
+      </template>
     </template>
   </p>
 </template>
@@ -108,12 +127,19 @@ const tokens = words.map(word => {
 .c-feed-content-image {
   max-width: 300px;
   max-height: 600px;
-  vertical-align: middle;
+  display: block;
 }
 
 .c-feed-content-emoji {
   max-width: 1.3em;
   max-height: 1.3em;
   vertical-align: middle;
+}
+
+.c-feed-content-profile-picture {
+  max-width: 1em;
+  max-height: 1em;
+  vertical-align: middle;
+  margin-right: 0.3em;
 }
 </style>
