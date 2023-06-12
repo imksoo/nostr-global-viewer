@@ -86,7 +86,10 @@ const tokens = words.map(word => {
     <template v-for="(token, index) in tokens" :key="index">
       <span style="display: none">{{ JSON.stringify(token) }}</span>
       <template v-if="token?.type === 'text'">
-        <span>{{ token.content }}</span>
+        <span v-if="props.event.kind === 7" class="c-feed-content-kind7">{{
+          token.content?.replace("+", "💕").replace("-", "👎")
+        }}</span>
+        <span v-else>{{ token.content }}</span>
       </template>
       <template v-else-if="token?.type === 'link'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
@@ -122,6 +125,10 @@ const tokens = words.map(word => {
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;
+}
+
+.c-feed-content-kind7 {
+  font-size: 2.0em;
 }
 
 .c-feed-content-image {

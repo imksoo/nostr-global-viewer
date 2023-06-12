@@ -66,18 +66,7 @@ pool.subscribe(
   ],
   feedRelays,
   (ev, _isAfterEose, _relayURL) => {
-    eventsToSearch.value.push(ev);
-    eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
-    search();
-    if (
-      !firstFetching &&
-      autoSpeech.value &&
-      events.value.some((obj) => {
-        return obj.id === ev.id;
-      })
-    ) {
-      speakNote(ev);
-    }
+    addEvents(ev);
   },
   undefined,
   () => {
@@ -87,6 +76,21 @@ pool.subscribe(
     }
   }
 );
+
+function addEvents(event: nostr.Event): void {
+  eventsToSearch.value.push(event);
+  eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+  search();
+  if (
+    !firstFetching &&
+    autoSpeech.value &&
+    events.value.some((obj) => {
+      return obj.id === event.id;
+    })
+  ) {
+    speakNote(event);
+  }
+}
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -145,7 +149,7 @@ function collectProfiles() {
         authors: pubkeys,
       },
     ],
-    normalizeUrls([...profileRelays, ...myRelays]),
+    normalizeUrls([...profileRelays, ...myWriteRelays]),
     (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
@@ -227,7 +231,8 @@ let logined = ref(false);
 let isPostOpen = ref(false);
 let myPubkey = "";
 let myRelaysCreatedAt = 0;
-let myRelays: string[] = [];
+let myReadRelays: string[] = [];
+let myWriteRelays: string[] = [];
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? "";
@@ -239,12 +244,10 @@ async function login() {
     setTimeout(() => {
       relayStatus.value = pool.getRelayStatuses();
       pool.subscribe(
-        [{ kinds: [1], "#p": [myPubkey], limit: 1 }],
-        normalizeUrls(myRelays),
-        (ev, _isAfterEose, relayURL) => {
-          if (ev.pubkey !== myPubkey) {
-            console.log("たぶんふぁぼとかりぷらいをもらった", relayURL, ev);
-          }
+        [{ kinds: [7], "#p": [myPubkey], limit: 10 }],
+        normalizeUrls(myReadRelays),
+        (ev, _isAfterEose, _relayURL) => {
+          addEvents(ev);
         }
       );
     }, 1000);
@@ -267,22 +270,9 @@ async function post() {
   event = await window.nostr?.signEvent(event);
 
   // @ts-ignore
-  pool.publish(event, normalizeUrls(myRelays));
+  pool.publish(event, normalizeUrls(myWriteRelays));
   isPostOpen.value = false;
   note.value = "";
-
-  // @ts-ignore
-  const ev: nostr.Event = event;
-  pool.subscribe(
-    [{ kinds: [1], ids: [ev.id], limit: 1 }],
-    normalizeUrls(myRelays),
-    (ev, _isAfterEose, relayURL) => {
-      console.log("たぶん投稿に成功した", relayURL, ev);
-    },
-    60 * 1000,
-    undefined,
-    { unsubscribeOnEose: true }
-  );
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -305,12 +295,13 @@ function collectMyRelay() {
     profileRelays,
     (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
-        myRelays.slice(0);
+        myWriteRelays.slice(0);
         const content = JSON.parse(ev.content);
         myRelaysCreatedAt = ev.created_at;
         for (const r in content) {
+          myReadRelays.push(r);
           if (content[r].write) {
-            myRelays.push(r);
+            myWriteRelays.push(r);
           }
         }
       }
