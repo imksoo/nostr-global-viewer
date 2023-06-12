@@ -47,11 +47,11 @@ const tokens = words.map(word => {
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        return { type: 'nostr-note', content: props.getEvent(data.data.id)?.content, href }
+        return { type: 'nostr-note', content: props.getEvent(data.data.id)?.content ?? data.data.id, href }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        return { type: 'nostr-note', content: props.getEvent(data.data)?.content, href }
+        return { type: 'nostr-note', content: props.getEvent(data.data)?.content ?? data.data, href }
       }
       case "nprofile": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
