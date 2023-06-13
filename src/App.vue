@@ -79,6 +79,21 @@ pool.subscribe(
   }
 );
 
+// 823chan
+pool.subscribe(
+  [
+    {
+      kinds: [1],
+      authors: ["3aa38bf663b6c834a04a6542edf14a81d3223e050c3cc9b7479f8c869c432cf2"],
+      limit: 100,
+    },
+  ],
+  ["wss://yabu.me/"],
+  (ev, _isAfterEose, _relayURL) => {
+    addEvent(ev);
+  }
+);
+
 const eventsById = ref(new Map<string, any>());
 function addEvent(event: nostr.Event): void {
   eventsToSearch.value.push(event);
