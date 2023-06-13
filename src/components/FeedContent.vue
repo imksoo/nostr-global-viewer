@@ -26,7 +26,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
 }
 const words: string[] = props.event.content.split(/(:\w+:|https?:\/\/\S+|nostr:\S+)/g);
 const tokens = words.map(word => {
-  if (!word) {
+  if (!word || word === "nostr:") {
     return { type: "null" };
   }
   if (word.startsWith(":") && word.endsWith(":")) {
@@ -42,18 +42,25 @@ const tokens = words.map(word => {
     } else {
       return { type: "link", href: word, content: word };
     }
-  } else if (word.match(/^nostr:(nprofile|nrelay|nevent|naddr|nsec|npub|note)/)) {
-    const data = Nostr.nip19.decode(word.replace('nostr:', ''));
+  } else if (word.match(/(nostr:|nprofile|nrelay|nevent|naddr|nsec|npub|note)\S+/)) {
+    let data;
+    try {
+      data = Nostr.nip19.decode(word.replace('nostr:', ''));
+    } catch (err) {
+      return { type: "null" }
+    }
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        const content = props.getEvent(data.data.id)?.content ?? data.data.id.substring(data.data.id.length - 8);
-        return { type: 'nostr-note', content, href }
+        const content = "nevent" + data.data.id.substring(data.data.id.length - 8);
+        const event = props.getEvent(data.data.id);
+        return { type: 'nostr-note', content, event, href }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        const content = props.getEvent(data.data)?.content ?? data.data.substring(data.data.length - 8);
-        return { type: 'nostr-note', content, href }
+        const content = "note" + data.data.substring(data.data.length - 8);
+        const event = props.getEvent(data.data);
+        return { type: 'nostr-note', content, event, href }
       }
       case "nprofile": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
@@ -88,6 +95,7 @@ const tokens = words.map(word => {
 </script>
 <template>
   <p class="c-feed-content">
+    <span style="display: none; color: black;">{{ tokens }}</span>
     <template v-for="(token, index) in tokens" :key="index">
       <span style="display: none">{{ JSON.stringify(token) }}</span>
       <template v-if="token?.type === 'text'">
@@ -109,7 +117,8 @@ const tokens = words.map(word => {
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
           <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-            <span class="c-feed-reply-link">{{ token.content }}</span>
+            <FeedContent :event="token.event" :get-event="props.getEvent" :get-profile="props.getProfile"></FeedContent>
+            {{ token?.content }}
           </a>
         </div>
       </template>
@@ -120,7 +129,9 @@ const tokens = words.map(word => {
           }}</a>
       </template>
       <template v-else-if="token?.type === 'img'">
-        <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
+        <a :href="token.src" target="_blank" referrerpolicy="no-referrer">
+          <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
+        </a>
       </template>
       <template v-else-if="token?.type === 'emoji'">
         <img :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
