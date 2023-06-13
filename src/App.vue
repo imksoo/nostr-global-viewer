@@ -94,11 +94,9 @@ pool.subscribe(
   }
 );
 
-const eventsById = ref(new Map<string, any>());
 function addEvent(event: nostr.Event): void {
   eventsToSearch.value.push(event);
   eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
-  eventsById.value.set(event.id, event);
   search();
   if (
     !firstFetching &&
@@ -114,21 +112,23 @@ function addEvent(event: nostr.Event): void {
 let oldEventCacheMismatch = false;
 let cacheMissHitEventIds = new Set<string>();
 
-function getEvent(id: string): nostr.Event | undefined {
-  if (!eventsById.value.has(id)) {
+function getEvent(id: string): nostr.Event {
+  const event = eventsToSearch.value.find((e) => (e.id === id));
+
+  if (!event) {
     oldEventCacheMismatch = true;
     cacheMissHitEventIds.add(id);
-
-    eventsById.value.set(id, {
+    return {
       id: id,
+      sig: "",
       kind: 1,
       tags: [],
       pubkey: "",
       content: "",
       created_at: Math.floor(Date.now() / 1000),
-    })
+    };
   }
-  return eventsById.value.get(id);
+  return event;
 }
 
 function collectEvents() {
@@ -148,10 +148,7 @@ function collectEvents() {
     normalizeUrls([...profileRelays, ...myWriteRelays, ...myReadRelays]),
     (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
-    },
-    undefined,
-    undefined,
-    { unsubscribeOnEose: true}
+    }
   );
 }
 setInterval(collectEvents, 1000);
