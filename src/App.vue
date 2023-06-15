@@ -62,7 +62,7 @@ const countOfDisplayEvents = 100;
 pool.subscribe(
   [
     {
-      kinds: [1],
+      kinds: [1, 7],
       limit: initialNumberOfEventToGet,
     },
   ],
