@@ -85,7 +85,7 @@ pool.subscribe(
     {
       kinds: [1],
       authors: ["3aa38bf663b6c834a04a6542edf14a81d3223e050c3cc9b7479f8c869c432cf2"],
-      limit: 100,
+      limit: initialNumberOfEventToGet / 10,
     },
   ],
   ["wss://yabu.me/"],

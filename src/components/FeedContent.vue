@@ -52,15 +52,13 @@ const tokens = words.map(word => {
     switch (data.type) {
       case "nevent": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
-        const content = "nevent" + data.data.id.substring(data.data.id.length - 8);
-        const event = props.getEvent(data.data.id);
-        return { type: 'nostr-note', content, event, href }
+        const id = data.data.id;
+        return { type: 'nostr-note', href, id }
       }
       case "note": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
-        const content = "note" + data.data.substring(data.data.length - 8);
-        const event = props.getEvent(data.data);
-        return { type: 'nostr-note', content, event, href }
+        const id = data.data;
+        return { type: 'nostr-note', href, id }
       }
       case "nprofile": {
         const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
@@ -116,10 +114,12 @@ const tokens = words.map(word => {
       </template>
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
+          リポストの表示デバッグ中…
           <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-            <FeedContent :event="token.event" :get-event="props.getEvent" :get-profile="props.getProfile"></FeedContent>
-            {{ token?.content }}
+            {{ token.id }}
           </a>
+          <br />
+          {{ props.getEvent(token.id) }}
         </div>
       </template>
       <template v-else-if="token?.type === 'nostr-npub'">

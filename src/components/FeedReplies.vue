@@ -7,7 +7,10 @@ function getReplyUsers(event: Nostr.Event) {
   for (let i = 0; i < parsedTags.profiles.length; ++i) {
     const p = parsedTags.profiles[i];
     if (props.getProfile) {
-      users.push(props.getProfile(p.pubkey));
+      const prof = props.getProfile(p.pubkey);
+      if (prof) {
+        users.push(prof);
+      }
     }
   }
   return users;
@@ -34,6 +37,26 @@ function getReplyMentions(event: Nostr.Event) {
   return mentions;
 }
 
+function getUserLink(pubkey: string): string {
+  try {
+    const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(pubkey);
+    return href;
+  } catch (err) {
+    console.error(err);
+    return "";
+  }
+}
+
+function getEventLink(id: string): string {
+  try {
+    const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(id);
+    return href;
+  } catch (err) {
+    console.error(err);
+    return "";
+  }
+}
+
 const props = defineProps({
   event: {
     // @ts-ignore
@@ -54,18 +77,16 @@ const props = defineProps({
   <p class="c-feed-reply" v-if="getReplyUsers(props.event)">
     <span v-for="(u, index) in getReplyUsers(props.event)" :key="index">
       <template v-if="index == 0">ユーザー </template>
-      <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
-        Nostr.nip19.npubEncode(u.pubkey)
-        ">
-        <img :src="u.picture" class="c-feed-reply-picture" />
-        <span class="c-feed-reply-profile__display-name">
-          {{
-            u.display_name ||
-            u.name ||
-            u.pubkey.substring(u.pubkey.length - 8)
+      <a target="_blank" v-bind:href="getUserLink(u.pubkey)">
+      <img :src="u.picture" class="c-feed-reply-picture" />
+      <span class="c-feed-reply-profile__display-name">
+        {{
+          u.display_name ||
+          u.name ||
+          u.pubkey.substring(u.pubkey.length - 8)
 
-          }}
-        </span>
+        }}
+      </span>
       </a>
       <template v-if="index != getReplyUsers(props.event).length - 1"> と </template>
       <template v-if="index == getReplyUsers(props.event).length - 1"> への返信</template>
@@ -74,8 +95,7 @@ const props = defineProps({
   <p class="c-feed-reply" v-if="getReplyMentions(props.event).length">
     <span v-for="(p, index) in getReplyMentions(props.event)" :key="index">
       <template v-if="index == 0">投稿: </template>
-      <a target="_blank" v-bind:href="'https://nostx.shino3.net/' +
-        Nostr.nip19.noteEncode(p.id)">
+      <a target="_blank" v-bind:href="getEventLink(p.id)">
         <span class="c-feed-reply-link" v-if="getEvent(p.id)?.content">{{ getEvent(p.id)?.content }}</span>
         <span class="c-feed-reply-link" v-else>{{ p.id.substring(p.id.length - 8) }}</span>
       </a>
