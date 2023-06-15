@@ -52,7 +52,6 @@ while (rest.length > 0) {
           tokens.push({ type: "link", href: text, content: decodeURI(text) });
         }
       } else {
-
         try {
           const data = Nostr.nip19.decode(text.replace('nostr:', ''));
           switch (data.type) {
@@ -106,43 +105,50 @@ while (rest.length > 0) {
 </script>
 <template>
   <p class="c-feed-content">
-  <template v-for="(token, index) in tokens" :key="index">
-    <template v-if="token?.type === 'text'">
-      <span v-if="props.event.kind === 7" class="c-feed-content-kind7">{{
-        token.content?.replace("+", "💕").replace("-", "👎")
-      }}</span>
-      <span v-else>{{ token.content }}</span>
+    <template v-for="(token, index) in tokens" :key="index">
+      <template v-if="token?.type === 'text'">
+        <span v-if="props.event.kind === 7" class="c-feed-content-kind7">{{
+          token.content?.replace("+", "💕").replace("-", "👎")
+        }}</span>
+        <span v-else>{{ token.content }}</span>
+      </template>
+      <template v-else-if="token?.type === 'link'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          {{ token.content }}
+        </a>
+      </template>
+      <template v-else-if="token?.type === 'nostr'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          {{ token?.content }}
+        </a>
+      </template>
+      <template v-else-if="token?.type === 'nostr-note'">
+        <div class="c-feed-content-repost">
+          <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" v-bind:get-profile="props.getProfile"
+            v-if="props.getEvent(token.id).content">
+          </FeedContent>
+          <template v-else>
+            <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+              {{ token.content }}
+            </a>
+          </template>
+        </div>
+      </template>
+      <template v-else-if="token?.type === 'nostr-npub'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          <img :src="token.picture" class="c-feed-content-profile-picture" />{{
+            token?.content
+          }}</a>
+      </template>
+      <template v-else-if="token?.type === 'img'">
+        <a :href="token.src" target="_blank" referrerpolicy="no-referrer">
+          <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
+        </a>
+      </template>
+      <template v-else-if="token?.type === 'emoji'">
+        <img :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
+      </template>
     </template>
-    <template v-else-if="token?.type === 'link'">
-      <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-        {{ token.content }}
-      </a>
-    </template>
-    <template v-else-if="token?.type === 'nostr'">
-      <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-        {{ token?.content }}
-      </a>
-    </template>
-    <template v-else-if="token?.type === 'nostr-note'">
-      <div class="c-feed-content-repost">
-        <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" v-bind:get-profile="props.getProfile"></FeedContent>
-      </div>
-    </template>
-    <template v-else-if="token?.type === 'nostr-npub'">
-      <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-        <img :src="token.picture" class="c-feed-content-profile-picture" />{{
-          token?.content
-        }}</a>
-    </template>
-    <template v-else-if="token?.type === 'img'">
-      <a :href="token.src" target="_blank" referrerpolicy="no-referrer">
-        <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
-      </a>
-    </template>
-    <template v-else-if="token?.type === 'emoji'">
-      <img :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
-    </template>
-  </template>
   </p>
 </template>
 <style lang="scss" scoped>
