@@ -49,7 +49,7 @@ while (rest.length > 0) {
         if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
           tokens.push({ type: "img", src: text });
         } else {
-          tokens.push({ type: "link", href: text, content: text });
+          tokens.push({ type: "link", href: text, content: decodeURI(text) });
         }
       } else {
 
@@ -64,16 +64,16 @@ while (rest.length > 0) {
             case "note": {
               const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
               const id = data.data;
-              tokens.push({ type: 'nostr-note', href, id })
+              tokens.push({ type: 'nostr-note', href, id });
             } break;
             case "nprofile": {
               const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
               if (props.getProfile) {
                 const profile = props.getProfile(data.data.pubkey);
                 const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
-                tokens.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture })
+                tokens.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
               } else {
-                tokens.push({ type: 'nostr', content: text, href })
+                tokens.push({ type: 'nostr', content: text, href });
               }
             } break;
             case "npub": {
@@ -83,16 +83,16 @@ while (rest.length > 0) {
                 const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
                 tokens.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture })
               } else {
-                tokens.push({ type: 'nostr', content: text, href })
+                tokens.push({ type: 'nostr', content: text, href });
               }
             } break;
             default: {
               const href = text;
-              tokens.push({ type: 'nostr', content: text, href })
+              tokens.push({ type: 'nostr', content: text, href });
             }
           }
         } catch (err) {
-          tokens.push({ type: "null" })
+          tokens.push({ type: "text", content: text });
         }
       }
       rest = rest.substring(text.length);
@@ -106,10 +106,6 @@ while (rest.length > 0) {
 </script>
 <template>
   <p class="c-feed-content">
-  <div>
-    contentsのレンダリングデバッグ中<br />
-    {{ tokens }}
-  </div>
   <template v-for="(token, index) in tokens" :key="index">
     <template v-if="token?.type === 'text'">
       <span v-if="props.event.kind === 7" class="c-feed-content-kind7">{{
@@ -129,12 +125,7 @@ while (rest.length > 0) {
     </template>
     <template v-else-if="token?.type === 'nostr-note'">
       <div class="c-feed-content-repost">
-        quoteの表示デバッグ中…
-        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-          {{ token.id }}
-        </a>
-        <br />
-        {{ props.getEvent(token.id) }}
+        <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" v-bind:get-profile="props.getProfile"></FeedContent>
       </div>
     </template>
     <template v-else-if="token?.type === 'nostr-npub'">
