@@ -49,7 +49,29 @@ while (rest.length > 0) {
         if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
           tokens.push({ type: "img", src: text });
         } else {
-          tokens.push({ type: "link", href: text, content: decodeURI(text) });
+          if (url.hostname === "youtu.be") {
+            tokens.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
+          } else if (url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
+            if (url.pathname.startsWith("/shorts/")) {
+              const v = url.pathname.replace('/shorts/', '');
+              tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
+            } else {
+              const v = getParam('v', text);
+              tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
+            }
+          } else {
+            tokens.push({ type: "link", href: text, content: decodeURI(text) });
+          }
+
+          function getParam(name: string, url: string): string | null {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+              results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+          }
         }
       } else {
         try {
@@ -116,6 +138,12 @@ while (rest.length > 0) {
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
           {{ token.content }}
         </a>
+      </template>
+      <template v-else-if="token?.type === 'youtube'">
+        <iframe width="560" height="315" :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
