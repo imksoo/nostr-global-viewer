@@ -55,16 +55,16 @@ function repostEvent(reposted: Nostr.Event) {
 <template>
   <div class="c-feed-footer">
     <p class="c-feed-speak">
-      <span @click="(_$event) => props.speakNote(props.event, 0)">
+      <span @click="(_$event) => props.speakNote(props.event, 0)" v-if="props.event.kind == 1">
         <mdicon name="play" />読み上げ
       </span>
     </p>
-    <p class="c-feed-repost" v-if="isLogined">
+    <p class="c-feed-repost" v-if="isLogined && props.event.kind == 1">
       <span @click="(_$event) => { repostEvent(props.event) }">
         <mdicon name="heart" />りぽすと
       </span>
     </p>
-    <p class="c-feed-fav" v-if="isLogined">
+    <p class="c-feed-fav" v-if="isLogined && props.event.kind == 1">
       <span @click="(_$event) => { favEvent(props.event) }">
         <mdicon name="heart" />ふぁぼ
       </span>
