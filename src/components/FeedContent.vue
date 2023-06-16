@@ -41,7 +41,7 @@ if (props.event.kind === 6) {
       note = Nostr.nip19.noteEncode(t[1]);
     }
   }
-  rest = `📬りぽすと ${note}`;
+  rest = `📬りぽすと！ ${note}`;
 }
 
 while (rest.length > 0) {
@@ -231,7 +231,7 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-kind6 {
-  font-size: 1.4em;
+  font-size: 1em;
   color: #df3d81;
 }
 
