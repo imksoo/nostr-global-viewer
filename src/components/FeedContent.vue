@@ -29,6 +29,11 @@ const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|ns
 
 let rest = props.event.content;
 let tokens: { type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; }[] = [];
+
+if (props.event.kind === 6) {
+  rest = `📬りぽすとされました nostr:${Nostr.nip19.noteEncode(props.event.id)}`
+}
+
 while (rest.length > 0) {
   const match = rest.match(regex);
   if (match) {
@@ -133,9 +138,12 @@ while (rest.length > 0) {
 </script>
 <template>
   <p class="c-feed-content">
-    <template v-for="(token, index) in tokens" :key="index">
+    <template v-for="(token, _index) in tokens" :key="_index">
       <template v-if="token?.type === 'text'">
-        <span v-if="props.event.kind === 7" class="c-feed-content-kind7">{{
+        <span class="c-feed-content-kind6" v-if="props.event.kind === 6">{{
+          token.content
+        }}</span>
+        <span class="c-feed-content-kind7" v-else-if="props.event.kind === 7">{{
           token.content?.replace("+", "💕").replace("-", "👎")
         }}</span>
         <span v-else>{{ token.content }}</span>
@@ -155,6 +163,7 @@ while (rest.length > 0) {
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
           {{ token.content }}
         </a>
+        <br />
         <iframe frameborder="0" width="330" height="600" :src="'https://twitframe.com/show?url=' + token.src"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
@@ -200,6 +209,11 @@ while (rest.length > 0) {
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;
+}
+
+.c-feed-content-kind6 {
+  font-size: 1.4em;
+  color: #df3d81;
 }
 
 .c-feed-content-kind7 {

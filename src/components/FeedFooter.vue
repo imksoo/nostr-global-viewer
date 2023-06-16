@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 import * as Nostr from "nostr-tools";
 
 const props = defineProps({
@@ -21,7 +22,14 @@ const props = defineProps({
   },
 });
 
+let isFavorited = ref(false);
+let isReposted = ref(false);
+
 function favEvent(reacted: Nostr.Event) {
+  if (isFavorited.value) {
+    return;
+  }
+
   const inheritedTags = reacted.tags.filter(
     (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
   )
@@ -36,10 +44,16 @@ function favEvent(reacted: Nostr.Event) {
   reaction.created_at = Math.floor(Date.now() / 1000);
 
   props.postEvent(reaction);
+
+  isFavorited.value = true;
 }
 
 
 function repostEvent(reposted: Nostr.Event) {
+  if (isReposted.value) {
+    return;
+  }
+
   const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
   reaction.tags = [
     ['e', reposted.id],
@@ -49,6 +63,8 @@ function repostEvent(reposted: Nostr.Event) {
   reaction.created_at = Math.floor(Date.now() / 1000);
 
   props.postEvent(reaction);
+
+  isReposted.value = true;
 }
 
 </script>
@@ -59,12 +75,12 @@ function repostEvent(reposted: Nostr.Event) {
         <mdicon name="play" />読み上げ
       </span>
     </p>
-    <p class="c-feed-repost" v-if="isLogined && props.event.kind == 1">
+    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
       <span @click="(_$event) => { repostEvent(props.event) }">
         <mdicon name="multicast" />りぽすと
       </span>
     </p>
-    <p class="c-feed-fav" v-if="isLogined && props.event.kind == 1">
+    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
       <span @click="(_$event) => { favEvent(props.event) }">
         <mdicon name="star-shooting" />ふぁぼ
       </span>
@@ -105,7 +121,11 @@ function repostEvent(reposted: Nostr.Event) {
   padding: 0.4rem 0 0 0;
   margin: 0;
   text-align: left;
-  color: #3faf83;
+  color: #213547;
+
+  &-actioned {
+    color: #3faf83;
+  }
 }
 
 .c-feed-fav {
@@ -117,7 +137,11 @@ function repostEvent(reposted: Nostr.Event) {
   padding: 0.4rem 0 0 0;
   margin: 0;
   text-align: left;
-  color: #df3d81;
+  color: #213547;
+
+  &-actioned {
+    color: #df3d81;
+  }
 }
 
 .c-feed-date {

@@ -219,8 +219,8 @@ function collectProfiles() {
             created_at: ev.created_at,
           };
           profiles.value.set(ev.pubkey, press);
-          pool.publish(ev, feedRelays);
         }
+        pool.publish(ev, feedRelays);
       }
     },
     undefined,
@@ -298,8 +298,9 @@ async function login() {
 
     setTimeout(() => {
       relayStatus.value = pool.getRelayStatuses();
-      pool.subscribe(
-        [{ kinds: [7], "#p": [myPubkey], limit: 10 }],
+      pool.subscribe([
+        { kinds: [7], "#p": [myPubkey], limit: 10 }
+      ],
         normalizeUrls(myReadRelays),
         (ev, _isAfterEose, _relayURL) => {
           addEvent(ev);
