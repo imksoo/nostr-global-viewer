@@ -47,6 +47,8 @@ while (rest.length > 0) {
         const emojiName = text.slice(1, -1);
         if (emojiMap.has(emojiName)) {
           tokens.push({ type: "emoji", content: emojiName, src: emojiMap.get(emojiName) });
+        } else {
+          tokens.push({ type: "text", content: text });
         }
       } else if (text.startsWith('http')) {
         try {
