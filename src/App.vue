@@ -228,9 +228,10 @@ function collectProfiles() {
       oldProfileCacheMismatch = false;
 
       // ローカルストレージにプロフィール情報を保存しておく
+      const validProfiles = Array.from(profiles.value.entries()).filter((p) => (p[1].created_at != 0));
       localStorage.setItem(
         "profiles",
-        JSON.stringify(Array.from(profiles.value.entries()))
+        JSON.stringify(validProfiles)
       );
     },
     { unsubscribeOnEose: true }
