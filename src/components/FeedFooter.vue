@@ -10,8 +10,46 @@ const props = defineProps({
   speakNote: {
     type: Function,
     required: true,
-  }
+  },
+  isLogined: {
+    type: Boolean,
+    required: true,
+  },
+  postEvent: {
+    type: Function,
+    required: true,
+  },
 });
+
+function favEvent(reacted: Nostr.Event) {
+  const inheritedTags = reacted.tags.filter(
+    (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
+  )
+
+  const reaction = Nostr.getBlankEvent(Nostr.Kind.Reaction);
+  reaction.tags = [
+    ...inheritedTags,
+    ['e', reacted.id],
+    ['p', reacted.pubkey],
+  ]
+  reaction.content = "+";
+  reaction.created_at = Math.floor(Date.now() / 1000);
+
+  props.postEvent(reaction);
+}
+
+
+function repostEvent(reposted: Nostr.Event) {
+  const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
+  reaction.tags = [
+    ['e', reposted.id],
+    ['p', reposted.pubkey],
+  ]
+  reaction.content = "";
+  reaction.created_at = Math.floor(Date.now() / 1000);
+
+  props.postEvent(reaction);
+}
 
 </script>
 <template>
@@ -21,8 +59,13 @@ const props = defineProps({
         <mdicon name="play" />読み上げ
       </span>
     </p>
-    <p class="c-feed-fav">
-      <span onclick="alert('まって♡')">
+    <p class="c-feed-repost" v-if="isLogined">
+      <span @click="(_$event) => { repostEvent(props.event) }">
+        <mdicon name="heart" />りぽすと
+      </span>
+    </p>
+    <p class="c-feed-fav" v-if="isLogined">
+      <span @click="(_$event) => { favEvent(props.event) }">
         <mdicon name="heart" />ふぁぼ
       </span>
     </p>
@@ -51,6 +94,18 @@ const props = defineProps({
   margin: 0;
   text-align: left;
   color: #213547;
+}
+
+.c-feed-repost {
+  vertical-align: middle;
+  font-size: 14px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-all;
+  padding: 0.4rem 0 0 0;
+  margin: 0;
+  text-align: left;
+  color: #3faf83;
 }
 
 .c-feed-fav {

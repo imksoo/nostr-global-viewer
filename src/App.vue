@@ -317,7 +317,6 @@ async function post() {
   let event = {
     kind: 1,
     tags: [],
-    pubkey: myPubkey,
     content: note.value,
     created_at: Math.floor(Date.now() / 1000),
   };
@@ -325,9 +324,17 @@ async function post() {
   event = await window.nostr?.signEvent(event);
 
   // @ts-ignore
-  pool.publish(event, normalizeUrls(myWriteRelays));
+  postEvent(event);
   isPostOpen.value = false;
   note.value = "";
+}
+
+async function postEvent(event: nostr.Event) {
+  event.pubkey = myPubkey;
+  // @ts-ignore
+  event = await window.nostr?.signEvent(event);
+
+  pool.publish(event, normalizeUrls(myWriteRelays));
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -559,7 +566,7 @@ setInterval(loggingStatistics, 30 * 1000);
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedContent>
-          <FeedFooter v-bind:event="e" :speak-note="speakNote"></FeedFooter>
+          <FeedFooter v-bind:event="e" :speak-note="speakNote" :is-logined="logined" :post-event="postEvent"></FeedFooter>
         </div>
       </div>
     </div>
