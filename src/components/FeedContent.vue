@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import * as Nostr from "nostr-tools";
 
+import FeedProfile from "./FeedProfile.vue";
+import FeedFooter from "./FeedFooter.vue";
+
 const props = defineProps({
   event: {
     // @ts-ignore
@@ -31,7 +34,14 @@ let rest = props.event.content;
 let tokens: { type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; }[] = [];
 
 if (props.event.kind === 6) {
-  rest = `📬りぽすとされました nostr:${Nostr.nip19.noteEncode(props.event.id)}`
+  let note = "";
+  for (let i = 0; i < props.event.tags.length; ++i) {
+    const t = props.event.tags[i];
+    if (t[0] === 'e') {
+      note = Nostr.nip19.noteEncode(t[1]);
+    }
+  }
+  rest = `📬りぽすと ${note}`;
 }
 
 while (rest.length > 0) {
@@ -175,9 +185,16 @@ while (rest.length > 0) {
       </template>
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
-          <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" v-bind:get-profile="props.getProfile"
-            v-if="props.getEvent(token.id)">
-          </FeedContent>
+          <template v-if="props.getEvent(token.id)">
+            <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
+            <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent"
+              v-bind:get-profile="props.getProfile">
+            </FeedContent>
+            <br />
+            <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+              {{ 'note' + token.id?.substring(token.id.length - 8) }}
+            </a>
+          </template>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
               {{ token.content }}
