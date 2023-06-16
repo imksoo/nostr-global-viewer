@@ -61,12 +61,12 @@ function repostEvent(reposted: Nostr.Event) {
     </p>
     <p class="c-feed-repost" v-if="isLogined && props.event.kind == 1">
       <span @click="(_$event) => { repostEvent(props.event) }">
-        <mdicon name="heart" />りぽすと
+        <mdicon name="multicast" />りぽすと
       </span>
     </p>
     <p class="c-feed-fav" v-if="isLogined && props.event.kind == 1">
       <span @click="(_$event) => { favEvent(props.event) }">
-        <mdicon name="heart" />ふぁぼ
+        <mdicon name="star-shooting" />ふぁぼ
       </span>
     </p>
     <p class="c-feed-date">
