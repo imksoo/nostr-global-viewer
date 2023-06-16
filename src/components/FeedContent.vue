@@ -25,7 +25,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
   }
 }
 
-const regex = /(:\w+:|https?:\/\/\S+|(nostr:)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)\S+)/;
+const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)\S+)/;
 
 let rest = props.event.content;
 let tokens: { type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; }[] = [];
@@ -44,48 +44,52 @@ while (rest.length > 0) {
           tokens.push({ type: "emoji", content: emojiName, src: emojiMap.get(emojiName) });
         }
       } else if (text.startsWith('http')) {
-        const url = new URL(text);
-        const ext = url.pathname.split(".").pop()?.toLocaleLowerCase() ?? "";
-        if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
-          tokens.push({ type: "img", src: text });
-        } else {
-          if (url.hostname === "youtu.be") {
-            tokens.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
-          } else if (url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
-            if (url.pathname.startsWith("/shorts/")) {
-              const v = url.pathname.replace('/shorts/', '');
-              tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
-            } else {
-              const v = getParam('v', text);
-              tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
-            }
+        try {
+          const url = new URL(text);
+          const ext = url.pathname.split(".").pop()?.toLocaleLowerCase() ?? "";
+          if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
+            tokens.push({ type: "img", src: text });
           } else {
-            tokens.push({ type: "link", href: text, content: decodeURI(text) });
-          }
+            if (url.hostname === "youtu.be") {
+              tokens.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
+            } else if (url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
+              if (url.pathname.startsWith("/shorts/")) {
+                const v = url.pathname.replace('/shorts/', '');
+                tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
+              } else {
+                const v = getParam('v', text);
+                tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
+              }
+            } else {
+              tokens.push({ type: "link", href: text, content: decodeURI(text) });
+            }
 
-          function getParam(name: string, url: string): string | null {
-            if (!url) url = window.location.href;
-            name = name.replace(/[\[\]]/g, "\\$&");
-            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-              results = regex.exec(url);
-            if (!results) return null;
-            if (!results[2]) return '';
-            return decodeURIComponent(results[2].replace(/\+/g, " "));
+            function getParam(name: string, url: string): string | null {
+              if (!url) url = window.location.href;
+              name = name.replace(/[\[\]]/g, "\\$&");
+              var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+              if (!results) return null;
+              if (!results[2]) return '';
+              return decodeURIComponent(results[2].replace(/\+/g, " "));
+            }
           }
+        } catch (err) {
+          tokens.push({ type: "text", content: text });
         }
       } else {
         try {
-          const data = Nostr.nip19.decode(text.replace('nostr:', ''));
+          const data = Nostr.nip19.decode(text.replace('nostr:', '').replace('@', ''));
           switch (data.type) {
             case "nevent": {
               const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
               const id = data.data.id;
-              tokens.push({ type: 'nostr-note', href, id });
+              tokens.push({ type: 'nostr-note', content: text, href, id });
             } break;
             case "note": {
               const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
               const id = data.data;
-              tokens.push({ type: 'nostr-note', href, id });
+              tokens.push({ type: 'nostr-note', content: text, href, id });
             } break;
             case "nprofile": {
               const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
@@ -140,7 +144,7 @@ while (rest.length > 0) {
         </a>
       </template>
       <template v-else-if="token?.type === 'youtube'">
-        <iframe width="560" height="315" :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
+        <iframe width="300" height="170" :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen></iframe>

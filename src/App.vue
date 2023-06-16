@@ -28,6 +28,8 @@ const profileRandom = new Date().getUTCDate() + new Date().getUTCMonth();
 const pool = new RelayPool(undefined, {
   autoReconnect: true,
   logErrorsAndNotices: true,
+  subscriptionCache: true,
+  useEventCache: true,
 });
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
@@ -145,7 +147,7 @@ function collectEvents() {
         ids: eventIds
       },
     ],
-    normalizeUrls([...profileRelays, ...myWriteRelays, ...myReadRelays]),
+    normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
     (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
     }
@@ -209,7 +211,7 @@ function collectProfiles() {
         authors: pubkeys,
       },
     ],
-    normalizeUrls([...profileRelays, ...myWriteRelays]),
+    normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
     (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
