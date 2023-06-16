@@ -11,6 +11,7 @@ import RelayStatus from "./components/RelayStatus.vue";
 import FeedProfile from "./components/FeedProfile.vue";
 import FeedReplies from "./components/FeedReplies.vue";
 import FeedContent from "./components/FeedContent.vue";
+import FeedFooter from "./components/FeedFooter.vue";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -558,23 +559,7 @@ setInterval(loggingStatistics, 30 * 1000);
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedContent>
-          <div class="c-feed-footer">
-            <p class="c-feed-speak">
-              <span @click="(_$event) => speakNote(e, 0)">
-                <mdicon name="play" />読み上げ
-              </span>
-            </p>
-            <p class="c-feed-fav">
-              <span onclick="alert('まって♡')">
-                <mdicon name="heart" />ふぁぼ
-              </span>
-            </p>
-            <p class="c-feed-date">
-              <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)
-                ">
-                {{ new Date(e.created_at * 1000).toLocaleString() }}</a>
-            </p>
-          </div>
+          <FeedFooter v-bind:event="e" :speak-note="speakNote"></FeedFooter>
         </div>
       </div>
     </div>
@@ -611,6 +596,13 @@ setInterval(loggingStatistics, 30 * 1000);
 
 <style lang="scss" scoped>
 @import "./assets/scss/project/index.scss";
-@import "./assets/scss/component/feed.scss";
 @import "./assets/scss/component/post.scss";
+
+.c-feed-item {
+  margin-top: 5px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 10px;
+}
 </style>
