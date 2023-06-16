@@ -157,7 +157,7 @@ while (rest.length > 0) {
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
           <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" v-bind:get-profile="props.getProfile"
-            v-if="props.getEvent(token.id).content">
+            v-if="props.getEvent(token.id)">
           </FeedContent>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
