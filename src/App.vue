@@ -227,6 +227,7 @@ function collectProfiles() {
             created_at: ev.created_at,
           };
           profiles.value.set(ev.pubkey, press);
+          pool.publish(ev, feedRelays);
         }
       }
     },
@@ -473,6 +474,14 @@ function appVersion() {
   // @ts-ignore
   return __APP_VERSION__;
 }
+
+function loggingStatistics(): void {
+  console.log({
+    eventsToSearchSize: eventsToSearch.value.length,
+    profilesSize: profiles.value.size,
+  });
+}
+setInterval(loggingStatistics, 30 * 1000);
 </script>
 
 <template>
