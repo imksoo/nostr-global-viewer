@@ -38,21 +38,29 @@ function getReplyMentions(event: Nostr.Event) {
 }
 
 function getUserLink(pubkey: string): string {
-  try {
-    const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(pubkey);
-    return href;
-  } catch (err) {
-    console.error(err);
+  if (pubkey) {
+    try {
+      const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(pubkey);
+      return href;
+    } catch (err) {
+      console.error(err);
+      return "";
+    }
+  } else {
     return "";
   }
 }
 
 function getEventLink(id: string): string {
-  try {
-    const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(id);
-    return href;
-  } catch (err) {
-    console.error(err);
+  if (id) {
+    try {
+      const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(id);
+      return href;
+    } catch (err) {
+      console.error(err);
+      return "";
+    }
+  } else {
     return "";
   }
 }
@@ -78,15 +86,15 @@ const props = defineProps({
     <span v-for="(u, index) in getReplyUsers(props.event)" :key="index">
       <template v-if="index == 0">ユーザー </template>
       <a target="_blank" v-bind:href="getUserLink(u.pubkey)">
-      <img :src="u.picture" class="c-feed-reply-picture" />
-      <span class="c-feed-reply-profile__display-name">
-        {{
-          u.display_name ||
-          u.name ||
-          u.pubkey.substring(u.pubkey.length - 8)
+        <img :src="u.picture" class="c-feed-reply-picture" />
+        <span class="c-feed-reply-profile__display-name">
+          {{
+            u.display_name ||
+            u.name ||
+            u.pubkey.substring(u.pubkey.length - 8)
 
-        }}
-      </span>
+          }}
+        </span>
       </a>
       <template v-if="index != getReplyUsers(props.event).length - 1"> と </template>
       <template v-if="index == getReplyUsers(props.event).length - 1"> への返信</template>
