@@ -114,21 +114,12 @@ function addEvent(event: nostr.Event): void {
 let oldEventCacheMismatch = false;
 let cacheMissHitEventIds = new Set<string>();
 
-function getEvent(id: string): nostr.Event {
+function getEvent(id: string): nostr.Event | undefined {
   const event = eventsToSearch.value.find((e) => (e.id === id));
 
   if (!event) {
     oldEventCacheMismatch = true;
     cacheMissHitEventIds.add(id);
-    return {
-      id: id,
-      sig: "",
-      kind: 1,
-      tags: [],
-      pubkey: "",
-      content: "",
-      created_at: Math.floor(Date.now() / 1000),
-    };
   }
   return event;
 }
