@@ -564,6 +564,11 @@ setInterval(loggingStatistics, 30 * 1000);
                 <mdicon name="play" />読み上げ
               </span>
             </p>
+            <p class="c-feed-fav">
+              <span onclick="alert('まって♡')">
+                <mdicon name="heart" />ふぁぼ
+              </span>
+            </p>
             <p class="c-feed-date">
               <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + nostr.nip19.noteEncode(e.id)
                 ">
