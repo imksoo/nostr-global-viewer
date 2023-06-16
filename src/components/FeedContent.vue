@@ -60,6 +60,8 @@ while (rest.length > 0) {
                 const v = getParam('v', text);
                 tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
               }
+            } else if (url.hostname.endsWith("twitter.com")) {
+              tokens.push({ type: "twitter", href: text, src: encodeURI(text), content: decodeURI(text) });
             } else {
               tokens.push({ type: "link", href: text, content: decodeURI(text) });
             }
@@ -148,6 +150,12 @@ while (rest.length > 0) {
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen></iframe>
+      </template>
+      <template v-else-if="token?.type === 'twitter'">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+          {{ token.content }}
+        </a>
+        <iframe frameborder="0" width="330" height="600" :src="'https://twitframe.com/show?url=' + token.src"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
