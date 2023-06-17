@@ -66,7 +66,7 @@ const reactionSound = new Audio(reactionMP3);
 
 const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
-const countOfDisplayEvents = 100;
+let countOfDisplayEvents = 100;
 
 pool.subscribe(
   [
@@ -303,6 +303,7 @@ async function login() {
 
   if (myPubkey) {
     logined.value = true;
+    countOfDisplayEvents = 500;
     collectMyRelay();
 
     setTimeout(() => {
