@@ -28,7 +28,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
   }
 }
 
-const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)\S+)/;
+const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
 let rest = props.event.content;
 let tokens: { type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; }[] = [];
