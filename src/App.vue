@@ -611,7 +611,7 @@ setInterval(loggingStatistics, 30 * 1000);
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
-          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"></FeedContent>
+          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote" :is-logined="logined" :post-event="postEvent"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :is-logined="logined" :post-event="postEvent"></FeedFooter>
         </div>
       </div>
