@@ -57,6 +57,10 @@ let firstFetching = true;
 let autoSpeech = ref(false);
 let volume = ref(0.5);
 let searchWords = ref("");
+let playActionSound = ref(true);
+
+import actionMP3 from './assets/action.mp3';
+const actionSound = new Audio(actionMP3);
 
 const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
@@ -337,6 +341,11 @@ async function postEvent(event: nostr.Event) {
   event = await window.nostr?.signEvent(event);
 
   pool.publish(event, normalizeUrls(myWriteRelays));
+
+  if (playActionSound.value) {
+    actionSound.currentTime = 0;
+    actionSound.play();
+  }
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -526,8 +535,9 @@ setInterval(loggingStatistics, 30 * 1000);
           <p class="p-index-intro__text">
             一部箇所で
             <a href="https://awayuki.github.io/emojis.html" target="_blank" class="p-index-intro__text-link">SUSHIYUKI
-              emojis (©awayuki)</a>
-            を利用しています。
+              emojis (©awayuki)</a> や
+            <a href="https://soundeffect-lab.info/" target="_blank" class="p-index-intro__text-link">効果音ラボ</a>
+            の効果音素材を利用しています。
           </p>
           <p class="p-index-intro__text">
             なお、私が管理するNostrリレーの利用規約は
@@ -549,6 +559,17 @@ setInterval(loggingStatistics, 30 * 1000);
               <label for="volume">音量</label>
               <input type="range" id="volume" v-model="volume" min="0" max="1" step="0.1" />
             </div>
+          </div>
+        </div>
+
+        <div class="p-index-speech">
+          <h2 class="p-index-speech__head">効果音</h2>
+          <div class="p-index-speech__body">
+            <label class="p-index-speech-cb" for="speech">
+              <input class="p-index-speech-cb__input" type="checkbox" id="speech" v-model="playActionSound" />
+              <span class="p-index-speech-cb__dummy"></span>
+              <span class="p-index-speech-cb__text-label">アクション音をつける</span>
+            </label>
           </div>
         </div>
 
