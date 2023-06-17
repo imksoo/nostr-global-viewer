@@ -161,7 +161,7 @@ function getProfile(pubkey: string): any {
 
     profiles.value.set(pubkey, {
       pubkey: pubkey,
-      picture: "",
+      picture: "https://placehold.jp/60x60.png",
       display_name: "",
       name: "",
       created_at: 0,
