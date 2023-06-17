@@ -60,7 +60,9 @@ let searchWords = ref("");
 let playActionSound = ref(true);
 
 import actionMP3 from './assets/action.mp3';
+import reactionMP3 from './assets/reaction.mp3';
 const actionSound = new Audio(actionMP3);
+const reactionSound = new Audio(reactionMP3);
 
 const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
@@ -293,6 +295,8 @@ let myPubkey = "";
 let myRelaysCreatedAt = 0;
 let myReadRelays: string[] = [];
 let myWriteRelays: string[] = [];
+let firstReactionFetching = true;
+let firstReactionFetchedRelays = 0;
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? "";
@@ -304,11 +308,31 @@ async function login() {
     setTimeout(() => {
       relayStatus.value = pool.getRelayStatuses();
       pool.subscribe([
-        { kinds: [7], "#p": [myPubkey], limit: 10 }
+        { kinds: [6, 7], "#p": [myPubkey], limit: 10 }
       ],
         normalizeUrls(myReadRelays),
         (ev, _isAfterEose, _relayURL) => {
           addEvent(ev);
+
+          if (
+            !firstReactionFetching &&
+            playActionSound.value &&
+            (ev.kind == 6 || ev.kind == 7) &&
+            reactionSound.paused
+          ) {
+            console.log("reactioned", ev);
+            reactionSound.currentTime = 0;
+            reactionSound.play();
+          }
+        },
+        undefined,
+        () => {
+          firstReactionFetchedRelays++;
+          if (firstReactionFetchedRelays > myReadRelays.length / 2) {
+            setTimeout(() => {
+              firstReactionFetching = false;
+            }, 10 * 1000);
+          }
         }
       );
     }, 1000);
@@ -533,9 +557,8 @@ setInterval(loggingStatistics, 30 * 1000);
               target="_blank">GitHub</a>にあります。
           </p>
           <p class="p-index-intro__text">
-            一部箇所で
             <a href="https://awayuki.github.io/emojis.html" target="_blank" class="p-index-intro__text-link">SUSHIYUKI
-              emojis (©awayuki)</a> や
+              emojis (©awayuki)</a> の絵文字素材や
             <a href="https://soundeffect-lab.info/" target="_blank" class="p-index-intro__text-link">効果音ラボ</a>
             の効果音素材を利用しています。
           </p>
@@ -568,7 +591,7 @@ setInterval(loggingStatistics, 30 * 1000);
             <label class="p-index-speech-cb" for="sound">
               <input class="p-index-speech-cb__input" type="checkbox" id="sound" v-model="playActionSound" />
               <span class="p-index-speech-cb__dummy"></span>
-              <span class="p-index-speech-cb__text-label">アクション音をつける</span>
+              <span class="p-index-speech-cb__text-label">効果音を鳴らす</span>
             </label>
           </div>
         </div>
