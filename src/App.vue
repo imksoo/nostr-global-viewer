@@ -565,8 +565,8 @@ setInterval(loggingStatistics, 30 * 1000);
         <div class="p-index-speech">
           <h2 class="p-index-speech__head">効果音</h2>
           <div class="p-index-speech__body">
-            <label class="p-index-speech-cb" for="speech">
-              <input class="p-index-speech-cb__input" type="checkbox" id="speech" v-model="playActionSound" />
+            <label class="p-index-speech-cb" for="sound">
+              <input class="p-index-speech-cb__input" type="checkbox" id="sound" v-model="playActionSound" />
               <span class="p-index-speech-cb__dummy"></span>
               <span class="p-index-speech-cb__text-label">アクション音をつける</span>
             </label>
