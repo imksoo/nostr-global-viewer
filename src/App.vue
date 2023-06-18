@@ -308,7 +308,7 @@ async function login() {
 
   if (myPubkey) {
     logined.value = true;
-    countOfDisplayEvents = 500;
+    countOfDisplayEvents *= 2;
     collectMyRelay();
 
     setTimeout(() => {
