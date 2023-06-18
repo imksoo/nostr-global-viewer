@@ -52,6 +52,7 @@ let profileRelays = [
 
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
+const eventsReceived = new Set<string>();
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -104,7 +105,11 @@ pool.subscribe(
 );
 
 function addEvent(event: nostr.Event): void {
-  eventsToSearch.value.push(event);
+  if (eventsReceived.has(event.id)) {
+    return;
+  }
+  eventsReceived.add(event.id);
+  eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
   eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   search();
   if (
@@ -136,7 +141,7 @@ function collectEvents() {
     return;
   }
 
-  const eventIds = Array.from(cacheMissHitEventIds);
+  const eventIds = Array.from(cacheMissHitEventIds).filter((e) => (!eventsReceived.has(e)));
   cacheMissHitEventIds.clear();
 
   pool.subscribe(
@@ -319,7 +324,8 @@ async function login() {
             !firstReactionFetching &&
             playActionSound.value &&
             (ev.kind == 6 || ev.kind == 7) &&
-            reactionSound.paused
+            reactionSound.paused &&
+            events.value[events.value.length - 1].created_at < ev.created_at
           ) {
             console.log("reactioned", ev);
             reactionSound.currentTime = 0;
@@ -345,12 +351,10 @@ async function post() {
   if (!note) {
     return;
   }
-  let event = {
-    kind: 1,
-    tags: [],
-    content: note.value,
-    created_at: Math.floor(Date.now() / 1000),
-  };
+  let event = nostr.getBlankEvent(nostr.Kind.Text);
+  event.content = note.value;
+  event.created_at = Math.floor(Date.now() / 1000)
+
   // @ts-ignore
   event = await window.nostr?.signEvent(event);
 
@@ -358,6 +362,9 @@ async function post() {
   postEvent(event);
   isPostOpen.value = false;
   note.value = "";
+
+  // @ts-ignore
+  addEvent(event);
 }
 
 async function postEvent(event: nostr.Event) {
@@ -419,20 +426,6 @@ function checkSend(event: KeyboardEvent) {
 function search() {
   events.value = eventsToSearch.value.filter((e) => {
     return searchSubstring(e.content, searchWords.value);
-  });
-  events.value.sort((a, b) => {
-    return a.created_at === b.created_at
-      ? a.id === b.id
-        ? 0
-        : a.id < b.id
-          ? 1
-          : -1
-      : a.created_at < b.created_at
-        ? 1
-        : -1;
-  });
-  events.value = events.value.filter((event, index, array) => {
-    return index === 0 || event.id !== array[index - 1].id;
   });
   events.value = events.value.slice(0, countOfDisplayEvents);
   if (events.value.length === 0) {
@@ -612,7 +605,8 @@ setInterval(loggingStatistics, 30 * 1000);
         <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
-          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote" :is-logined="logined" :post-event="postEvent"></FeedContent>
+          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
+            :is-logined="logined" :post-event="postEvent"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :is-logined="logined" :post-event="postEvent"></FeedFooter>
         </div>
       </div>
