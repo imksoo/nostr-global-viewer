@@ -488,14 +488,7 @@ setInterval(() => {
 }, 1000);
 
 function normalizeUrls(urls: string[]): string[] {
-  return urls.map((url) => {
-    let urlObject = new URL(url);
-    // If there's no pathname, add a slash
-    if (urlObject.pathname === "") {
-      urlObject.pathname = "/";
-    }
-    return urlObject.toString();
-  });
+  return urls.map((url) => (nostr.utils.normalizeURL(url)));
 }
 
 function appVersion() {
