@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from "vue";
+import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
@@ -490,6 +490,24 @@ setInterval(() => {
 function normalizeUrls(urls: string[]): string[] {
   return urls.map((url) => (nostr.utils.normalizeURL(url)));
 }
+
+function handleKeydownShortcuts(e: KeyboardEvent): void {
+  const target = e.target as HTMLElement;
+  if ( target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea' ) {
+    return;
+  }
+  if (e.key === 'n' && logined.value && !isPostOpen.value) {
+    isPostOpen.value = true;
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydownShortcuts);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', handleKeydownShortcuts);
+})
 
 function appVersion() {
   // @ts-ignore
