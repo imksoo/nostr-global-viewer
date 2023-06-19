@@ -77,7 +77,7 @@ pool.subscribe(
     },
   ],
   feedRelays,
-  (ev, _isAfterEose, _relayURL) => {
+  async (ev, _isAfterEose, _relayURL) => {
     addEvent(ev);
   },
   undefined,
@@ -99,7 +99,7 @@ pool.subscribe(
     },
   ],
   ["wss://yabu.me/"],
-  (ev, _isAfterEose, _relayURL) => {
+  async (ev, _isAfterEose, _relayURL) => {
     addEvent(ev);
   }
 );
@@ -136,7 +136,7 @@ function getEvent(id: string): nostr.Event | undefined {
   return event;
 }
 
-function collectEvents() {
+async function collectEvents() {
   if (!oldEventCacheMismatch) {
     return;
   }
@@ -151,9 +151,9 @@ function collectEvents() {
       },
     ],
     normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
-    (ev, _isAfterEose, _relayURL) => {
+    async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
-    }
+    },
   );
 }
 setInterval(collectEvents, 1000);
@@ -193,7 +193,7 @@ function getProfile(pubkey: string): any {
   return profiles.value.get(pubkey);
 }
 
-function collectProfiles() {
+async function collectProfiles() {
   if (!oldProfileCacheMismatch) {
     return;
   }
@@ -215,7 +215,7 @@ function collectProfiles() {
       },
     ],
     normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
-    (ev, _isAfterEose, _relayURL) => {
+    async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
         if (
@@ -235,7 +235,7 @@ function collectProfiles() {
       }
     },
     undefined,
-    () => {
+    async () => {
       oldProfileCacheMismatch = false;
 
       // ローカルストレージにプロフィール情報を保存しておく
@@ -317,7 +317,7 @@ async function login() {
         { kinds: [6, 7], "#p": [myPubkey], limit: 10 }
       ],
         normalizeUrls(myReadRelays),
-        (ev, _isAfterEose, _relayURL) => {
+        async (ev, _isAfterEose, _relayURL) => {
           addEvent(ev);
 
           if (
@@ -333,7 +333,7 @@ async function login() {
           }
         },
         undefined,
-        () => {
+        async () => {
           firstReactionFetchedRelays++;
           if (firstReactionFetchedRelays > myReadRelays.length / 2) {
             setTimeout(() => {
