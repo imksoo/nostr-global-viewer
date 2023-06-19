@@ -1,42 +1,6 @@
 <script setup lang="ts">
 import * as Nostr from "nostr-tools";
 
-function getReplyUsers(event: Nostr.Event) {
-  const parsedTags = Nostr.nip10.parse(event);
-  const users = [];
-  for (let i = 0; i < parsedTags.profiles.length; ++i) {
-    const p = parsedTags.profiles[i];
-    if (props.getProfile) {
-      const prof = props.getProfile(p.pubkey);
-      if (prof) {
-        users.push(prof);
-      }
-    }
-  }
-  return users;
-}
-
-function getReplyMentions(event: Nostr.Event) {
-  const parsedTags = Nostr.nip10.parse(event);
-  let mentions = [];
-  if (parsedTags.root) {
-    const e = parsedTags.root;
-    mentions.push(e);
-  }
-  for (let i = 0; i < parsedTags.mentions.length; ++i) {
-    const m = parsedTags.mentions[i];
-    mentions.push(m);
-  }
-  if (parsedTags.reply) {
-    const e = parsedTags.reply;
-    mentions.push(e);
-  }
-  mentions = mentions.filter((m, i, a) => {
-    return i === 0 || m.id !== a[i - 1].id;
-  })
-  return mentions;
-}
-
 function getUserLink(pubkey: string): string {
   if (pubkey) {
     try {
@@ -73,43 +37,34 @@ const props = defineProps({
   },
   getProfile: {
     type: Function,
-    require: true,
+    required: true,
   },
   getEvent: {
     type: Function,
     required: true,
-  }
+  },
 });
 </script>
 <template>
-  <p class="c-feed-reply" v-if="getReplyUsers(props.event)">
-    <span v-for="(u, index) in getReplyUsers(props.event)" :key="index">
-      <template v-if="index == 0">ユーザー </template>
-      <a target="_blank" v-bind:href="getUserLink(u.pubkey)">
-        <img :src="u.picture" class="c-feed-reply-picture" />
+  <p class="c-feed-reply" v-for="(tag, index) in props.event.tags" :key="index">
+    <template v-if="tag[0] === 'p'">
+      ユーザー <a target="_blank" v-bind:href="getUserLink(tag[1])">
+        <img :src="tag[0].picture" class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
-            u.display_name ||
-            u.name ||
-            u.pubkey.substring(u.pubkey.length - 8)
-
+            props.getProfile(tag[1]).display_name ||
+            props.getProfile(tag[1]).name ||
+            props.getProfile(tag[1]).pubkey.substring(props.getProfile(tag[1]).pubkey.length - 8)
           }}
         </span>
-      </a>
-      <template v-if="index != getReplyUsers(props.event).length - 1"> と </template>
-      <template v-if="index == getReplyUsers(props.event).length - 1"> への返信</template>
-    </span>
-  </p>
-  <p class="c-feed-reply" v-if="getReplyMentions(props.event).length">
-    <span v-for="(p, index) in getReplyMentions(props.event)" :key="index">
-      <template v-if="index == 0">投稿: </template>
-      <a target="_blank" v-bind:href="getEventLink(p.id)">
-        <span class="c-feed-reply-link" v-if="getEvent(p.id)?.content">{{ getEvent(p.id)?.content }}</span>
-        <span class="c-feed-reply-link" v-else>{{ p.id.substring(p.id.length - 8) }}</span>
-      </a>
-      <template v-if="index != getReplyMentions(props.event).length - 1"> と </template>
-      <template v-if="index == getReplyMentions(props.event).length - 1"> への返信</template>
-    </span>
+      </a> への返信
+    </template>
+    <template v-else-if="tag[0] === 'e'">
+      投稿 <a target="_blank" v-bind:href="getEventLink(tag[1])">
+        <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{ getEvent(tag[1])?.content }}</span>
+        <span class="c-feed-reply-link" v-else>{{ tag[1].substring(tag[1].length - 8) }}</span>
+      </a> <span v-if="tag.length > 3">({{ tag[3] }})</span> への返信
+    </template>
   </p>
 </template>
 <style lang="scss" scoped>
