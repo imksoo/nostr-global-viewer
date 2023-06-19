@@ -46,15 +46,15 @@ const props = defineProps({
 });
 </script>
 <template>
-  <p class="c-feed-reply" v-for="(tag, index) in props.event.tags" :key="index">
+  <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー <a target="_blank" v-bind:href="getUserLink(tag[1])">
-        <img :src="tag[0].picture" class="c-feed-reply-picture" />
+        <img :src="getProfile(tag[1]).picture" class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
-            props.getProfile(tag[1]).display_name ||
-            props.getProfile(tag[1]).name ||
-            props.getProfile(tag[1]).pubkey.substring(props.getProfile(tag[1]).pubkey.length - 8)
+            getProfile(tag[1]).display_name ||
+            getProfile(tag[1]).name ||
+            getProfile(tag[1]).pubkey.substring(getProfile(tag[1]).pubkey.length - 8)
           }}
         </span>
       </a> への返信
