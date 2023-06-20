@@ -20,6 +20,20 @@ function getProfileLink(pubkey: string) {
     return ""
   }
 }
+
+function copyNpubId(): void {
+  const text = nostr.nip19.npubEncode(props.profile.pubkey);
+  copyToClipboard(text);
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 </script>
 <template>
   <div class="c-feed-profile">
@@ -39,12 +53,19 @@ function getProfileLink(pubkey: string) {
         @{{ props.profile.name ?? "" }}
       </span>
     </a>
+    <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
+      <mdicon name="content-copy" :width="16" :height="16" title="Copy npub string" />
+    </span>
   </div>
 </template>
 <style lang="scss" scoped>
 .c-feed-profile {
   display: flex;
   gap: 10px;
+
+  &-copy-button {
+    color: #213547;
+  }
 }
 
 .c-feed-profile__avatar {

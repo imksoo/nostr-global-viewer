@@ -346,13 +346,13 @@ async function login() {
   }
 }
 
-let note = ref("");
+let draftEvent = ref(nostr.getBlankEvent(nostr.Kind.Text));
 async function post() {
-  if (!note) {
+  if (!draftEvent.value.content) {
     return;
   }
   let event = nostr.getBlankEvent(nostr.Kind.Text);
-  event.content = note.value;
+  event.content = draftEvent.value.content;
   event.created_at = Math.floor(Date.now() / 1000)
 
   // @ts-ignore
@@ -361,7 +361,7 @@ async function post() {
   // @ts-ignore
   postEvent(event);
   isPostOpen.value = false;
-  note.value = "";
+  draftEvent.value.content = "";
 
   // @ts-ignore
   addEvent(event);
@@ -493,7 +493,7 @@ function normalizeUrls(urls: string[]): string[] {
 
 function handleKeydownShortcuts(e: KeyboardEvent): void {
   const target = e.target as HTMLElement;
-  if ( target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea' ) {
+  if (target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea') {
     return;
   }
   if (e.key === 'n' && logined.value && !isPostOpen.value) {
@@ -637,9 +637,10 @@ setInterval(loggingStatistics, 30 * 1000);
         </button>
       </div>
       <FeedProfile v-bind:profile="getProfile(myPubkey)"></FeedProfile>
+      <FeedReplies v-bind:event="draftEvent" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
-          <textarea class="i-note" id="note" rows="8" v-model="note" ref="noteTextarea"
+          <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
             }

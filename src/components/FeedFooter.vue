@@ -67,28 +67,51 @@ function repostEvent(reposted: Nostr.Event) {
   isReposted.value = true;
 }
 
+function copyNoteId(): void {
+  const text = Nostr.nip19.noteEncode(props.event.id);
+  copyToClipboard(text);
+}
+
+async function copyToClipboard(text: string) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (err) {
+    console.log(err);
+  }
+}
+
 </script>
 <template>
   <div class="c-feed-footer">
     <p class="c-feed-speak">
       <span @click="(_$event) => props.speakNote(props.event, 0)" v-if="props.event.kind == 1">
-        <mdicon name="play" />読み上げ
+        <mdicon name="play" :height="14" />読み上げ
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
       <span @click="(_$event) => { repostEvent(props.event) }">
-        <mdicon name="multicast" />りぽすと
+        <mdicon name="multicast" :height="14" />りぽすと
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
       <span @click="(_$event) => { favEvent(props.event) }">
-        <mdicon name="star-shooting" />ふぁぼ
+        <mdicon name="star-shooting" :height="14" />ふぁぼ
+      </span>
+    </p>
+    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-reply': true }">
+      <span onclick="alert('待って♡')">
+        <mdicon name="reply" :height="14" />りぷらい
       </span>
     </p>
     <p class="c-feed-date">
-      <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id)
-        ">
-        {{ new Date(props.event.created_at * 1000).toLocaleString() }}</a>
+      <span>
+        <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id)">
+          {{ new Date(props.event.created_at * 1000).toLocaleString() }}
+        </a>
+      </span>
+      <span class="c-feed-date-copy-button" @click="(_$event) => { copyNoteId(); }">
+        <mdicon name="content-copy" :width="16" :height="16" title="Copy note id" />
+      </span>
     </p>
   </div>
 </template>
@@ -100,20 +123,11 @@ function repostEvent(reposted: Nostr.Event) {
   width: 100%;
 }
 
-.c-feed-speak {
-  vertical-align: middle;
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  text-align: left;
-  color: #213547;
+.c-feed-footer p {
+  margin: 0.7em 0 0.2em 0;
 }
 
-.c-feed-repost {
-  vertical-align: middle;
+.c-feed {
   font-size: 14px;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -121,36 +135,37 @@ function repostEvent(reposted: Nostr.Event) {
   padding: 0.4rem 0 0 0;
   margin: 0;
   text-align: left;
-  color: #213547;
 
-  &-actioned {
-    color: #3faf83;
+  &-speak {
+    color: #213547;
   }
-}
 
-.c-feed-fav {
-  vertical-align: middle;
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  text-align: left;
-  color: #213547;
+  &-repost {
+    color: #213547;
 
-  &-actioned {
-    color: #df3d81;
+    &-actioned {
+      color: #3faf83;
+    }
   }
-}
 
-.c-feed-date {
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  word-break: break-all;
-  padding: 0.4rem 0 0 0;
-  margin: 0;
-  text-align: right;
+  &-fav {
+    color: #213547;
+
+    &-actioned {
+      color: #df3d81;
+    }
+  }
+
+  &-reply {
+    color: #213547;
+  }
+
+  &-date {
+    text-align: right;
+    &-copy-button {
+      margin-left: 0.2em;
+      color: #213547;
+    }
+  }
 }
 </style>
