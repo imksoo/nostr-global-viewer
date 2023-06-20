@@ -5,9 +5,7 @@ import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
 
 import { playActionSound, playRectionSound } from './hooks/usePlaySound';
-
-import sushiDataJSON from "./assets/sushiyuki.json";
-import mahjongDataJSON from "./assets/mahjong.json";
+import { getRandomProfile } from './hooks/useEmojiProfiles';
 
 import RelayStatus from "./components/RelayStatus.vue";
 import FeedProfile from "./components/FeedProfile.vue";
@@ -22,12 +20,6 @@ const sushiMode = computed(() => {
 const mahjongMode = computed(() => {
   return route.query.mahjong === "on";
 });
-const sushiData = ref(sushiDataJSON);
-const sushiDataLength = sushiData.value.length;
-const mahjongData = ref(mahjongDataJSON);
-const mahjongDataLength = mahjongData.value.length;
-const profileRandom = new Date().getUTCDate() + new Date().getUTCMonth();
-
 const pool = new RelayPool(undefined, {
   autoReconnect: true,
   logErrorsAndNotices: true,
@@ -162,7 +154,15 @@ const profiles = ref(
 let oldProfileCacheMismatch = false;
 let cacheMissHitPubkeys: string[] = [];
 
-function getProfile(pubkey: string): any {
+type Profile = {
+  pubkey: string,
+  picture: string,
+  display_name: string,
+  name: string,
+  created_at: Number,
+};
+
+function getProfile(pubkey: string): Profile {
   if (!profiles.value.has(pubkey)) {
     oldProfileCacheMismatch = true;
     cacheMissHitPubkeys.push(pubkey);
@@ -175,17 +175,8 @@ function getProfile(pubkey: string): any {
       created_at: 0,
     });
   }
-  const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
-  const characters = [...sushiData.value, ...mahjongData.value];
-  if (sushiMode.value && mahjongMode.value) {
-    const randomNumber = pubkeyNumber % (sushiDataLength + mahjongDataLength);
-    return characters[randomNumber];
-  } else if (sushiMode.value) {
-    const randomNumber = pubkeyNumber % (sushiDataLength);
-    return sushiData.value[randomNumber];
-  } else if (mahjongMode.value) {
-    const randomNumber = pubkeyNumber % (mahjongDataLength);
-    return mahjongData.value[randomNumber];
+  if (sushiMode.value || mahjongMode.value) {
+    return getRandomProfile(pubkey, sushiMode.value, mahjongMode.value);
   }
   return profiles.value.get(pubkey);
 }
