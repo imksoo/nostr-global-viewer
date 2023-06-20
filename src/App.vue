@@ -6,7 +6,7 @@ import { useRoute } from "vue-router";
 
 import { playActionSound, playRectionSound } from './hooks/usePlaySound';
 import { getRandomProfile } from './hooks/useEmojiProfiles';
-import { speakNote, volume as utterVolume } from './hooks/useSpeakNote';
+import { speakNote } from './hooks/useSpeakNote';
 
 import IndexTitleControl from "./components/IndexTitleControl.vue";
 import IndexIntroControl from "./components/IndexIntroControl.vue";
@@ -300,24 +300,18 @@ async function post() {
   if (!draftEvent.value.content) {
     return;
   }
-  let event = nostr.getBlankEvent(nostr.Kind.Text);
-  event.content = draftEvent.value.content;
-  event.created_at = Math.floor(Date.now() / 1000)
+
+  const ev = JSON.parse(JSON.stringify(draftEvent.value));
+  ev.created_at = Math.floor(Date.now() / 1000);
 
   // @ts-ignore
-  event = await window.nostr?.signEvent(event);
-
-  // @ts-ignore
-  postEvent(event);
+  await postEvent(ev);
+  
   isPostOpen.value = false;
   draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
-
-  // @ts-ignore
-  addEvent(event);
 }
 
 async function postEvent(event: nostr.Event) {
-  event.pubkey = myPubkey;
   // @ts-ignore
   event = await window.nostr?.signEvent(event);
 
@@ -326,6 +320,8 @@ async function postEvent(event: nostr.Event) {
   if (soundEffect.value) {
     playActionSound();
   }
+
+  addEvent(event);
 }
 
 function openReplyPost(reply: nostr.Event): void {
@@ -546,8 +542,7 @@ setInterval(loggingStatistics, 30 * 1000);
           <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
-            }
-              "></textarea>
+            }"></textarea>
         </div>
         <div class="p-index-post__post-btn">
           <input class="b-post" type="button" value="投稿" v-on:click="post()" />
