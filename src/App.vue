@@ -310,7 +310,7 @@ async function post() {
   // @ts-ignore
   postEvent(event);
   isPostOpen.value = false;
-  draftEvent.value.content = "";
+  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
 
   // @ts-ignore
   addEvent(event);
@@ -326,6 +326,41 @@ async function postEvent(event: nostr.Event) {
   if (soundEffect.value) {
     playActionSound();
   }
+}
+
+function openReplyPost(reply: nostr.Event): void {
+  // 投稿欄をすべて空っぽにする
+  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
+  const parsedTags = nostr.nip10.parse(reply);
+  if (parsedTags.root) {
+    draftEvent.value.tags.push(['e', parsedTags.root.id, "", "root"]);
+  }
+  for (let i = 0; i < parsedTags.mentions.length; ++i) {
+    const e = parsedTags.mentions[i];
+
+    // Damusみたいに古い形式だとrootリプライがないので、最初の1個目をrootとしてみなす
+    if (i == 0 && !parsedTags.root) {
+      draftEvent.value.tags.push(['e', e.id, "", "root"]);
+    } else {
+      draftEvent.value.tags.push(['e', e.id, ""]);
+    }
+  }
+  if (parsedTags.reply) {
+    draftEvent.value.tags.push(['e', parsedTags.reply.id]);
+  }
+  if (draftEvent.value.tags.length) {
+    draftEvent.value.tags.push(['e', reply.id, "", "reply"]);
+  } else {
+    draftEvent.value.tags.push(['e', reply.id, "", "root"]);
+  }
+
+  for (let i = 0; i < parsedTags.profiles.length; ++i) {
+    const p = parsedTags.profiles[i];
+    draftEvent.value.tags.push(['p', p.pubkey]);
+  }
+  draftEvent.value.tags.push(['p', reply.pubkey]);
+
+  isPostOpen.value = true;
 }
 
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
@@ -484,9 +519,9 @@ setInterval(loggingStatistics, 30 * 1000);
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
-            :volume="volume" :is-logined="logined" :post-event="postEvent"></FeedContent>
+            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile"></FeedFooter>
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"></FeedFooter>
         </div>
       </div>
     </div>

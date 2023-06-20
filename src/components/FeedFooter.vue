@@ -28,6 +28,10 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  openReplyPost: {
+    type: Function,
+    required: true,
+  },
 });
 
 let isFavorited = ref(false);
@@ -107,7 +111,7 @@ async function copyToClipboard(text: string) {
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-reply': true }">
-      <span onclick="alert('待って♡')">
+      <span @click="(_$event) => { openReplyPost(props.event) }">
         <mdicon name="reply" :height="14" />りぷらい
       </span>
     </p>
