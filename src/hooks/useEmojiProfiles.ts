@@ -15,7 +15,7 @@ type Profile = {
   picture: string,
   display_name: string,
   name: string,
-  created_at: Number,
+  created_at: number,
 };
 
 export function getRandomProfile(pubkey: string, sushiMode: Boolean = true, mahjongMode: Boolean = true): Profile {

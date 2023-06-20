@@ -8,8 +8,16 @@ const props = defineProps({
     type: Nostr.Event,
     required: true,
   },
+  getProfile: {
+    type: Function,
+    required: true,
+  },
   speakNote: {
     type: Function,
+    required: true,
+  },
+  volume : {
+    type: Number,
     required: true,
   },
   isLogined: {
@@ -84,7 +92,7 @@ async function copyToClipboard(text: string) {
 <template>
   <div class="c-feed-footer">
     <p class="c-feed-speak">
-      <span @click="(_$event) => props.speakNote(props.event, 0)" v-if="props.event.kind == 1">
+      <span @click="(_$event) => props.speakNote(props.event, props.getProfile(props.event.pubkey), props.volume)" v-if="props.event.kind == 1">
         <mdicon name="play" :height="14" />読み上げ
       </span>
     </p>
