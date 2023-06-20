@@ -4,6 +4,8 @@ import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
 
+import { playActionSound, playRectionSound } from './hooks/usePlaySound';
+
 import sushiDataJSON from "./assets/sushiyuki.json";
 import mahjongDataJSON from "./assets/mahjong.json";
 
@@ -58,12 +60,7 @@ let firstFetching = true;
 let autoSpeech = ref(false);
 let volume = ref(0.5);
 let searchWords = ref("");
-let playActionSound = ref(true);
-
-import actionMP3 from './assets/action.mp3';
-import reactionMP3 from './assets/reaction.mp3';
-const actionSound = new Audio(actionMP3);
-const reactionSound = new Audio(reactionMP3);
+let soundEffect = ref(true);
 
 const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
@@ -322,14 +319,12 @@ async function login() {
 
           if (
             !firstReactionFetching &&
-            playActionSound.value &&
+            soundEffect.value &&
             (ev.kind == 6 || ev.kind == 7) &&
-            reactionSound.paused &&
             events.value[events.value.length - 1].created_at < ev.created_at
           ) {
             console.log("reactioned", ev);
-            reactionSound.currentTime = 0;
-            reactionSound.play();
+            playRectionSound();
           }
         },
         undefined,
@@ -374,9 +369,8 @@ async function postEvent(event: nostr.Event) {
 
   pool.publish(event, normalizeUrls(myWriteRelays));
 
-  if (playActionSound.value) {
-    actionSound.currentTime = 0;
-    actionSound.play();
+  if (soundEffect.value) {
+    playActionSound();
   }
 }
 
@@ -594,7 +588,7 @@ setInterval(loggingStatistics, 30 * 1000);
           <h2 class="p-index-speech__head">効果音</h2>
           <div class="p-index-speech__body">
             <label class="p-index-speech-cb" for="sound">
-              <input class="p-index-speech-cb__input" type="checkbox" id="sound" v-model="playActionSound" />
+              <input class="p-index-speech-cb__input" type="checkbox" id="sound" v-model="soundEffect" />
               <span class="p-index-speech-cb__dummy"></span>
               <span class="p-index-speech-cb__text-label">効果音を鳴らす</span>
             </label>
