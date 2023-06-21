@@ -296,6 +296,7 @@ async function login() {
 }
 
 let draftEvent = ref(nostr.getBlankEvent(nostr.Kind.Text));
+let editingTags = ref(nostr.getBlankEvent(nostr.Kind.Text));
 async function post() {
   if (!draftEvent.value.content) {
     return;
@@ -306,7 +307,7 @@ async function post() {
 
   // @ts-ignore
   await postEvent(ev);
-  
+
   isPostOpen.value = false;
   draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
 }
@@ -366,6 +367,53 @@ watch(isPostOpen, async (isPostOpened) => {
     noteTextarea.value?.focus();
   }
 });
+
+function extractTags() {
+  editingTags.value.tags = [];
+  const regexNostrStr = /@?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/g
+  const nostrStr = draftEvent.value.content.match(regexNostrStr);
+  if (nostrStr?.length) {
+    for (let i = 0; i < nostrStr.length; ++i) {
+      const ns = nostrStr[i];
+      try {
+        const d = nostr.nip19.decode(ns.replace('@',''));
+        switch (d.type) {
+          case "nevent": {
+            editingTags.value.tags.push(['e', d.data.id])
+          } break;
+          case "note": {
+            editingTags.value.tags.push(['e', d.data])
+          } break;
+          case "nprofile": {
+            editingTags.value.tags.push(['p', d.data.pubkey]);
+          } break;
+          case "npub": {
+            editingTags.value.tags.push(['p', d.data]);
+          }
+        }
+      } catch (err) {
+        ;
+      }
+    }
+  }
+  const regexHashTag = /#[^\s!@#$%^&*()=+./,\[{\]};:'"?><]+/g;
+  const hashTags = draftEvent.value.content.match(regexHashTag);
+  if (hashTags?.length) {
+    for (let i = 0; i < hashTags?.length; ++i) {
+      const t = hashTags[i];
+      editingTags.value.tags.push(['t', t]);
+    }
+  }
+
+  const regexURL = /https?:\/\/\S+/g;
+  const urls = draftEvent.value.content.match(regexURL);
+  if ( urls?.length ) {
+    for ( let i = 0; i < urls.length; ++ i ) {
+      const u = urls[i];
+      editingTags.value.tags.push(['r', u]);
+    }
+  }
+}
 
 function collectMyRelay() {
   pool.subscribe(
@@ -537,12 +585,14 @@ setInterval(loggingStatistics, 30 * 1000);
       </div>
       <FeedProfile v-bind:profile="getProfile(myPubkey)"></FeedProfile>
       <FeedReplies v-bind:event="draftEvent" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
+      <FeedReplies v-bind:event="editingTags" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
+      <span class="p-index-post__help">メンションしたいときは@マークの後にnpub文字列を貼り付けてください。<br />引用リポストするときは@noteで投稿IDを貼り付けてください。</span>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
-            }"></textarea>
+            }" v-on:input="extractTags"></textarea>
         </div>
         <div class="p-index-post__post-btn">
           <input class="b-post" type="button" value="投稿" v-on:click="post()" />
@@ -562,5 +612,9 @@ setInterval(loggingStatistics, 30 * 1000);
   border-radius: 4px;
   box-sizing: border-box;
   padding: 10px;
+}
+
+.p-index-post__help {
+  color: #050a30;
 }
 </style>
