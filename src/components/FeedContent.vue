@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue';
 import * as Nostr from "nostr-tools";
 
 import FeedProfile from "./FeedProfile.vue";
@@ -47,6 +48,37 @@ for (let i = 0; i < props.event.tags.length; ++i) {
     emojiMap.set(tag[1], tag[2]);
   }
 }
+
+const twitterSources: string[] = [];
+const twitterIframes = ref<HTMLIFrameElement[]>([]);
+
+const onIframeLoad = (event: Event) => {
+  const iframe = event.target as HTMLIFrameElement;
+  twitterIframes.value.push(iframe);
+  iframe.contentWindow?.postMessage(
+    { element: iframe.src, query: 'height' },
+    'https://twitframe.com'
+  );
+}
+
+const handleMessage = (evt: MessageEvent) => {
+  if (evt.origin !== 'https://twitframe.com') {
+    return;
+  } else if (evt.data.height) {
+    const targetIframe = twitterIframes.value.find(iframe => iframe.src === evt.data.element);
+    if (targetIframe) {
+      targetIframe.style.height = `${parseInt(evt.data.height)}px`;
+    }
+  }
+};
+
+onMounted(() => {
+  window.addEventListener('message', handleMessage);
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('message', handleMessage);
+})
 
 const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
@@ -98,7 +130,9 @@ while (rest.length > 0) {
                 tokens.push({ type: "youtube", href: v, content: decodeURI(text) });
               }
             } else if (url.hostname.endsWith("twitter.com")) {
-              tokens.push({ type: "twitter", href: text, src: encodeURI(text), content: decodeURI(text) });
+              const src = encodeURI(text);
+              twitterSources.push(src);
+              tokens.push({ type: "twitter", href: text, src, content: decodeURI(text) });
             } else {
               tokens.push({ type: "link", href: text, content: decodeURI(text) });
             }
@@ -196,7 +230,8 @@ while (rest.length > 0) {
           {{ token.content }}
         </a>
         <br />
-        <iframe frameborder="0" width="330" height="600" :src="'https://twitframe.com/show?url=' + token.src"></iframe>
+        <iframe frameborder="0" width="330" height="600" :src="'https://twitframe.com/show?url=' + token.src"
+          @load="onIframeLoad"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
@@ -207,11 +242,13 @@ while (rest.length > 0) {
         <div class="c-feed-content-repost">
           <template v-if="props.getEvent(token.id)">
             <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
-            <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote" :volume="props.volume"
-              :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile" :open-reply-post="props.openReplyPost">
+            <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
+              :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
+              :get-profile="props.getProfile" :open-reply-post="props.openReplyPost">
             </FeedContent>
             <FeedFooter v-bind:event="props.getEvent(token.id)" :speak-note="props.speakNote" :volume="volume"
-              :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"></FeedFooter>
+              :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile"
+              :open-reply-post="props.openReplyPost"></FeedFooter>
           </template>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
@@ -222,9 +259,10 @@ while (rest.length > 0) {
       </template>
       <template v-else-if="token?.type === 'nostr-npub'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-          <img :src="token.picture ? token.picture : 'https://placehold.jp/60x60.png'" class="c-feed-content-profile-picture" />{{
-            token?.content
-          }}</a>
+          <img :src="token.picture ? token.picture : 'https://placehold.jp/60x60.png'"
+            class="c-feed-content-profile-picture" />{{
+              token?.content
+            }}</a>
       </template>
       <template v-else-if="token?.type === 'img'">
         <a :href="token.src" target="_blank" referrerpolicy="no-referrer">
