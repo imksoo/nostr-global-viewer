@@ -302,6 +302,8 @@ async function post() {
     return;
   }
 
+  draftEvent.value.tags = draftEvent.value.tags.concat(editingTags.value.tags);
+
   const ev = JSON.parse(JSON.stringify(draftEvent.value));
   ev.created_at = Math.floor(Date.now() / 1000);
 
