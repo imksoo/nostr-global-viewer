@@ -49,7 +49,7 @@ const props = defineProps({
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー <a target="_blank" v-bind:href="getUserLink(tag[1])">
-        <img :src="getProfile(tag[1]).picture" class="c-feed-reply-picture" />
+        <img :src="getProfile(tag[1]).picture ? getProfile(tag[1]).picture : 'https://placehold.jp/60x60.png'" class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
             getProfile(tag[1]).display_name ||

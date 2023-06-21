@@ -222,7 +222,7 @@ while (rest.length > 0) {
       </template>
       <template v-else-if="token?.type === 'nostr-npub'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
-          <img :src="token.picture" class="c-feed-content-profile-picture" />{{
+          <img :src="token.picture ? token.picture : 'https://placehold.jp/60x60.png'" class="c-feed-content-profile-picture" />{{
             token?.content
           }}</a>
       </template>

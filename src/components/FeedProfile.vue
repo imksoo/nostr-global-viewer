@@ -38,7 +38,7 @@ async function copyToClipboard(text: string) {
 <template>
   <div class="c-feed-profile">
     <p class="c-feed-profile__avatar">
-      <img class="c-feed-profile__picture" v-bind:src="props.profile.picture ?? 'https://placehold.jp/60x60.png'"
+      <img class="c-feed-profile__picture" v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/60x60.png'"
         referrerpolicy="no-referrer" />
     </p>
     <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)" class="c-feed-profile__detail">
