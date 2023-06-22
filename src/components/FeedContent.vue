@@ -80,6 +80,18 @@ onBeforeUnmount(() => {
   window.removeEventListener('message', handleMessage);
 })
 
+let isHidden = ref(false);
+let isNIP36 = ref(false);
+let reasonOfNIP36 = ref('');
+for (let i = 0; i < props.event.tags.length; ++i) {
+  const tag = props.event.tags[i];
+  if (tag[0] === 'content-warning') {
+    isHidden.value = true;
+    isNIP36.value = true;
+    reasonOfNIP36 = tag[1] ? tag[1] : "Content Warning (NIP36)";
+  }
+}
+
 const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
 let rest = props.event.content;
@@ -203,7 +215,10 @@ while (rest.length > 0) {
 }
 </script>
 <template>
-  <p class="c-feed-content">
+  <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
+    {{ reasonOfNIP36 }}
+  </button>
+  <p class="c-feed-content" v-if="isHidden != true">
     <template v-for="(token, _index) in tokens" :key="_index">
       <template v-if="token?.type === 'text'">
         <span class="c-feed-content-kind6" v-if="props.event.kind === 6">{{
@@ -319,5 +334,10 @@ while (rest.length > 0) {
   max-height: 1em;
   vertical-align: middle;
   margin-right: 0.3em;
+}
+
+.c-feed-warning {
+  margin: 2em auto 1em auto;
+  background-color: #df3d81;
 }
 </style>
