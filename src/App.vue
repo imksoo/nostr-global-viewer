@@ -265,7 +265,7 @@ async function login() {
     setTimeout(() => {
       relayStatus.value = pool.getRelayStatuses();
       pool.subscribe([
-        { kinds: [6, 7], "#p": [myPubkey], limit: 10 }
+        { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 }
       ],
         normalizeUrls(myReadRelays),
         async (ev, _isAfterEose, _relayURL) => {
@@ -274,7 +274,6 @@ async function login() {
           if (
             !firstReactionFetching &&
             soundEffect.value &&
-            (ev.kind == 6 || ev.kind == 7) &&
             events.value[events.value.length - 1].created_at < ev.created_at
           ) {
             console.log("reactioned", ev);
@@ -316,7 +315,7 @@ async function post() {
 
 async function postEvent(event: nostr.Event) {
   // @ts-ignore
-  event = await window.nostr?.signEvent(event);
+  event = await window.nostr?.signEvent(JSON.parse(JSON.stringify(event)));
 
   pool.publish(event, normalizeUrls(myWriteRelays));
 
