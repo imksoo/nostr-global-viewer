@@ -13,7 +13,7 @@ function appVersion() {
 </script>
 <template>
         <h1 class="p-index-title">
-          <span class="p-index-title__main">Nostr Feeds</span>
+          <span class="p-index-title__main">のぞき窓</span>
           <span class="p-index-title__sub">From
             {{
               feedRelays
