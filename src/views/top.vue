@@ -225,8 +225,8 @@ async function collectProfiles() {
             created_at: ev.created_at,
           };
           profiles.value.set(ev.pubkey, press);
+          pool.publish(ev, feedRelays);
         }
-        pool.publish(ev, feedRelays);
       }
     },
     undefined,
@@ -377,7 +377,7 @@ function extractTags() {
     for (let i = 0; i < nostrStr.length; ++i) {
       const ns = nostrStr[i];
       try {
-        const d = nostr.nip19.decode(ns.replace('@',''));
+        const d = nostr.nip19.decode(ns.replace('@', ''));
         switch (d.type) {
           case "nevent": {
             editingTags.value.tags.push(['e', d.data.id])
@@ -408,8 +408,8 @@ function extractTags() {
 
   const regexURL = /https?:\/\/\S+/g;
   const urls = draftEvent.value.content.match(regexURL);
-  if ( urls?.length ) {
-    for ( let i = 0; i < urls.length; ++ i ) {
+  if (urls?.length) {
+    for (let i = 0; i < urls.length; ++i) {
       const u = urls[i];
       editingTags.value.tags.push(['r', u]);
     }
