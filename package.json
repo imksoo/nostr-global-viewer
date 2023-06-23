@@ -13,6 +13,8 @@
   "dependencies": {
     "@mdi/js": "^7.2.96",
     "@types/vue-router": "^2.0.0",
+    "axios": "^1.4.0",
+    "html-dom-parser": "^4.0.0",
     "mdi-vue": "^3.0.13",
     "nostr-relaypool": "^0.6.28",
     "nostr-tools": "^1.12.0",
