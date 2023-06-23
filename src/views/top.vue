@@ -85,21 +85,6 @@ pool.subscribe(
   }
 );
 
-// 823chan
-pool.subscribe(
-  [
-    {
-      kinds: [1],
-      authors: ["3aa38bf663b6c834a04a6542edf14a81d3223e050c3cc9b7479f8c869c432cf2"],
-      limit: initialNumberOfEventToGet / 10,
-    },
-  ],
-  ["wss://yabu.me/"],
-  async (ev, _isAfterEose, _relayURL) => {
-    addEvent(ev);
-  }
-);
-
 function addEvent(event: nostr.Event): void {
   if (eventsReceived.has(event.id)) {
     return;
@@ -253,6 +238,7 @@ let myReadRelays: string[] = [];
 let myWriteRelays: string[] = [];
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
+let myFollows: string[] = [];
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? "";
@@ -261,37 +247,86 @@ async function login() {
     logined.value = true;
     countOfDisplayEvents *= 2;
     collectMyRelay();
-
     setTimeout(() => {
-      relayStatus.value = pool.getRelayStatuses();
-      pool.subscribe([
-        { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 }
-      ],
-        normalizeUrls(myReadRelays),
-        async (ev, _isAfterEose, _relayURL) => {
-          addEvent(ev);
+      subscribeReactions();
+    }, 1000);
 
-          if (
-            !firstReactionFetching &&
-            soundEffect.value &&
-            events.value[events.value.length - 1].created_at < ev.created_at
-          ) {
-            console.log("reactioned", ev);
-            playRectionSound();
-          }
-        },
-        undefined,
-        async () => {
-          firstReactionFetchedRelays++;
-          if (firstReactionFetchedRelays > myReadRelays.length / 2) {
-            setTimeout(() => {
-              firstReactionFetching = false;
-            }, 10 * 1000);
+    collectFollowsAndSubscribe();
+  }
+}
+
+function collectMyRelay() {
+  pool.subscribe(
+    [
+      {
+        kinds: [3],
+        authors: [myPubkey],
+        limit: 1,
+      },
+    ],
+    profileRelays,
+    (ev, _relayURL) => {
+      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
+        myWriteRelays.slice(0);
+        const content = JSON.parse(ev.content);
+        myRelaysCreatedAt = ev.created_at;
+        for (const r in content) {
+          myReadRelays.push(r);
+          if (content[r].write) {
+            myWriteRelays.push(r);
           }
         }
-      );
-    }, 1000);
-  }
+      }
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+}
+
+async function collectFollowsAndSubscribe() {
+  const contactList = await pool.fetchAndCacheContactList(myPubkey);
+  myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+
+  pool.subscribe([
+    { kinds: [1], authors: myFollows, limit: 2 },
+  ],
+    normalizeUrls(myReadRelays),
+    async (ev, _isAfterEose, _relayURL) => {
+      addEvent(ev);
+    }
+  );
+}
+
+function subscribeReactions() {
+  relayStatus.value = pool.getRelayStatuses();
+
+  pool.subscribe([
+    { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 },
+  ],
+    normalizeUrls(myReadRelays),
+    async (ev, _isAfterEose, _relayURL) => {
+      addEvent(ev);
+
+      if (
+        !firstReactionFetching &&
+        soundEffect.value &&
+        events.value[events.value.length - 1].created_at < ev.created_at
+      ) {
+        console.log("reactioned", ev);
+        playRectionSound();
+      }
+    },
+    undefined,
+    async () => {
+      firstReactionFetchedRelays++;
+      if (firstReactionFetchedRelays > myReadRelays.length / 2) {
+        setTimeout(() => {
+          firstReactionFetching = false;
+        }, 10 * 1000);
+      }
+    }
+  );
 }
 
 let draftEvent = ref(nostr.getBlankEvent(nostr.Kind.Text));
@@ -414,35 +449,6 @@ function extractTags() {
       editingTags.value.tags.push(['r', u]);
     }
   }
-}
-
-function collectMyRelay() {
-  pool.subscribe(
-    [
-      {
-        kinds: [3],
-        authors: [myPubkey],
-        limit: 1,
-      },
-    ],
-    profileRelays,
-    (ev, _relayURL) => {
-      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
-        myWriteRelays.slice(0);
-        const content = JSON.parse(ev.content);
-        myRelaysCreatedAt = ev.created_at;
-        for (const r in content) {
-          myReadRelays.push(r);
-          if (content[r].write) {
-            myWriteRelays.push(r);
-          }
-        }
-      }
-    },
-    undefined,
-    undefined,
-    { unsubscribeOnEose: true }
-  );
 }
 
 function checkSend(event: KeyboardEvent) {
