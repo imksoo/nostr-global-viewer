@@ -385,9 +385,9 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-ogp-image {
-  max-width: 160px;
-  max-height: 480px;
-  margin: auto 8px;
+  max-width: 25%;
+  max-height: 240px;
+  margin: auto 12px auto 4px;
 }
 
 .c-feed-content-ogp-description {
