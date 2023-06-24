@@ -534,6 +534,10 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     isPostOpen.value = true;
     e.preventDefault();
     e.stopPropagation();
+  } else if ( e.key === 'l' && !logined.value ) {
+    login();
+    e.preventDefault();
+    e.stopPropagation();
   }
 }
 onMounted(() => {
