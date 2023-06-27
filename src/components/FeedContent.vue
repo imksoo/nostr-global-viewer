@@ -3,6 +3,7 @@ import { Ref, onBeforeUnmount, onMounted, ref } from 'vue';
 import * as Nostr from "nostr-tools";
 import axios from 'axios';
 import parser from 'html-dom-parser';
+import Encoding from 'encoding-japanese';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
@@ -112,7 +113,12 @@ if (props.event.kind === 6) {
 
 async function getOgp(url: string, ogp: Ref<{}>) {
   const res = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-  const dom = parser(res.data.contents);
+
+  const coding = Encoding.detect(res.data.contents);
+  console.log(JSON.stringify({ url, coding }));
+  const content = Encoding.convert(res.data.contents, { to: 'UNICODE', from: coding });
+
+  const dom = parser(content);
   const ogTitleMetaTag = findMetaTag(dom, 'og:title');
   const ogTitle = (ogTitleMetaTag && ogTitleMetaTag.type === 'tag') ? ogTitleMetaTag.attribs.content : '';
   const ogImageMetaTag = findMetaTag(dom, 'og:image');
