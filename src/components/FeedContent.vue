@@ -114,9 +114,7 @@ if (props.event.kind === 6) {
 async function getOgp(url: string, ogp: Ref<{}>) {
   const res = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
 
-  const coding = Encoding.detect(res.data.contents);
-  console.log(JSON.stringify({ url, coding }));
-  const content = Encoding.convert(res.data.contents, { to: 'UNICODE', from: coding });
+  const content = Encoding.convert(res.data.contents, { to: 'UNICODE', from: 'AUTO', type: 'string'});
 
   const dom = parser(content);
   const ogTitleMetaTag = findMetaTag(dom, 'og:title');
