@@ -548,7 +548,7 @@ onBeforeUnmount(() => {
 })
 
 function loggingStatistics(): void {
-  console.log({
+  console.log(JSON.stringify{
     eventsToSearchSize: eventsToSearch.value.length,
     profilesSize: profiles.value.size,
   });
