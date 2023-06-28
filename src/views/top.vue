@@ -548,10 +548,10 @@ onBeforeUnmount(() => {
 })
 
 function loggingStatistics(): void {
-  console.log(JSON.stringify{
+  console.log(JSON.stringify({
     eventsToSearchSize: eventsToSearch.value.length,
     profilesSize: profiles.value.size,
-  });
+  }));
 }
 setInterval(loggingStatistics, 30 * 1000);
 </script>
