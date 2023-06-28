@@ -3,7 +3,6 @@ import { Ref, onBeforeUnmount, onMounted, ref } from 'vue';
 import * as Nostr from "nostr-tools";
 import axios from 'axios';
 import parser from 'html-dom-parser';
-import Encoding from 'encoding-japanese';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
@@ -114,9 +113,7 @@ if (props.event.kind === 6) {
 async function getOgp(url: string, ogp: Ref<{}>) {
   const res = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
 
-  const content = Encoding.convert(res.data.contents, { to: 'UNICODE', from: 'AUTO', type: 'string'});
-
-  const dom = parser(content);
+  const dom = parser(res.data.contents);
   const ogTitleMetaTag = findMetaTag(dom, 'og:title');
   const ogTitle = (ogTitleMetaTag && ogTitleMetaTag.type === 'tag') ? ogTitleMetaTag.attribs.content : '';
   const ogImageMetaTag = findMetaTag(dom, 'og:image');
@@ -145,6 +142,27 @@ async function getOgp(url: string, ogp: Ref<{}>) {
     }
     return null;
   }
+
+  // 再帰的にContent-TypeかCharsetタグを探して文字コードを特定する関数
+  function findCharset(nodes: any[]): string | null {
+    for (const node of nodes) {
+      if (node.type === 'tag' && node.name === 'meta' && node.attribs && node.attribs.charset) {
+        return node.attribs.charset;
+      } else if (node.type === 'tag' && node.name === 'meta' && node.attribs && node.attribs['http-equiv'] && node.attribs['http-equiv'].toLowerCase() === 'content-type' && node.attribs.content) {
+        const match = node.attribs.content.match(/charset=([^;]*)/i);
+        if (match) {
+          return match[1];
+        }
+      }
+
+      const found = findCharset(node.children || []);
+      if (found) {
+        return found;
+      }
+    }
+    return null;
+  }
+
 }
 
 while (rest.length > 0) {
