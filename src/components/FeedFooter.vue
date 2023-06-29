@@ -136,11 +136,11 @@ async function copyToClipboard(text: string) {
 }
 
 .c-feed-footer p {
+  font-size: 14px;
   margin: 0.7em 0 0.2em 0;
 }
 
 .c-feed {
-  font-size: 14px;
   white-space: pre-wrap;
   word-wrap: break-word;
   word-break: break-all;
