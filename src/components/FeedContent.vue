@@ -417,13 +417,12 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-image {
-  max-width: 300px;
+  max-width: 100%;
   max-height: 600px;
   display: block;
 }
 
 .c-feed-content-emoji {
-  max-width: 1.3em;
   max-height: 1.3em;
   vertical-align: middle;
 }

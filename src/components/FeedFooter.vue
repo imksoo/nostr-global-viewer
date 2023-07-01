@@ -16,7 +16,7 @@ const props = defineProps({
     type: Function,
     required: true,
   },
-  volume : {
+  volume: {
     type: Number,
     required: true,
   },
@@ -96,29 +96,33 @@ async function copyToClipboard(text: string) {
 <template>
   <div class="c-feed-footer">
     <p class="c-feed-speak">
-      <span @click="(_$event) => props.speakNote(props.event, props.getProfile(props.event.pubkey), props.volume)" v-if="props.event.kind == 1">
-        <mdicon name="play" :height="14" />読み上げ
+      <span @click="(_$event) => props.speakNote(props.event, props.getProfile(props.event.pubkey), props.volume)"
+        v-if="props.event.kind == 1">
+        <mdicon name="play" :height="14" />
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
       <span @click="(_$event) => { repostEvent(props.event) }">
-        <mdicon name="multicast" :height="14" />りぽすと
+        <mdicon name="multicast" :height="14" />
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
       <span @click="(_$event) => { favEvent(props.event) }">
-        <mdicon name="star-shooting" :height="14" />ふぁぼ
+        <mdicon name="star-shooting" :height="14" />
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-reply': true }">
       <span @click="(_$event) => { openReplyPost(props.event) }">
-        <mdicon name="reply" :height="14" />りぷらい
+        <mdicon name="reply" :height="14" />
       </span>
     </p>
     <p class="c-feed-date">
       <span>
         <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id)">
-          {{ new Date(props.event.created_at * 1000).toLocaleString() }}
+          {{ new Date(props.event.created_at * 1000).toLocaleString("ja-JP", {
+            month: "numeric", day: "numeric", hour:
+              "numeric", minute: "numeric"
+          }) }}
         </a>
       </span>
       <span class="c-feed-date-copy-button" @click="(_$event) => { copyNoteId(); }">
@@ -174,10 +178,10 @@ async function copyToClipboard(text: string) {
 
   &-date {
     text-align: right;
+
     &-copy-button {
       margin-left: 0.2em;
       color: #213547;
     }
   }
-}
-</style>
+}</style>

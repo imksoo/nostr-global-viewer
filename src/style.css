@@ -12,6 +12,11 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 a {

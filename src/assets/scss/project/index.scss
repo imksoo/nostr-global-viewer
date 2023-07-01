@@ -5,6 +5,7 @@
   padding: 0 10px;
   display: flex;
   gap: 20px;
+
   @media screen and (max-width: 880px) {
     display: block;
   }
@@ -13,13 +14,16 @@
 .p-index-heading {
   width: 360px;
   flex-shrink: 0;
+
   // position: relative;
   @media screen and (max-width: 880px) {
     width: 100%;
   }
+
   &__inner {
     // position: sticky;
     top: 0;
+
     @media screen and (max-width: 880px) {
       position: relative;
     }
@@ -39,6 +43,7 @@
   padding: 8px;
   position: sticky;
   top: 0;
+
   @media screen and (max-width: 880px) {
     position: fixed;
     top: auto;
@@ -47,24 +52,29 @@
     width: 100%;
     box-sizing: border-box;
   }
+
   &__head {
     margin: 0;
     text-align: center;
     font-size: 18px;
     color: #fff;
   }
+
   &__signin-btn {
     text-align: center;
     margin-top: 12px;
   }
+
   &__post-btn {
     text-align: right;
   }
+
   &__editer {
     display: flex;
     align-items: center;
     gap: 10px;
   }
+
   &__textarea {
     flex-grow: 1;
   }
@@ -80,10 +90,12 @@
   position: fixed;
   right: 40px;
   bottom: 40px;
+
   @media screen and (max-width: 880px) {
     right: 20px;
     bottom: 20px;
   }
+
   &__btn {
     border: solid 2px #fff;
     margin: 0;
@@ -96,17 +108,20 @@
     display: flex;
     align-items: center;
     justify-content: center;
+
     @media screen and (max-width: 880px) {
       width: 48px;
       height: 48px;
     }
   }
+
   &__icon {
     font-size: 40px;
     color: #fff;
     font-weight: bold;
     display: block;
     line-height: 1;
+
     @media screen and (max-width: 880px) {
       font-size: 20px;
     }
