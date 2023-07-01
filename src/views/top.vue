@@ -548,15 +548,6 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     focusItemIndex.value = 0;
     moveToItemByIndex(focusItemIndex.value);
   }
-
-  function moveToItemByIndex(index: number): void {
-    focusedItemId.value = events.value[index].id;
-    scrollToItem(items.value[focusedItemId.value] as HTMLElement);
-
-    showFocusBorder.value = true;
-    clearTimeout(showFocusBorderTimeoutId);
-    showFocusBorderTimeoutId = setTimeout(() => { showFocusBorder.value = false }, 1 * 1000);
-  }
 }
 onMounted(() => {
   window.addEventListener('keydown', handleKeydownShortcuts);
@@ -580,6 +571,7 @@ const focusItemIndex = ref(0);
 const focusedItemId = ref("");
 const showFocusBorder = ref(false);
 let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
+
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
@@ -590,9 +582,19 @@ const observer = new IntersectionObserver((entries) => {
     }
   });
 });
+
 function scrollToItem(el: HTMLElement) {
-  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset;
+  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - 8;
   window.scrollTo({ top: yCoodinate, behavior: 'instant' });
+}
+
+function moveToItemByIndex(index: number): void {
+  focusedItemId.value = events.value[index].id;
+  scrollToItem(items.value[focusedItemId.value] as HTMLElement);
+
+  showFocusBorder.value = true;
+  clearTimeout(showFocusBorderTimeoutId);
+  showFocusBorderTimeoutId = setTimeout(() => { showFocusBorder.value = false }, 1 * 1000);
 }
 </script>
 
