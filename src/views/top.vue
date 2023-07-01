@@ -546,7 +546,9 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     moveToItemByIndex(focusItemIndex.value);
   } else if (e.key === 'h') {
     focusItemIndex.value = 0;
-    moveToItemByIndex(focusItemIndex.value);
+    if (itemsTop.value) {
+      scrollToItem(itemsTop.value);
+    }
   }
 }
 onMounted(() => {
@@ -570,6 +572,7 @@ const items = ref<Record<string, HTMLElement>>({});
 const focusItemIndex = ref(0);
 const focusedItemId = ref("");
 const showFocusBorder = ref(false);
+const itemsTop = ref<HTMLElement>();
 let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
 
 const observer = new IntersectionObserver((entries) => {
@@ -611,7 +614,7 @@ function moveToItemByIndex(index: number): void {
       </div>
     </div>
     <div class="p-index-body">
-      <div class="p-index-feeds">
+      <div class="p-index-feeds" :ref="(el) => { itemsTop = el as HTMLElement }">
         <div v-for="e in events" :key="e.id"
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }">
