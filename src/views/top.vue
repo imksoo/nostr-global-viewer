@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount } from "vue";
+import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount, ComponentPublicInstance } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
@@ -534,17 +534,37 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     isPostOpen.value = true;
     e.preventDefault();
     e.stopPropagation();
-  } else if ( e.key === 'l' && !logined.value ) {
+  } else if (e.key === 'l' && !logined.value) {
     login();
     e.preventDefault();
     e.stopPropagation();
+  } else if (e.key === 'j') {
+    focusItemIndex.value = focusItemIndex.value < events.value.length - 1 ? focusItemIndex.value + 1 : focusItemIndex.value;
+    moveToItemByIndex(focusItemIndex.value);
+  } else if (e.key === 'k') {
+    focusItemIndex.value = focusItemIndex.value > 0 ? focusItemIndex.value - 1 : 0;
+    moveToItemByIndex(focusItemIndex.value);
+  } else if (e.key === 'h') {
+    focusItemIndex.value = 0;
+    moveToItemByIndex(focusItemIndex.value);
+  }
+
+  function moveToItemByIndex(index: number): void {
+    focusedItemId.value = events.value[index].id;
+    scrollToItem(items.value[focusedItemId.value] as HTMLElement);
+
+    showFocusBorder.value = true;
+    clearTimeout(showFocusBorderTimeoutId);
+    showFocusBorderTimeoutId = setTimeout(() => { showFocusBorder.value = false }, 1 * 1000);
   }
 }
 onMounted(() => {
   window.addEventListener('keydown', handleKeydownShortcuts);
+  Object.values(items.value).forEach((i) => { observer.observe(i as Element) });
 });
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
+  Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
 })
 
 function loggingStatistics(): void {
@@ -554,6 +574,26 @@ function loggingStatistics(): void {
   }));
 }
 setInterval(loggingStatistics, 30 * 1000);
+
+const items = ref<Record<string, HTMLElement>>({});
+const focusItemIndex = ref(0);
+const focusedItemId = ref("");
+const showFocusBorder = ref(false);
+let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry) => {
+    if (entry.isIntersecting && entry.intersectionRatio > 0.5) {
+      const currentElementId = Object.keys(items.value).find(key => items.value[key] === entry.target);
+      if (currentElementId) {
+        focusedItemId.value = currentElementId;
+      }
+    }
+  });
+});
+function scrollToItem(el: HTMLElement) {
+  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset;
+  window.scrollTo({ top: yCoodinate, behavior: 'instant' });
+}
 </script>
 
 <template>
@@ -570,7 +610,9 @@ setInterval(loggingStatistics, 30 * 1000);
     </div>
     <div class="p-index-body">
       <div class="p-index-feeds">
-        <div v-for="e in events" v-bind:key="nostr.nip19.noteEncode(e.id)" class="c-feed-item">
+        <div v-for="e in events" :key="e.id"
+          :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
+          :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
@@ -623,6 +665,11 @@ setInterval(loggingStatistics, 30 * 1000);
   border-radius: 4px;
   box-sizing: border-box;
   padding: 10px;
+  border: 2px dashed #ffffff;
+
+  &-focused {
+    border: 2px dashed blue;
+  }
 }
 
 .p-index-post__help {
