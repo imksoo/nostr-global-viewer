@@ -539,16 +539,40 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     e.preventDefault();
     e.stopPropagation();
   } else if (e.key === 'j') {
-    focusItemIndex.value = focusItemIndex.value < events.value.length - 1 ? focusItemIndex.value + 1 : focusItemIndex.value;
-    moveToItemByIndex(focusItemIndex.value);
+    let currentIndex = events.value.findIndex((e) => (e.id === focusedItemId.value));
+    if (currentIndex < 0) {
+      currentIndex = 0;
+    }
+    const newFocusIndex = currentIndex < events.value.length - 1 ? currentIndex + 1 : events.value.length - 1;
+    moveToItemByIndex(newFocusIndex);
   } else if (e.key === 'k') {
-    focusItemIndex.value = focusItemIndex.value > 0 ? focusItemIndex.value - 1 : 0;
-    moveToItemByIndex(focusItemIndex.value);
+    let currentIndex = events.value.findIndex((e) => (e.id === focusedItemId.value));
+    if (currentIndex < 0) {
+      currentIndex = events.value.length;
+    }
+    const newFocusIndex = focusItemIndex.value > 0 ? currentIndex - 1 : 0;
+    moveToItemByIndex(newFocusIndex);
   } else if (e.key === 'h') {
     focusItemIndex.value = 0;
+    focusedItemId.value = events.value[0].id;
     if (itemsTop.value) {
-      scrollToItem(itemsTop.value);
+      scrollToItemTop(itemsTop.value);
     }
+  } else if (e.key === 'r' && logined.value && !isPostOpen.value) {
+    const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
+    if (targetEvent) {
+      e.preventDefault();
+      e.stopPropagation();
+      openReplyPost(targetEvent);
+    }
+  } else if (e.key === "f" && logined.value && !isPostOpen.value) {
+    e.preventDefault();
+    e.stopPropagation();
+    alert("ふぁぼは実装中。待って♡");
+  } else if (e.key === "e" && logined.value && !isPostOpen.value) {
+    e.preventDefault();
+    e.stopPropagation();
+    alert("りぽすとは実装中。待って♡");
   }
 }
 onMounted(() => {
@@ -587,11 +611,18 @@ const observer = new IntersectionObserver((entries) => {
 });
 
 function scrollToItem(el: HTMLElement) {
-  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - 8;
+  const offsetY = (window.innerHeight - el.getBoundingClientRect().height) / 2;
+  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - offsetY;
+  window.scrollTo({ top: yCoodinate, behavior: 'instant' });
+}
+
+function scrollToItemTop(el: HTMLElement) {
+  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset;
   window.scrollTo({ top: yCoodinate, behavior: 'instant' });
 }
 
 function moveToItemByIndex(index: number): void {
+  focusItemIndex.value = index;
   focusedItemId.value = events.value[index].id;
   scrollToItem(items.value[focusedItemId.value] as HTMLElement);
 
@@ -617,7 +648,8 @@ function moveToItemByIndex(index: number): void {
       <div class="p-index-feeds" :ref="(el) => { itemsTop = el as HTMLElement }">
         <div v-for="e in events" :key="e.id"
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
-          :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }">
+          :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
+          :click="() => { focusedItemId = e.id; console.log('1 focusedItemId=', focusedItemId); }">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
