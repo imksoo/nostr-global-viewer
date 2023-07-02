@@ -316,7 +316,7 @@ while (rest.length > 0) {
           {{ token.content }}
         </a>
         <br />
-        <iframe frameborder="0" width="330" height="600" :src="'https://twitframe.com/show?url=' + token.src"
+        <iframe frameborder="0" width="300" height="600" :src="'https://twitframe.com/show?url=' + token.src"
           @load="onIframeLoad"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
