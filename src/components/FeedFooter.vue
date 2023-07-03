@@ -37,7 +37,7 @@ const props = defineProps({
 let isFavorited = ref(false);
 let isReposted = ref(false);
 
-function favEvent(reacted: Nostr.Event) {
+const favEvent = (reacted: Nostr.Event = props.event) => {
   if (isFavorited.value) {
     return;
   }
@@ -60,8 +60,7 @@ function favEvent(reacted: Nostr.Event) {
   isFavorited.value = true;
 }
 
-
-function repostEvent(reposted: Nostr.Event) {
+const repostEvent = (reposted: Nostr.Event = props.event) => {
   if (isReposted.value) {
     return;
   }
@@ -91,7 +90,6 @@ async function copyToClipboard(text: string) {
     console.log(err);
   }
 }
-
 </script>
 <template>
   <div class="c-feed-footer">
@@ -102,12 +100,12 @@ async function copyToClipboard(text: string) {
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
-      <span @click="(_$event) => { repostEvent(props.event) }">
+      <span @click="(_$event) => { repostEvent() }">
         <mdicon name="multicast" :height="14" />
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
-      <span @click="(_$event) => { favEvent(props.event) }">
+      <span @click="(_$event) => { favEvent() }">
         <mdicon name="star-shooting" :height="14" />
       </span>
     </p>
@@ -184,4 +182,5 @@ async function copyToClipboard(text: string) {
       color: #213547;
     }
   }
-}</style>
+}
+</style>

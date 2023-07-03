@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount, ComponentPublicInstance } from "vue";
+import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount, ComponentPublicInstance, reactive } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { playActionSound, playRectionSound } from '../hooks/usePlaySound';
 import { getRandomProfile } from '../hooks/useEmojiProfiles';
 import { speakNote } from '../hooks/useSpeakNote';
+import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
 
 import IndexTitleControl from "../components/IndexTitleControl.vue";
 import IndexIntroControl from "../components/IndexIntroControl.vue";
@@ -19,6 +20,8 @@ import FeedProfile from "../components/FeedProfile.vue";
 import FeedReplies from "../components/FeedReplies.vue";
 import FeedContent from "../components/FeedContent.vue";
 import FeedFooter from "../components/FeedFooter.vue";
+import { fstat } from "fs";
+import { NostrURI } from "nostr-tools/lib/nip21";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -560,25 +563,37 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     }
   } else if (e.key === 'r' && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
-    if (targetEvent) {
+    if (targetEvent && targetEvent.kind === 1) {
       e.preventDefault();
       e.stopPropagation();
       openReplyPost(targetEvent);
     }
   } else if (e.key === "f" && logined.value && !isPostOpen.value) {
-    e.preventDefault();
-    e.stopPropagation();
-    alert("ふぁぼは実装中。待って♡");
+    const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
+    if (targetEvent && targetEvent.kind === 1) {
+      const reaction = createFavEvent(targetEvent) as nostr.Event;
+      reaction.pubkey = myPubkey;
+      postEvent(reaction);
+      e.preventDefault();
+      e.stopPropagation();
+    }
   } else if (e.key === "e" && logined.value && !isPostOpen.value) {
-    e.preventDefault();
-    e.stopPropagation();
-    alert("りぽすとは実装中。待って♡");
+    const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
+    if (targetEvent && targetEvent.kind === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      const repost = createRepostEvent(targetEvent) as nostr.Event;
+      repost.pubkey = myPubkey;
+      postEvent(repost);
+    }
   }
 }
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.observe(i as Element) });
 });
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
@@ -598,6 +613,8 @@ const focusedItemId = ref("");
 const showFocusBorder = ref(false);
 const itemsTop = ref<HTMLElement>();
 let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
+
+const itemFooters = ref<Map<string, any>>(new Map());
 
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
@@ -655,7 +672,8 @@ function moveToItemByIndex(index: number): void {
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"></FeedFooter>
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>
     </div>
