@@ -306,7 +306,7 @@ while (rest.length > 0) {
         </a>
       </template>
       <template v-else-if="token?.type === 'youtube'">
-        <iframe width="300" height="170" :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
+        <iframe width="90%" height="170" :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen></iframe>
@@ -316,7 +316,7 @@ while (rest.length > 0) {
           {{ token.content }}
         </a>
         <br />
-        <iframe frameborder="0" width="300" height="600" :src="'https://twitframe.com/show?url=' + token.src"
+        <iframe frameborder="0" width="90%" height="600" :src="'https://twitframe.com/show?url=' + token.src"
           @load="onIframeLoad"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
@@ -384,7 +384,7 @@ while (rest.length > 0) {
 .c-feed-content-repost {
   border: gray dashed 1px;
   font-size: 0.8em;
-  margin: 0.2em 1.5em;
+  margin: 0.2em 2%;
   padding: 0.5em;
 }
 
@@ -417,9 +417,10 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-image {
-  max-width: 100%;
+  max-width: 90%;
   max-height: 600px;
   display: block;
+  margin: auto;
 }
 
 .c-feed-content-emoji {

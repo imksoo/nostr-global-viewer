@@ -19,16 +19,24 @@ const props = defineProps({
   </div>
   <div class="p-index-intro" v-if="!props.isLogined">
     <h2 class="p-index-intro__head">はじめに</h2>
-    <p class="p-index-intro__text">Nostrを始めてみたくなった方は</p>
+    <p class="p-index-intro__text">Nostr を始めてみたくなった方は</p>
+    <p class="p-index-intro__text">
+      <a href="https://welcome.nostr-jp.org/" rel="noopener" target="_blank" class="p-index-intro__btn">Welcome to
+        Nostr</a>
+    </p>
+    <p class="p-index-intro__text">をはじめに読んでみてください。<br />また、ちょっと詳しいことが気になった方は</p>
     <p class="p-index-intro__text">
       <a href="https://scrapbox.io/nostr/%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AENostr%E3%80%90%E3%81%AF%E3%81%98%E3%82%81%E3%81%A6%E3%81%AE%E6%96%B9%E3%81%AF%E3%81%93%E3%81%A1%E3%82%89%E3%80%91"
         rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
     </p>
-    <p class="p-index-intro__text">を参照ください。<br /></p>
+    <p class="p-index-intro__text">などを起点に調べてる見ると面白いと思います。</p>
+    <h2 class="p-index-intro__head">このリレーについて</h2>
     <p class="p-index-intro__text">
-      また、日本向けリレーとしてこのページの裏側にある
-      <code>wss://relay-jp.nostr.wirednet.jp</code> も是非お使いください。
+      日本向けリレーとしてこのページの裏側にある
+      <code>wss://relay-jp.nostr.wirednet.jp</code>
+      を是非 Nostr クライアントに設定してお使いください。
     </p>
+    <h2 class="p-index-intro__head">ライセンス、ソースコードなど</h2>
     <p class="p-index-intro__text">
       このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
         target="_blank">GitHub</a>にあります。
@@ -40,7 +48,7 @@ const props = defineProps({
       の効果音素材を利用しています。
     </p>
     <p class="p-index-intro__text">
-      なお、私が管理するNostrリレーの利用規約は
+      なお、私が管理する Nostr リレーの利用規約は
       <a href="https://relay.nostr.wirednet.jp/index.html" class="p-index-intro__text-link"
         target="_blank">relay.nostr.wirednet.jp</a>
       に掲示してあります。
@@ -56,6 +64,7 @@ const props = defineProps({
   align-items: center;
   gap: 10px;
   margin-top: 1rem;
+
   &__head {
     color: #ffffff;
     font-size: 14px;
@@ -78,6 +87,7 @@ const props = defineProps({
     transition: all 0.4s;
     border: none;
     cursor: pointer;
+
     &:hover {
       background-color: #df3d81;
     }
@@ -86,23 +96,34 @@ const props = defineProps({
 
 .p-index-intro {
   margin-top: 2rem;
+
   @media screen and (max-width: 880px) {
     margin-top: 0rem;
   }
+
   &__head {
     font-size: 1.5rem;
     color: #ffffff;
     display: flex;
     gap: 0.4rem;
     align-items: center;
-    margin: 0;
+    margin: 1em 0 0 0;
+
+    &::before {
+      content: "";
+      width: 2em;
+      height: 2px;
+      background-color: #ffffff;
+    }
+
     &::after {
       content: "";
-      width: 3em;
+      width: 2em;
       height: 2px;
       background-color: #ffffff;
     }
   }
+
   &__text {
     color: #ffffff;
     margin: 0;
@@ -138,5 +159,4 @@ const props = defineProps({
     padding: 12px 0;
   }
 }
-
 </style>
