@@ -86,6 +86,48 @@
   border-radius: 4px;
 }
 
+.p-index-top-btn {
+  position: fixed;
+  left: 40px;
+  bottom: 40px;
+
+  @media screen and (max-width: 880px) {
+    left: 20px;
+    bottom: 20px;
+  }
+
+  &__btn {
+    border: solid 2px #fff;
+    margin: 0;
+    padding: 0;
+    background: #fc5fa1;
+    width: 60px;
+    height: 60px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @media screen and (max-width: 880px) {
+      width: 48px;
+      height: 48px;
+    }
+  }
+
+  &__icon {
+    font-size: 40px;
+    color: #fff;
+    font-weight: bold;
+    display: block;
+    line-height: 1;
+
+    @media screen and (max-width: 880px) {
+      font-size: 20px;
+    }
+  }
+}
+
 .p-index-post-btn {
   position: fixed;
   right: 40px;

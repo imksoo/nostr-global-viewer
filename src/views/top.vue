@@ -561,11 +561,7 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     const newFocusIndex = focusItemIndex.value > 0 ? currentIndex - 1 : 0;
     moveToItemByIndex(newFocusIndex);
   } else if (e.key === 'h') {
-    focusItemIndex.value = 0;
-    focusedItemId.value = events.value[0].id;
-    if (itemsTop.value) {
-      scrollToItemTop(itemsTop.value);
-    }
+    gotoTop();
   } else if (e.key === 'g') {
     focusItemIndex.value = events.value.length - 1;
     focusedItemId.value = events.value[focusItemIndex.value].id;
@@ -644,7 +640,8 @@ const observer = new IntersectionObserver((entries) => {
 });
 
 function scrollToItem(el: HTMLElement) {
-  const offsetY = (window.innerHeight - el.getBoundingClientRect().height) / 2;
+  // const offsetY = (window.innerHeight - el.getBoundingClientRect().height) / 2;
+  const offsetY = 80;
   const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - offsetY;
   window.scrollTo({ top: yCoodinate, behavior: 'instant' });
 }
@@ -672,6 +669,14 @@ function moveToItemByIndex(index: number): void {
   showFocusBorder.value = true;
   clearTimeout(showFocusBorderTimeoutId);
   showFocusBorderTimeoutId = setTimeout(() => { showFocusBorder.value = false }, 1 * 1000);
+}
+
+function gotoTop() {
+  focusItemIndex.value = 0;
+  focusedItemId.value = events.value[0].id;
+  if (itemsTop.value) {
+    scrollToItemTop(itemsTop.value);
+  }
 }
 </script>
 
@@ -704,6 +709,11 @@ function moveToItemByIndex(index: number): void {
       </div>
       <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
     </div>
+  </div>
+  <div class="p-index-top-btn">
+    <button @click="gotoTop()" class="p-index-top-btn__btn">
+      <span class="p-index-top-btn__icon">^</span>
+    </button>
   </div>
   <div class="p-index-post-btn" v-if="logined">
     <button @click="isPostOpen = !isPostOpen" class="p-index-post-btn__btn">
