@@ -20,8 +20,6 @@ import FeedProfile from "../components/FeedProfile.vue";
 import FeedReplies from "../components/FeedReplies.vue";
 import FeedContent from "../components/FeedContent.vue";
 import FeedFooter from "../components/FeedFooter.vue";
-import { fstat } from "fs";
-import { NostrURI } from "nostr-tools/lib/nip21";
 
 const route = useRoute();
 const sushiMode = computed(() => {
@@ -408,14 +406,14 @@ watch(isPostOpen, async (isPostOpened) => {
 });
 
 function extractTags() {
-  editingTags.value.tags = [];
-  const regexNostrStr = /@?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/g
+  editingTags.value.tags.length = 0;
+  const regexNostrStr = /(nostr:|@)(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/g
   const nostrStr = draftEvent.value.content.match(regexNostrStr);
   if (nostrStr?.length) {
     for (let i = 0; i < nostrStr.length; ++i) {
       const ns = nostrStr[i];
       try {
-        const d = nostr.nip19.decode(ns.replace('@', ''));
+        const d = nostr.nip19.decode(ns.replace('nostr:', '').replace('@', ''));
         switch (d.type) {
           case "nevent": {
             editingTags.value.tags.push(['e', d.data.id])
@@ -541,6 +539,10 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     login();
     e.preventDefault();
     e.stopPropagation();
+  } else if (e.key === 'l' && logined.value) {
+    moveToItemById(focusedItemId.value);
+    e.preventDefault();
+    e.stopPropagation();
   } else if (e.key === 'j') {
     let currentIndex = events.value.findIndex((e) => (e.id === focusedItemId.value));
     if (currentIndex < 0) {
@@ -638,6 +640,16 @@ function scrollToItemTop(el: HTMLElement) {
   window.scrollTo({ top: yCoodinate, behavior: 'instant' });
 }
 
+function moveToItemById(id: string): void {
+  focusedItemId.value = id;
+  focusItemIndex.value = events.value.findIndex((e) => (e.id === focusedItemId.value));;
+  scrollToItem(items.value[id] as HTMLElement);
+
+  showFocusBorder.value = true;
+  clearTimeout(showFocusBorderTimeoutId);
+  showFocusBorderTimeoutId = setTimeout(() => { showFocusBorder.value = false }, 1 * 1000);
+}
+
 function moveToItemByIndex(index: number): void {
   focusItemIndex.value = index;
   focusedItemId.value = events.value[index].id;
@@ -694,7 +706,8 @@ function moveToItemByIndex(index: number): void {
       <FeedProfile v-bind:profile="getProfile(myPubkey)"></FeedProfile>
       <FeedReplies v-bind:event="draftEvent" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
       <FeedReplies v-bind:event="editingTags" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
-      <span class="p-index-post__help">メンションしたいときは@マークの後にnpub文字列を貼り付けてください。<br />引用リポストするときは@noteで投稿IDを貼り付けてください。</span>
+      <span class="p-index-post__help">メンションしたいときは<code>nostr:</code>の後に<code>npub文字列</code>を貼り付けてください。<br />
+        引用リポストするときは<code>nostr:note文字列</code>で投稿IDを貼り付けてください。</span>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
