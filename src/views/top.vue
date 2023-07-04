@@ -563,6 +563,12 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     if (itemsTop.value) {
       scrollToItemTop(itemsTop.value);
     }
+  } else if (e.key === 'g') {
+    focusItemIndex.value = events.value.length - 1;
+    focusedItemId.value = events.value[focusItemIndex.value].id;
+    if (itemsBottom.value) {
+      scrollToItemTop(itemsBottom.value);
+    }
   } else if (e.key === 'r' && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1) {
@@ -614,6 +620,7 @@ const focusItemIndex = ref(0);
 const focusedItemId = ref("");
 const showFocusBorder = ref(false);
 const itemsTop = ref<HTMLElement>();
+const itemsBottom = ref<HTMLElement>();
 let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
 
 const itemFooters = ref<Map<string, any>>(new Map());
@@ -688,6 +695,7 @@ function moveToItemByIndex(index: number): void {
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>
+      <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
     </div>
   </div>
   <div class="p-index-post-btn" v-if="logined">
