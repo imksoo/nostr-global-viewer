@@ -526,6 +526,9 @@ function normalizeUrls(urls: string[]): string[] {
   return urls.map((url) => (nostr.utils.normalizeURL(url)));
 }
 
+const isFaved = new Set<string>();
+const isReposted = new Set<string>();
+
 function handleKeydownShortcuts(e: KeyboardEvent): void {
   const target = e.target as HTMLElement;
   if (target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea') {
@@ -578,21 +581,25 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     }
   } else if (e.key === "f" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
-    if (targetEvent && targetEvent.kind === 1) {
+    if (targetEvent && targetEvent.kind === 1 && !isFaved.has(targetEvent.id)) {
+      e.preventDefault();
+      e.stopPropagation();
+
       const reaction = createFavEvent(targetEvent) as nostr.Event;
       reaction.pubkey = myPubkey;
       postEvent(reaction);
-      e.preventDefault();
-      e.stopPropagation();
+      isFaved.add(targetEvent.id);
     }
   } else if (e.key === "e" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
-    if (targetEvent && targetEvent.kind === 1) {
+    if (targetEvent && targetEvent.kind === 1 && !isReposted.has(targetEvent.id)) {
       e.preventDefault();
       e.stopPropagation();
+
       const repost = createRepostEvent(targetEvent) as nostr.Event;
       repost.pubkey = myPubkey;
       postEvent(repost);
+      isReposted.add(targetEvent.id);
     }
   }
 }
