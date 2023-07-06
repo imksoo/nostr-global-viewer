@@ -124,7 +124,7 @@ async function copyToClipboard(text: string) {
         </a>
       </span>
       <span class="c-feed-date-copy-button" @click="(_$event) => { copyNoteId(); }">
-        <mdicon name="content-copy" :width="16" :height="16" title="Copy note id" />
+        <mdicon name="content-copy" :width="14" :height="14" title="Copy note id" />
       </span>
     </p>
   </div>
@@ -183,4 +183,5 @@ async function copyToClipboard(text: string) {
     }
   }
 }
+
 </style>

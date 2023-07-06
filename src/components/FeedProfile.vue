@@ -44,6 +44,9 @@ async function copyToClipboard(text: string) {
           referrerpolicy="no-referrer" />
       </p>
     </a>
+    <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
+      <mdicon name="content-copy" :width="16" :height="16" title="Copy npub string" />
+    </span>
     <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">
         {{
@@ -56,9 +59,6 @@ async function copyToClipboard(text: string) {
         @{{ props.profile.name ?? "" }}
       </span>
     </a>
-    <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
-      <mdicon name="content-copy" :width="16" :height="16" title="Copy npub string" />
-    </span>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -82,11 +82,12 @@ async function copyToClipboard(text: string) {
 }
 
 .c-feed-profile__detail {
-  flex-grow: 1;
+  width: max-content;
 }
 
 .c-feed-profile__display-name {
   display: block;
+  font-size: 14px;
   color: #213547;
 }
 
@@ -103,5 +104,9 @@ async function copyToClipboard(text: string) {
   margin: 0;
   object-fit: cover;
   border-radius: 4px;
+}
+
+.c-feed-profile-copy-button {
+  vertical-align: middle;
 }
 </style>

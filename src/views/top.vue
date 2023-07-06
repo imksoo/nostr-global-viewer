@@ -549,14 +549,14 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
   } else if (e.key === 'j') {
     let currentIndex = events.value.findIndex((e) => (e.id === focusedItemId.value));
     if (currentIndex < 0) {
-      currentIndex = 0;
+      currentIndex = focusItemIndex.value;
     }
     const newFocusIndex = currentIndex < events.value.length - 1 ? currentIndex + 1 : events.value.length - 1;
     moveToItemByIndex(newFocusIndex);
   } else if (e.key === 'k') {
     let currentIndex = events.value.findIndex((e) => (e.id === focusedItemId.value));
     if (currentIndex < 0) {
-      currentIndex = events.value.length;
+      currentIndex = focusItemIndex.value;
     }
     const newFocusIndex = focusItemIndex.value > 0 ? currentIndex - 1 : 0;
     moveToItemByIndex(newFocusIndex);
@@ -697,7 +697,7 @@ function gotoTop() {
         <div v-for="e in events" :key="e.id"
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
-          :click="() => { focusedItemId = e.id; console.log('1 focusedItemId=', focusedItemId); }">
+          @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)); console.log(JSON.stringify({ focusedItemId, focusItemIndex })) }">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
