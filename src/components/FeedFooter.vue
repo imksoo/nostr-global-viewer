@@ -80,7 +80,7 @@ const repostEvent = (reposted: Nostr.Event = props.event) => {
 
 function copyNoteId(): void {
   const text = Nostr.nip19.noteEncode(props.event.id);
-  copyToClipboard(text);
+  copyToClipboard('nostr:' + text);
 }
 
 async function copyToClipboard(text: string) {
@@ -183,5 +183,4 @@ async function copyToClipboard(text: string) {
     }
   }
 }
-
 </style>

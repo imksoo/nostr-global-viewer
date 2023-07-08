@@ -23,7 +23,7 @@ function getProfileLink(pubkey: string) {
 
 function copyNpubId(): void {
   const text = nostr.nip19.npubEncode(props.profile.pubkey);
-  copyToClipboard(text);
+  copyToClipboard('nostr:' + text);
 }
 
 async function copyToClipboard(text: string) {
