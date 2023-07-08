@@ -136,6 +136,9 @@ async function collectEvents() {
     async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
     },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
   );
 }
 setInterval(collectEvents, 1000);
