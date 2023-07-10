@@ -537,6 +537,9 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
   if (target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea') {
     return;
   }
+  if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
+    return;
+  }
   if (e.key === 'n' && logined.value && !isPostOpen.value) {
     isPostOpen.value = true;
     e.preventDefault();
@@ -584,10 +587,13 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
       e.preventDefault();
       e.stopPropagation();
 
-      const reaction = createFavEvent(targetEvent) as nostr.Event;
-      reaction.pubkey = myPubkey;
-      postEvent(reaction);
-      isFaved.add(targetEvent.id);
+      const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
+      if (confirmed) {
+        const reaction = createFavEvent(targetEvent) as nostr.Event;
+        reaction.pubkey = myPubkey;
+        postEvent(reaction);
+        isFaved.add(targetEvent.id);
+      }
     }
   } else if (e.key === "e" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
@@ -595,10 +601,13 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
       e.preventDefault();
       e.stopPropagation();
 
-      const repost = createRepostEvent(targetEvent) as nostr.Event;
-      repost.pubkey = myPubkey;
-      postEvent(repost);
-      isReposted.add(targetEvent.id);
+      const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
+      if (confirmed) {
+        const repost = createRepostEvent(targetEvent) as nostr.Event;
+        repost.pubkey = myPubkey;
+        postEvent(repost);
+        isReposted.add(targetEvent.id);
+      }
     }
   }
 }
