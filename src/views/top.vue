@@ -655,12 +655,12 @@ function scrollToItem(el: HTMLElement) {
   // const offsetY = (window.innerHeight - el.getBoundingClientRect().height) / 2;
   const offsetY = 80;
   const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - offsetY;
-  window.scrollTo({ top: yCoodinate, behavior: 'instant' });
+  window.scrollTo({ top: yCoodinate, behavior: 'smooth' });
 }
 
 function scrollToItemTop(el: HTMLElement) {
   const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset;
-  window.scrollTo({ top: yCoodinate, behavior: 'instant' });
+  window.scrollTo({ top: yCoodinate, behavior: 'smooth' });
 }
 
 function moveToItemById(id: string): void {
