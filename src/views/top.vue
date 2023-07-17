@@ -293,7 +293,7 @@ async function collectFollowsAndSubscribe() {
   myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
   pool.subscribe([
-    { kinds: [1], authors: myFollows, limit: 2 },
+    { kinds: [1], authors: myFollows, limit: 20 },
   ],
     normalizeUrls(myReadRelays),
     async (ev, _isAfterEose, _relayURL) => {
