@@ -48,8 +48,9 @@ const props = defineProps({
 <template>
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
-      ユーザー <a target="_blank" v-bind:href="getUserLink(tag[1])">
-        <img :src="getProfile(tag[1]).picture ? getProfile(tag[1]).picture : 'https://placehold.jp/60x60.png'" class="c-feed-reply-picture" />
+      ユーザー <a :href="'?' + Nostr.nip19.npubEncode(tag[1])">
+        <img :src="getProfile(tag[1]).picture ? getProfile(tag[1]).picture : 'https://placehold.jp/60x60.png'"
+          class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
             getProfile(tag[1]).display_name ||
@@ -58,16 +59,20 @@ const props = defineProps({
           }}
         </span>
       </a>
+      <span>&nbsp;</span>
+      <a target="_blank" v-bind:href="getUserLink(tag[1])">
+        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
+      </a>
     </template>
     <template v-else-if="tag[0] === 'e'">
-      投稿 <a :href="'?'+Nostr.nip19.noteEncode(props.event.id)">
+      投稿 <a :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{ getEvent(tag[1])?.content }}</span>
         <span class="c-feed-reply-link" v-else>{{ tag[1].substring(tag[1].length - 8) }}</span>
       </a>
       <span>&nbsp;</span>
       <a target="_blank" v-bind:href="getEventLink(tag[1])">
-          <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
-        </a>
+        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
+      </a>
       <span v-if="tag.length > 3">({{ tag[3] }})</span>
     </template>
     <template v-else-if="tag[0] === 'q'">

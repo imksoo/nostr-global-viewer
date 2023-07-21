@@ -65,6 +65,7 @@ let countOfDisplayEvents = 100;
 
 watch(() => route.query, (newQuery) => {
   let noteId: string | undefined;
+  let npubId: string | undefined;
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
   sushiMode.value = (route.query.sushi === "on");
@@ -81,6 +82,12 @@ watch(() => route.query, (newQuery) => {
           case "note": {
             noteId = data.data;
           } break;
+          case "nprofile": {
+            npubId = data.data.pubkey;
+          } break;
+          case "npub": {
+            npubId = data.data;
+          }
         }
       } catch (err) {
         console.error(err);
@@ -91,7 +98,11 @@ watch(() => route.query, (newQuery) => {
   const timelineFilter = (noteId) ? {
     kinds: [1, 6],
     limit: initialNumberOfEventToGet,
-    ids: [noteId]
+    ids: [noteId],
+  } : (npubId) ? {
+    kinds: [1, 6, 7],
+    limit: initialNumberOfEventToGet,
+    authors: [npubId],
   } : {
     kinds: [1, 6],
     limit: initialNumberOfEventToGet,
