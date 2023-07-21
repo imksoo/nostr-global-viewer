@@ -18,7 +18,7 @@ type Profile = {
   created_at: number,
 };
 
-export function getRandomProfile(pubkey: string, sushiMode: Boolean = true, mahjongMode: Boolean = true): Profile {
+export function getRandomProfile(pubkey: string, sushiMode: Boolean = false, mahjongMode: Boolean = false): Profile {
   const pubkeyNumber = profileRandom + parseInt(pubkey.substring(0, 3), 29);
 
   let randomNumber = 0;
@@ -28,7 +28,7 @@ export function getRandomProfile(pubkey: string, sushiMode: Boolean = true, mahj
     randomNumber = pubkeyNumber % (sushiDataLength);
     const c = characters[randomNumber];
   } else if (mahjongMode) {
-    randomNumber = pubkeyNumber % (mahjongDataLength);
+    randomNumber = sushiDataLength + pubkeyNumber % (mahjongDataLength);
     const c = characters[randomNumber];
   }
   const c = characters[randomNumber];
