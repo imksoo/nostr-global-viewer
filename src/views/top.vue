@@ -63,9 +63,9 @@ const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
 let countOfDisplayEvents = 100;
 
+let noteId: string | undefined;
+let npubId: string | undefined;
 watch(() => route.query, (newQuery) => {
-  let noteId: string | undefined;
-  let npubId: string | undefined;
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
   sushiMode.value = (route.query.sushi === "on");
@@ -290,11 +290,12 @@ async function login() {
     logined.value = true;
     countOfDisplayEvents *= 2;
     collectMyRelay();
-    setTimeout(() => {
-      subscribeReactions();
-    }, 1000);
-
-    collectFollowsAndSubscribe();
+    if (!noteId && !npubId) {
+      setTimeout(() => {
+        collectFollowsAndSubscribe();
+        subscribeReactions();
+      }, 1000);
+    }
   }
 }
 
