@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import * as Nostr from "nostr-tools";
+import { useRoute } from "vue-router";
 
 const props = defineProps({
   event: {
@@ -90,6 +91,21 @@ async function copyToClipboard(text: string) {
     console.log(err);
   }
 }
+
+function getLinkUrl(): string {
+  return 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id);
+}
+
+const route = useRoute();
+const linkTo = ref({});
+onMounted(() => {
+  let query = { ...route.query };
+  let noteText = encodeURI();
+
+  query[noteText] = "";
+
+  linkTo.value = { path: "/", query: query };
+})
 </script>
 <template>
   <div class="c-feed-footer">
@@ -116,13 +132,18 @@ async function copyToClipboard(text: string) {
     </p>
     <p class="c-feed-date">
       <span>
-        <a target="_blank" v-bind:href="'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id)">
+        <a :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
           {{ new Date(props.event.created_at * 1000).toLocaleString("ja-JP", {
             month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
           }) }}
         </a>
+        <span>&nbsp;</span>
+        <a target="_blank" v-bind:href="getLinkUrl()">
+          <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
+        </a>
       </span>
+      <span>&nbsp;</span>
       <span class="c-feed-date-copy-button" @click="(_$event) => { copyNoteId(); }">
         <mdicon name="content-copy" :width="14" :height="14" title="Copy note id" />
       </span>

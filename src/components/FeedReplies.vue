@@ -60,10 +60,15 @@ const props = defineProps({
       </a>
     </template>
     <template v-else-if="tag[0] === 'e'">
-      投稿 <a target="_blank" v-bind:href="getEventLink(tag[1])">
+      投稿 <a :href="'?'+Nostr.nip19.noteEncode(props.event.id)">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{ getEvent(tag[1])?.content }}</span>
         <span class="c-feed-reply-link" v-else>{{ tag[1].substring(tag[1].length - 8) }}</span>
-      </a> <span v-if="tag.length > 3">({{ tag[3] }})</span>
+      </a>
+      <span>&nbsp;</span>
+      <a target="_blank" v-bind:href="getEventLink(tag[1])">
+          <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
+        </a>
+      <span v-if="tag.length > 3">({{ tag[3] }})</span>
     </template>
     <template v-else-if="tag[0] === 'q'">
       引用 <a target="_blank" v-bind:href="getEventLink(tag[1])">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, computed, onMounted, onBeforeUnmount, ComponentPublicInstance, reactive } from "vue";
+import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { useRoute } from "vue-router";
@@ -22,12 +22,9 @@ import FeedContent from "../components/FeedContent.vue";
 import FeedFooter from "../components/FeedFooter.vue";
 
 const route = useRoute();
-const sushiMode = computed(() => {
-  return route.query.sushi === "on";
-});
-const mahjongMode = computed(() => {
-  return route.query.mahjong === "on";
-});
+let sushiMode = ref(false);
+let mahjongMode = ref(false);
+
 const pool = new RelayPool(undefined, {
   autoReconnect: true,
   logErrorsAndNotices: true,
@@ -66,25 +63,56 @@ const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
 let countOfDisplayEvents = 100;
 
-pool.subscribe(
-  [
-    {
-      kinds: [1, 6],
-      limit: initialNumberOfEventToGet,
-    },
-  ],
-  feedRelays,
-  async (ev, _isAfterEose, _relayURL) => {
-    addEvent(ev);
-  },
-  undefined,
-  () => {
-    collectProfiles();
-    if (firstFetching) {
-      firstFetching = false;
+watch(() => route.query, (newQuery) => {
+  let noteId: string | undefined;
+  const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
+
+  sushiMode.value = (route.query.sushi === "on");
+  mahjongMode.value = (route.query.mahjong === "on");
+  for (let key in newQuery) {
+    console.log(key, route.query[key]);
+    if (key.match(nostrRegex)) {
+      try {
+        const data = nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
+        switch (data.type) {
+          case "nevent": {
+            noteId = data.data.id;
+          } break;
+          case "note": {
+            noteId = data.data;
+          } break;
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   }
-);
+
+  const timelineFilter = (noteId) ? {
+    kinds: [1, 6],
+    limit: initialNumberOfEventToGet,
+    ids: [noteId]
+  } : {
+    kinds: [1, 6],
+    limit: initialNumberOfEventToGet,
+  };
+  pool.subscribe(
+    [
+      timelineFilter
+    ],
+    feedRelays,
+    async (ev, _isAfterEose, _relayURL) => {
+      addEvent(ev);
+    },
+    undefined,
+    () => {
+      collectProfiles();
+      if (firstFetching) {
+        firstFetching = false;
+      }
+    }
+  );
+});
 
 function addEvent(event: nostr.Event): void {
   if (eventsReceived.has(event.id)) {
