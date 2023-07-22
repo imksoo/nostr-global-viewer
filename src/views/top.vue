@@ -339,11 +339,18 @@ async function collectFollowsAndSubscribe() {
   myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
   pool.subscribe([
-    { kinds: [1], authors: myFollows, limit: 20 },
+    { kinds: [1, 5], authors: myFollows, limit: 20 },
   ],
     normalizeUrls(myReadRelays),
     async (ev, _isAfterEose, _relayURL) => {
-      addEvent(ev);
+      switch (ev.kind) {
+        case 1:
+          addEvent(ev);
+          break;
+        case 5:
+          pool.publish(ev, normalizeUrls(feedRelays));
+          break;
+      }
     }
   );
 }
