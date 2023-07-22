@@ -25,12 +25,6 @@ const route = useRoute();
 let sushiMode = ref(false);
 let mahjongMode = ref(false);
 
-const pool = new RelayPool(undefined, {
-  autoReconnect: true,
-  logErrorsAndNotices: true,
-  subscriptionCache: true,
-  useEventCache: true,
-});
 const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
   "wss://nos.lol/",
@@ -49,6 +43,12 @@ let profileRelays = [
   "wss://yabu.me/",
 ];
 
+const pool = new RelayPool(normalizeUrls(feedRelays), {
+  autoReconnect: true,
+  logErrorsAndNotices: true,
+  subscriptionCache: true,
+  useEventCache: true,
+});
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
 const eventsReceived = new Set<string>();
@@ -172,8 +172,13 @@ async function collectEvents() {
       },
     ],
     normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev, _isAfterEose, relayURL) => {
       addEvent(ev);
+
+      if ( relayURL !== undefined && !feedRelays.includes(relayURL) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+        console.log(JSON.stringify({msg:"japanese content", ev}));
+        pool.publish(ev, normalizeUrls(feedRelays));
+      }
     },
     undefined,
     undefined,
@@ -294,6 +299,7 @@ async function login() {
       setTimeout(() => {
         collectFollowsAndSubscribe();
         subscribeReactions();
+        // collectJapaneseUsers();
       }, 1000);
     }
   }
@@ -730,6 +736,17 @@ function gotoTop() {
     scrollToItemTop(itemsTop.value);
   }
 }
+
+const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
+let japaneseUsers: string[] = [];
+async function collectJapaneseUsers() {
+  console.log(JSON.stringify({msg:"Japanese users1", japaneseUsers}));
+  const contactList = await pool.fetchAndCacheContactList(japaneseFollowBotPubkey);
+  japaneseUsers = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+
+  console.log(JSON.stringify({msg:"Japanese users2", japaneseUsers}));
+}
+
 </script>
 
 <template>
