@@ -370,7 +370,6 @@ while (rest.length > 0) {
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;
-  max-width: 95%;
 }
 
 .c-feed-content-kind6 {
