@@ -175,8 +175,8 @@ async function collectEvents() {
     async (ev, _isAfterEose, relayURL) => {
       addEvent(ev);
 
-      if ( relayURL !== undefined && !feedRelays.includes(relayURL) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-        console.log(JSON.stringify({msg:"japanese content", ev}));
+      if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+        console.log(JSON.stringify({ msg: "japanese content", relayURL, ev }));
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     },
@@ -299,11 +299,21 @@ async function login() {
       setTimeout(() => {
         collectFollowsAndSubscribe();
         subscribeReactions();
-        // collectJapaneseUsers();
       }, 1000);
     }
   }
 }
+
+function autoLogin() {
+  const checkNIP07Extention = setInterval(() => {
+    // @ts-ignore
+    if (window.nostr) {
+      login();
+      clearInterval(checkNIP07Extention);
+    }
+  }, 500);
+}
+autoLogin();
 
 function collectMyRelay() {
   pool.subscribe(
@@ -747,11 +757,11 @@ function gotoTop() {
 const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
 let japaneseUsers: string[] = [];
 async function collectJapaneseUsers() {
-  console.log(JSON.stringify({msg:"Japanese users1", japaneseUsers}));
+  console.log(JSON.stringify({ msg: "Japanese users1", japaneseUsers }));
   const contactList = await pool.fetchAndCacheContactList(japaneseFollowBotPubkey);
   japaneseUsers = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
-  console.log(JSON.stringify({msg:"Japanese users2", japaneseUsers}));
+  console.log(JSON.stringify({ msg: "Japanese users2", japaneseUsers }));
 }
 
 </script>
@@ -800,7 +810,8 @@ async function collectJapaneseUsers() {
     <label class="c-post-wrap__bg" @click="isPostOpen = !isPostOpen"></label>
     <div class="c-post-body">
       <div class="c-post-cancel">
-        <button @click="isPostOpen = !isPostOpen" class="c-post-cancel__btn">
+        <button @click="isPostOpen = !isPostOpen; draftEvent = nostr.getBlankEvent(nostr.Kind.Text);"
+          class="c-post-cancel__btn">
           <span class="c-post-cancel__icon">☓</span>
         </button>
       </div>
