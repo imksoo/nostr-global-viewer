@@ -305,10 +305,16 @@ async function login() {
 }
 
 function autoLogin() {
+  let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
     // @ts-ignore
     if (window.nostr) {
       login();
+      clearInterval(checkNIP07Extention);
+    }
+    ++retryCount;
+
+    if ( retryCount > 60 ) {
       clearInterval(checkNIP07Extention);
     }
   }, 500);
