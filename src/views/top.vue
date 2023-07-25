@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import * as nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
+import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
 import { playActionSound, playRectionSound } from '../hooks/usePlaySound';
@@ -65,7 +66,10 @@ let countOfDisplayEvents = 100;
 
 let noteId: string | undefined;
 let npubId: string | undefined;
-watch(() => route.query, (newQuery) => {
+let npubDate = ref<Date | undefined>();
+let npubDateYesterday = ref<Date | undefined>();
+let npubDateTomorrow = ref<Date | undefined>();
+watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
   sushiMode.value = (route.query.sushi === "on");
@@ -92,46 +96,81 @@ watch(() => route.query, (newQuery) => {
       } catch (err) {
         console.error(err);
       }
+    } else if (key === 'date') {
+      const datestr = route.query[key];
+      if (datestr) {
+        console.log('datestr=', datestr);
+        const year = Number(datestr.slice(0, 4));
+        const month = Number(datestr.slice(4, 6));
+        const day = Number(datestr.slice(6, 8));
+        npubDate.value = new Date(year, month - 1, day);
+        console.log('npubDate=', npubDate);
+      }
     }
   }
 
-  const timelineFilter = (noteId) ? {
-    kinds: [1, 6],
-    limit: initialNumberOfEventToGet,
-    ids: [noteId],
-  } : (npubId) ? {
-    kinds: [1, 6, 7],
-    limit: initialNumberOfEventToGet,
-    authors: [npubId],
-  } : {
-    kinds: [1, 6],
-    limit: initialNumberOfEventToGet,
-  };
-  pool.subscribe(
-    [
-      timelineFilter
-    ],
-    feedRelays,
-    async (ev, _isAfterEose, _relayURL) => {
-      addEvent(ev);
-    },
-    undefined,
-    () => {
-      collectProfiles();
-      if (firstFetching) {
-        firstFetching = false;
+  if (!npubId) {
+    const timelineFilter = (noteId) ? {
+      kinds: [1, 6],
+      limit: initialNumberOfEventToGet,
+      ids: [noteId],
+    } : {
+      kinds: [1, 6],
+      limit: initialNumberOfEventToGet,
+    };
+    pool.subscribe(
+      [
+        timelineFilter
+      ],
+      feedRelays,
+      async (ev, _isAfterEose, _relayURL) => {
+        addEvent(ev);
+      },
+      undefined,
+      () => {
+        collectProfiles();
+        if (firstFetching) {
+          firstFetching = false;
+        }
       }
+    );
+  } else {
+    let now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const targetDate = npubDate.value ? npubDate.value : now;
+
+    npubDate.value = new Date(targetDate.getTime());
+    npubDateYesterday.value = new Date(targetDate.getTime());
+    npubDateYesterday.value.setDate(npubDateYesterday.value.getDate() - 1);
+    npubDateTomorrow.value = new Date(targetDate.getTime());
+    npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
+
+    const since = Math.floor(targetDate.getTime() / 1000);
+    const until = since + 24 * 60 * 60;
+    const fetcher = NostrFetcher.init();
+
+    console.log({ since, until });
+    const eventsIter = fetcher.allEventsIterator(
+      feedRelays,
+      { kinds: [1, 6, 7], authors: [npubId] },
+      { since, until }
+    );
+
+    for await (const ev of eventsIter) {
+      addEvent(ev, false);
     }
-  );
+  }
 });
 
-function addEvent(event: nostr.Event): void {
+function addEvent(event: nostr.Event, cutoff: boolean = true): void {
   if (eventsReceived.has(event.id)) {
     return;
   }
   eventsReceived.add(event.id);
   eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
-  eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+  if (cutoff) {
+    eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
+  }
   search();
   if (
     !firstFetching &&
@@ -314,7 +353,7 @@ function autoLogin() {
     }
     ++retryCount;
 
-    if ( retryCount > 60 ) {
+    if (retryCount > 60) {
       clearInterval(checkNIP07Extention);
     }
   }, 500);
@@ -785,6 +824,17 @@ async function collectJapaneseUsers() {
       </div>
     </div>
     <div class="p-index-body">
+      <div class="p-index-header" v-if="npubId">
+        <div><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+        </div>
+        <div><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+              npubDate?.toLocaleDateString() }}</span></a></div>
+        <div><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+        </div>
+      </div>
       <div class="p-index-feeds" :ref="(el) => { itemsTop = el as HTMLElement }">
         <div v-for="e in events" :key="e.id"
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"

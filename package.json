@@ -16,6 +16,7 @@
     "axios": "^1.4.0",
     "html-dom-parser": "^4.0.0",
     "mdi-vue": "^3.0.13",
+    "nostr-fetch": "^0.12.2",
     "nostr-relaypool": "^0.6.28",
     "nostr-tools": "^1.12.0",
     "vue": "^3.2.47",
