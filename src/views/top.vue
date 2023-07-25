@@ -130,7 +130,7 @@ watch(() => route.query, async (newQuery) => {
       [
         timelineFilter
       ],
-      feedRelays,
+      normalizeUrls([...feedRelays]),
       async (ev, _isAfterEose, _relayURL) => {
         addEvent(ev);
       },
@@ -176,7 +176,7 @@ watch(() => route.query, async (newQuery) => {
 
     console.log({ since, until });
     const eventsIter = fetcher.allEventsIterator(
-      feedRelays,
+      normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
       { kinds: [1], authors: [npubId.value] },
       { since, until }
     );
