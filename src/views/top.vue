@@ -77,7 +77,6 @@ watch(() => route.query, async (newQuery) => {
   sushiMode.value = (route.query.sushi === "on");
   mahjongMode.value = (route.query.mahjong === "on");
   for (let key in newQuery) {
-    console.log(key, route.query[key]);
     if (key.match(nostrRegex)) {
       try {
         const data = nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
@@ -101,17 +100,14 @@ watch(() => route.query, async (newQuery) => {
     } else if (key === 'date') {
       const datestr = route.query[key];
       if (datestr) {
-        console.log('datestr=', datestr);
         const year = Number(datestr.slice(0, 4));
         const month = Number(datestr.slice(4, 6));
         const day = Number(datestr.slice(6, 8));
         npubDate.value = new Date(year, month - 1, day);
-        console.log('npubDate=', npubDate);
       }
     }
   }
 
-  console.log(noteId.value, npubId.value, npubDate.value);
   if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && !npubDate.value)) {
     const timelineFilter = (noteId.value) ? {
       kinds: [1, 6],
@@ -125,7 +121,6 @@ watch(() => route.query, async (newQuery) => {
       kinds: [1, 6],
       limit: initialNumberOfEventToGet,
     };
-    console.log("timelineFilter", timelineFilter);
     pool.subscribe(
       [
         timelineFilter
@@ -174,9 +169,8 @@ watch(() => route.query, async (newQuery) => {
     const until = since + 24 * 60 * 60;
     const fetcher = NostrFetcher.init();
 
-    console.log({ since, until });
     const eventsIter = fetcher.allEventsIterator(
-      normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
+      normalizeUrls([...feedRelays]),
       { kinds: [1], authors: [npubId.value] },
       { since, until }
     );
@@ -875,6 +869,18 @@ async function collectJapaneseUsers() {
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
             :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
+        </div>
+      </div>
+      <div class="p-index-header" v-if="npubId">
+        <div class="p-index-npub-prev"><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+        </div>
+        <div class="p-index-npub-now"><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+              npubMode
+            }}</span></a></div>
+        <div class="p-index-npub-next"><a
+            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
       <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
