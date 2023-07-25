@@ -64,11 +64,12 @@ const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
 let countOfDisplayEvents = 100;
 
-let noteId: string | undefined;
-let npubId: string | undefined;
+let noteId = ref<string | undefined>();
+let npubId = ref<string | undefined>();
 let npubDate = ref<Date | undefined>();
 let npubDateYesterday = ref<Date | undefined>();
 let npubDateTomorrow = ref<Date | undefined>();
+let npubMode = ref<string>("");
 watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
@@ -81,16 +82,16 @@ watch(() => route.query, async (newQuery) => {
         const data = nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
         switch (data.type) {
           case "nevent": {
-            noteId = data.data.id;
+            noteId.value = data.data.id;
           } break;
           case "note": {
-            noteId = data.data;
+            noteId.value = data.data;
           } break;
           case "nprofile": {
-            npubId = data.data.pubkey;
+            npubId.value = data.data.pubkey;
           } break;
           case "npub": {
-            npubId = data.data;
+            npubId.value = data.data;
           }
         }
       } catch (err) {
@@ -109,15 +110,21 @@ watch(() => route.query, async (newQuery) => {
     }
   }
 
-  if (!npubId) {
-    const timelineFilter = (noteId) ? {
+  console.log(noteId.value, npubId.value, npubDate.value);
+  if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && !npubDate.value)) {
+    const timelineFilter = (noteId.value) ? {
       kinds: [1, 6],
       limit: initialNumberOfEventToGet,
-      ids: [noteId],
+      ids: [noteId.value],
+    } : (npubId.value) ? {
+      kinds: [1, 6, 7],
+      limit: initialNumberOfEventToGet,
+      authors: [npubId.value]
     } : {
       kinds: [1, 6],
       limit: initialNumberOfEventToGet,
     };
+    console.log("timelineFilter", timelineFilter);
     pool.subscribe(
       [
         timelineFilter
@@ -134,10 +141,26 @@ watch(() => route.query, async (newQuery) => {
         }
       }
     );
+
+    if (npubId.value && !npubDate.value) {
+      npubMode.value = `直近の ${countOfDisplayEvents} 件の投稿を表示しています。`;
+
+      let now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const targetDate = now;
+
+      npubDate.value = new Date(targetDate.getTime());
+      npubDateYesterday.value = new Date(targetDate.getTime());
+      npubDateYesterday.value.setDate(npubDateYesterday.value.getDate() - 1);
+      npubDateTomorrow.value = new Date(targetDate.getTime());
+      npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
+    }
   } else {
     let now = new Date();
     now.setHours(0, 0, 0, 0);
     const targetDate = npubDate.value ? npubDate.value : now;
+
+    npubMode.value = `${targetDate.toLocaleDateString()} の投稿を表示しています。`;
 
     npubDate.value = new Date(targetDate.getTime());
     npubDateYesterday.value = new Date(targetDate.getTime());
@@ -152,7 +175,7 @@ watch(() => route.query, async (newQuery) => {
     console.log({ since, until });
     const eventsIter = fetcher.allEventsIterator(
       feedRelays,
-      { kinds: [1, 6, 7], authors: [npubId] },
+      { kinds: [1, 6, 7], authors: [npubId.value] },
       { since, until }
     );
 
@@ -334,7 +357,7 @@ async function login() {
     logined.value = true;
     countOfDisplayEvents *= 2;
     collectMyRelay();
-    if (!noteId && !npubId) {
+    if (!noteId.value && !npubId.value) {
       setTimeout(() => {
         collectFollowsAndSubscribe();
         subscribeReactions();
@@ -825,13 +848,14 @@ async function collectJapaneseUsers() {
     </div>
     <div class="p-index-body">
       <div class="p-index-header" v-if="npubId">
-        <div><a
+        <div class="p-index-npub-prev"><a
             :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
-        <div><a
+        <div class="p-index-npub-now"><a
             :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
-              npubDate?.toLocaleDateString() }}</span></a></div>
-        <div><a
+              npubMode
+            }}</span></a></div>
+        <div class="p-index-npub-next"><a
             :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
@@ -910,5 +934,27 @@ async function collectJapaneseUsers() {
 
 .p-index-post__help {
   color: #050a30;
+}
+
+.p-index-header {
+  margin-top: 5px;
+  background-color: #ffffff;
+  border-radius: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.p-index-npub-prev {
+  flex-grow: 1;
+}
+
+.p-index-npub-now {
+  text-align: center;
+}
+
+.p-index-npub-next {
+  flex-grow: 1;
+  text-align: right;
 }
 </style>
