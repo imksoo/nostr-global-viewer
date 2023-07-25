@@ -70,6 +70,7 @@ let npubDate = ref<Date | undefined>();
 let npubDateYesterday = ref<Date | undefined>();
 let npubDateTomorrow = ref<Date | undefined>();
 let npubMode = ref<string>("");
+let cutoffMode = ref<boolean>(true);
 watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
@@ -117,8 +118,8 @@ watch(() => route.query, async (newQuery) => {
       limit: initialNumberOfEventToGet,
       ids: [noteId.value],
     } : (npubId.value) ? {
-      kinds: [1, 6, 7],
-      limit: initialNumberOfEventToGet,
+      kinds: [1],
+      limit: countOfDisplayEvents,
       authors: [npubId.value]
     } : {
       kinds: [1, 6],
@@ -155,12 +156,13 @@ watch(() => route.query, async (newQuery) => {
       npubDateTomorrow.value = new Date(targetDate.getTime());
       npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
     }
-  } else {
+  } else if (npubId.value) {
     let now = new Date();
     now.setHours(0, 0, 0, 0);
     const targetDate = npubDate.value ? npubDate.value : now;
 
     npubMode.value = `${targetDate.toLocaleDateString()} の投稿を表示しています。`;
+    cutoffMode.value = false;
 
     npubDate.value = new Date(targetDate.getTime());
     npubDateYesterday.value = new Date(targetDate.getTime());
@@ -175,23 +177,23 @@ watch(() => route.query, async (newQuery) => {
     console.log({ since, until });
     const eventsIter = fetcher.allEventsIterator(
       feedRelays,
-      { kinds: [1, 6, 7], authors: [npubId.value] },
+      { kinds: [1], authors: [npubId.value] },
       { since, until }
     );
 
     for await (const ev of eventsIter) {
-      addEvent(ev, false);
+      addEvent(ev);
     }
   }
 });
 
-function addEvent(event: nostr.Event, cutoff: boolean = true): void {
+function addEvent(event: nostr.Event): void {
   if (eventsReceived.has(event.id)) {
     return;
   }
   eventsReceived.add(event.id);
   eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
-  if (cutoff) {
+  if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
   search();
@@ -596,7 +598,9 @@ function search() {
   events.value = eventsToSearch.value.filter((e) => {
     return searchSubstring(e.content, searchWords.value);
   });
-  events.value = events.value.slice(0, countOfDisplayEvents);
+  if (cutoffMode.value) {
+    events.value = events.value.slice(0, countOfDisplayEvents);
+  }
   if (events.value.length === 0) {
     events.value[0] = {
       id: "",
