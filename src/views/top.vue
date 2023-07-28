@@ -44,6 +44,10 @@ let profileRelays = [
   "wss://yabu.me/",
 ];
 
+const invalidSinceLastRelays = [
+  "wss://relay.nostr.band/",
+];
+
 const pool = new RelayPool(normalizeUrls(feedRelays), {
   autoReconnect: true,
   logErrorsAndNotices: true,
@@ -169,14 +173,22 @@ watch(() => route.query, async (newQuery) => {
     const until = since + 24 * 60 * 60;
     const fetcher = NostrFetcher.init();
 
+    let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
+    searchRelays = searchRelays.filter((e) => (!invalidSinceLastRelays.includes(e)));
     const eventsIter = fetcher.allEventsIterator(
-      normalizeUrls([...feedRelays]),
+      normalizeUrls(searchRelays),
       { kinds: [1], authors: [npubId.value] },
       { since, until }
     );
 
     for await (const ev of eventsIter) {
-      addEvent(ev);
+      if (since <= ev.created_at && ev.created_at <= until) {
+        addEvent(ev);
+
+        if (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+          pool.publish(ev, normalizeUrls(feedRelays));
+        }
+      }
     }
   }
 });
