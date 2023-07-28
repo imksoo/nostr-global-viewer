@@ -177,13 +177,6 @@ watch(() => route.query, async (newQuery) => {
     npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
 
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
-    searchRelays = searchRelays.filter((e) => (!invalidSinceLastRelays.includes(e)));
-    console.log("searchRelays=", searchRelays);
-
-    // 自分のリレーの中でイベントを検索してみる
-    collectUserDailyEvents(npubId.value, searchRelays, targetDate);
-
-    // そのユーザーが利用しているリレーリストの中から取りこぼしがないかさらに検索して表示する
     pool.subscribe(
       [
         {
@@ -211,15 +204,13 @@ watch(() => route.query, async (newQuery) => {
       { unsubscribeOnEose: true }
     );
 
+    await collectUserDailyEvents(npubId.value, searchRelays, targetDate);
     setTimeout(async () => {
       if (npubId.value) {
         let searchRelays = [...npubReadRelays, ...npubWriteRelays];
-        searchRelays = searchRelays.filter((e) => (!invalidSinceLastRelays.includes(e)));
-        console.log("searchRelays=", searchRelays);
-
         collectUserDailyEvents(npubId.value, searchRelays, targetDate);
       }
-    }, 3000);
+    }, 5000);
   }
 });
 
@@ -242,6 +233,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
       npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
 
       if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+        console.log("Publish event from collectUserDailyEvents", ev);
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     }
@@ -296,12 +288,12 @@ async function collectEvents() {
         ids: eventIds
       },
     ],
-    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
+    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, relayURL) => {
       addEvent(ev);
 
       if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-        console.log(JSON.stringify({ msg: "japanese content", relayURL, ev }));
+        console.log("Publish event from collectEvents", relayURL, ev);
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     },
