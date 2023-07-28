@@ -31,9 +31,13 @@ let profileRelays = [
   "wss://nos.lol/",
   "wss://nostr-pub.wellorder.net/",
   "wss://nostr-relay.nokotaro.com/",
+  "wss://nostr.fediverse.jp",
   "wss://nostr.h3z.jp/",
   "wss://nostr.holybea.com/",
+  "wss://nrelay-jp.c-stellar.net",
+  "wss://nrelay.c-stellar.net",
   "wss://offchain.pub/",
+  "wss://r.kojira.io/",
   "wss://relay-jp.nostr.wirednet.jp/",
   "wss://relay.austrich.net/",
   "wss://relay.current.fyi/",
@@ -74,8 +78,11 @@ let npubDate = ref<Date | undefined>();
 let npubDateYesterday = ref<Date | undefined>();
 let npubDateTomorrow = ref<Date | undefined>();
 let npubMode = ref<string>("");
-let npubModeCount = ref(0);
 let cutoffMode = ref<boolean>(true);
+
+let npubRelaysCreatedAt = 0;
+let npubReadRelays: string[] = [];
+let npubWriteRelays: string[] = [];
 watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
@@ -130,7 +137,7 @@ watch(() => route.query, async (newQuery) => {
       [
         timelineFilter
       ],
-      normalizeUrls([...feedRelays]),
+      [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, _relayURL) => {
         addEvent(ev);
       },
@@ -161,7 +168,6 @@ watch(() => route.query, async (newQuery) => {
     now.setHours(0, 0, 0, 0);
     const targetDate = npubDate.value ? npubDate.value : now;
 
-    npubModeCount.value = 0;
     cutoffMode.value = false;
 
     npubDate.value = new Date(targetDate.getTime());
@@ -170,31 +176,77 @@ watch(() => route.query, async (newQuery) => {
     npubDateTomorrow.value = new Date(targetDate.getTime());
     npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
 
-    const since = Math.floor(targetDate.getTime() / 1000);
-    const until = since + 24 * 60 * 60;
-    const fetcher = NostrFetcher.init();
-
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
     searchRelays = searchRelays.filter((e) => (!invalidSinceLastRelays.includes(e)));
-    const eventsIter = fetcher.allEventsIterator(
-      normalizeUrls(searchRelays),
-      { kinds: [1], authors: [npubId.value] },
-      { since, until }
+    console.log("searchRelays=", searchRelays);
+
+    // 自分のリレーの中でイベントを検索してみる
+    collectUserDailyEvents(npubId.value, searchRelays, targetDate);
+
+    // そのユーザーが利用しているリレーリストの中から取りこぼしがないかさらに検索して表示する
+    pool.subscribe(
+      [
+        {
+          kinds: [3],
+          authors: [npubId.value],
+          limit: 1,
+        },
+      ],
+      [...new Set(normalizeUrls(profileRelays))],
+      (ev, _relayURL) => {
+        if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
+          npubWriteRelays.slice(0);
+          const content = JSON.parse(ev.content);
+          npubRelaysCreatedAt = ev.created_at;
+          for (const r in content) {
+            npubReadRelays.push(r);
+            if (content[r].write) {
+              npubWriteRelays.push(r);
+            }
+          }
+        }
+      },
+      undefined,
+      undefined,
+      { unsubscribeOnEose: true }
     );
 
-    for await (const ev of eventsIter) {
-      if (since <= ev.created_at && ev.created_at <= until) {
-        addEvent(ev);
-        npubModeCount.value += 1;
-        npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${npubModeCount.value} 件 + 引用/リプライを表示しています。`;
+    setTimeout(async () => {
+      if (npubId.value) {
+        let searchRelays = [...npubReadRelays, ...npubWriteRelays];
+        searchRelays = searchRelays.filter((e) => (!invalidSinceLastRelays.includes(e)));
+        console.log("searchRelays=", searchRelays);
 
-        if (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-          pool.publish(ev, normalizeUrls(feedRelays));
-        }
+        collectUserDailyEvents(npubId.value, searchRelays, targetDate);
+      }
+    }, 3000);
+  }
+});
+
+// 指定されたユーザーのその一日のイベントを取得する
+async function collectUserDailyEvents(pubkey: string, relays: string[], targetDate: Date) {
+  const fetcher = NostrFetcher.init();
+
+  const since = Math.floor(targetDate.getTime() / 1000);
+  const until = since + 24 * 60 * 60;
+
+  const eventsIter = fetcher.allEventsIterator(
+    [...new Set(normalizeUrls(relays))],
+    { kinds: [1], authors: [pubkey] },
+    { since, until }
+  );
+
+  for await (const ev of eventsIter) {
+    if (since <= ev.created_at && ev.created_at <= until) {
+      addEvent(ev);
+      npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
+
+      if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+        pool.publish(ev, normalizeUrls(feedRelays));
       }
     }
   }
-});
+}
 
 function addEvent(event: nostr.Event): void {
   if (eventsReceived.has(event.id)) {
@@ -244,7 +296,7 @@ async function collectEvents() {
         ids: eventIds
       },
     ],
-    normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
+    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
     async (ev, _isAfterEose, relayURL) => {
       addEvent(ev);
 
@@ -315,7 +367,7 @@ async function collectProfiles() {
         authors: pubkeys,
       },
     ],
-    normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]),
+    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
@@ -403,7 +455,7 @@ function collectMyRelay() {
         limit: 1,
       },
     ],
-    profileRelays,
+    [... new Set(normalizeUrls(profileRelays))],
     (ev, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
         myWriteRelays.slice(0);
@@ -430,7 +482,7 @@ async function collectFollowsAndSubscribe() {
   pool.subscribe([
     { kinds: [1, 5], authors: myFollows, limit: 20 },
   ],
-    normalizeUrls(myReadRelays),
+    [...new Set(normalizeUrls(myReadRelays))],
     async (ev, _isAfterEose, _relayURL) => {
       switch (ev.kind) {
         case 1:
@@ -450,7 +502,7 @@ function subscribeReactions() {
   pool.subscribe([
     { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 },
   ],
-    normalizeUrls(myReadRelays),
+    [...new Set(normalizeUrls(myReadRelays))],
     async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
 
