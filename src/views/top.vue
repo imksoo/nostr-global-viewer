@@ -181,6 +181,28 @@ watch(() => route.query, async (newQuery) => {
     npubDateTomorrow.value = new Date(targetDate.getTime());
     npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
 
+    pool.subscribe(
+      [{
+        kinds: [1],
+        authors: [npubId.value],
+        since: Math.floor(targetDate.getTime() / 1000),
+        until: Math.floor(targetDate.getTime() / 1000) + 24 * 60 * 60
+      }],
+      [...new Set(normalizeUrls([...feedRelays]))],
+      async (ev, _isAfterEose, relayURL) => {
+        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+          console.log("Publish event from collectEvents", relayURL, ev);
+          pool.publish(ev, normalizeUrls(feedRelays));
+        }
+
+        npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
+        addEvent(ev);
+      },
+      undefined,
+      undefined,
+      { unsubscribeOnEose: true }
+    );
+
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
     pool.subscribe(
       [
