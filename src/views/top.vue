@@ -74,6 +74,7 @@ let npubDate = ref<Date | undefined>();
 let npubDateYesterday = ref<Date | undefined>();
 let npubDateTomorrow = ref<Date | undefined>();
 let npubMode = ref<string>("");
+let npubModeCount = ref(0);
 let cutoffMode = ref<boolean>(true);
 watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
@@ -160,7 +161,7 @@ watch(() => route.query, async (newQuery) => {
     now.setHours(0, 0, 0, 0);
     const targetDate = npubDate.value ? npubDate.value : now;
 
-    npubMode.value = `${targetDate.toLocaleDateString()} の投稿を表示しています。`;
+    npubModeCount.value = 0;
     cutoffMode.value = false;
 
     npubDate.value = new Date(targetDate.getTime());
@@ -184,6 +185,8 @@ watch(() => route.query, async (newQuery) => {
     for await (const ev of eventsIter) {
       if (since <= ev.created_at && ev.created_at <= until) {
         addEvent(ev);
+        npubModeCount.value += 1;
+        npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${npubModeCount.value} 件 + 引用/リプライを表示しています。`;
 
         if (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
           pool.publish(ev, normalizeUrls(feedRelays));
