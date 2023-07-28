@@ -138,7 +138,12 @@ watch(() => route.query, async (newQuery) => {
         timelineFilter
       ],
       [...new Set(normalizeUrls([...feedRelays]))],
-      async (ev, _isAfterEose, _relayURL) => {
+      async (ev, _isAfterEose, relayURL) => {
+        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+          console.log("Publish event from collectEvents", relayURL, ev);
+          pool.publish(ev, normalizeUrls(feedRelays));
+        }
+
         addEvent(ev);
       },
       undefined,
@@ -204,7 +209,7 @@ watch(() => route.query, async (newQuery) => {
       { unsubscribeOnEose: true }
     );
 
-    await collectUserDailyEvents(npubId.value, searchRelays, targetDate);
+    collectUserDailyEvents(npubId.value, searchRelays, targetDate);
     setTimeout(async () => {
       if (npubId.value) {
         let searchRelays = [...npubReadRelays, ...npubWriteRelays];
@@ -229,13 +234,12 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
 
   for await (const ev of eventsIter) {
     if (since <= ev.created_at && ev.created_at <= until) {
-      addEvent(ev);
-      npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
-
       if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
         console.log("Publish event from collectUserDailyEvents", ev);
         pool.publish(ev, normalizeUrls(feedRelays));
       }
+      addEvent(ev);
+      npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
     }
   }
 }
