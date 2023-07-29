@@ -156,7 +156,7 @@ watch(() => route.query, async (newQuery) => {
     );
 
     if (npubId.value && !npubDate.value) {
-      npubMode.value = `直近の ${countOfDisplayEvents} 件の投稿を表示しています。`;
+      npubMode.value = `直近の ${countOfDisplayEvents} 件の投稿を表示しています。(リンクを押すと日付別モードに変わります)`;
 
       let now = new Date();
       now.setHours(0, 0, 0, 0);
@@ -181,22 +181,20 @@ watch(() => route.query, async (newQuery) => {
     npubDateTomorrow.value = new Date(targetDate.getTime());
     npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
 
+    const since = Math.floor(targetDate.getTime() / 1000) - 1;
+    const until = Math.floor(targetDate.getTime() / 1000) + 24 * 60 * 60 + 1;
     pool.subscribe(
       [{
         kinds: [1],
         authors: [npubId.value],
-        since: Math.floor(targetDate.getTime() / 1000),
-        until: Math.floor(targetDate.getTime() / 1000) + 24 * 60 * 60
+        since, until,
       }],
       [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, relayURL) => {
-        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-          console.log("Publish event from collectEvents", relayURL, ev);
-          pool.publish(ev, normalizeUrls(feedRelays));
+        if (since <= ev.created_at && ev.created_at <= until) {
+          npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
+          addEvent(ev);
         }
-
-        npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
-        addEvent(ev);
       },
       undefined,
       undefined,
@@ -205,13 +203,7 @@ watch(() => route.query, async (newQuery) => {
 
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
     pool.subscribe(
-      [
-        {
-          kinds: [3],
-          authors: [npubId.value],
-          limit: 1,
-        },
-      ],
+      [{ kinds: [3], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(profileRelays))],
       (ev, _relayURL) => {
         if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
@@ -261,7 +253,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
         pool.publish(ev, normalizeUrls(feedRelays));
       }
       addEvent(ev);
-      npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
+      npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)`;
     }
   }
 }
