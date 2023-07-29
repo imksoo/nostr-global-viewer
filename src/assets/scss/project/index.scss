@@ -6,9 +6,17 @@
   display: flex;
   gap: 20px;
 
+  @media screen and (max-width: 640px) {
+    display: block;
+    width: 400px;
+    max-width: 400px;
+  }
   @media screen and (max-width: 880px) {
     display: block;
-    max-width: 100%;
+    max-width: 800px;
+  }
+  @media screen and (max-width: 1024px) {
+    display: block;
   }
 }
 
@@ -17,7 +25,7 @@
   flex-shrink: 0;
 
   // position: relative;
-  @media screen and (max-width: 880px) {
+  @media screen and (max-width: 1024px) {
     width: 100%;
   }
 
@@ -25,7 +33,7 @@
     // position: sticky;
     top: 0;
 
-    @media screen and (max-width: 880px) {
+    @media screen and (max-width: 1024px) {
       position: relative;
     }
   }
