@@ -72,6 +72,24 @@ const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
 let countOfDisplayEvents = 100;
 
+const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
+let japaneseUsers: string[] = [];
+function collectJapaneseUsers() {
+  pool.subscribe(
+    [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
+    [...new Set(normalizeUrls(profileRelays))],
+    (ev, _relayURL) => {
+      if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
+        japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+      }
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+}
+collectJapaneseUsers();
+
 let noteId = ref<string | undefined>();
 let npubId = ref<string | undefined>();
 let npubDate = ref<Date | undefined>();
@@ -182,7 +200,7 @@ watch(() => route.query, async (newQuery) => {
     npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
 
     const since = Math.floor(targetDate.getTime() / 1000) - 1;
-    const until = Math.floor(targetDate.getTime() / 1000) + 24 * 60 * 60 + 1;
+    const until = Math.floor(npubDateTomorrow.value.getTime() / 1000) + 1;
     pool.subscribe(
       [{
         kinds: [1],
@@ -235,21 +253,27 @@ watch(() => route.query, async (newQuery) => {
 
 // 指定されたユーザーのその一日のイベントを取得する
 async function collectUserDailyEvents(pubkey: string, relays: string[], targetDate: Date) {
+  const profile = getProfile(pubkey);
+
   const fetcher = NostrFetcher.init();
 
+  let nextDay = new Date(targetDate.getTime());
+  nextDay.setDate(nextDay.getDate() + 1);
+
   const since = Math.floor(targetDate.getTime() / 1000);
-  const until = since + 24 * 60 * 60;
+  const until = Math.floor(nextDay.getTime() / 1000);
 
   const eventsIter = fetcher.allEventsIterator(
     [...new Set(normalizeUrls(relays))],
-    { kinds: [1], authors: [pubkey] },
+    { kinds: [1, 5], authors: [pubkey] },
     { since, until }
   );
 
   for await (const ev of eventsIter) {
     if (since <= ev.created_at && ev.created_at <= until) {
-      if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-        console.log("Publish event from collectUserDailyEvents", ev);
+      const usertext = profile.display_name + profile.name + ev.content;
+      const japaneseRegex = /[亜-熙ぁ-んァ-ヶ]/;
+      if (ev.kind === 5 || !eventsReceived.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
       addEvent(ev);
@@ -896,17 +920,6 @@ function gotoTop() {
     scrollToItemTop(itemsTop.value);
   }
 }
-
-const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
-let japaneseUsers: string[] = [];
-async function collectJapaneseUsers() {
-  console.log(JSON.stringify({ msg: "Japanese users1", japaneseUsers }));
-  const contactList = await pool.fetchAndCacheContactList(japaneseFollowBotPubkey);
-  japaneseUsers = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
-
-  console.log(JSON.stringify({ msg: "Japanese users2", japaneseUsers }));
-}
-
 </script>
 
 <template>
