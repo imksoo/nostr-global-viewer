@@ -15,7 +15,7 @@ function appVersion() {
   <h1 class="p-index-title">
     <a href="/">
       <span class="p-index-title__main">
-        のぞき窓
+        Nozokimado
       </span>
     </a>
     <span class="p-index-title__sub">From
