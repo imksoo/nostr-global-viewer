@@ -43,22 +43,25 @@ const favEvent = (reacted: Nostr.Event = props.event) => {
     return;
   }
 
-  const inheritedTags = reacted.tags.filter(
-    (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
-  )
+  const confirmed = window.confirm(`ふぁぼりますか？\n\n"${reacted.content}"`);
+  if (confirmed) {
+    const inheritedTags = reacted.tags.filter(
+      (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
+    )
 
-  const reaction = Nostr.getBlankEvent(Nostr.Kind.Reaction);
-  reaction.tags = [
-    ...inheritedTags,
-    ['e', reacted.id],
-    ['p', reacted.pubkey],
-  ]
-  reaction.content = "+";
-  reaction.created_at = Math.floor(Date.now() / 1000);
+    const reaction = Nostr.getBlankEvent(Nostr.Kind.Reaction);
+    reaction.tags = [
+      ...inheritedTags,
+      ['e', reacted.id],
+      ['p', reacted.pubkey],
+    ]
+    reaction.content = "+";
+    reaction.created_at = Math.floor(Date.now() / 1000);
 
-  props.postEvent(reaction);
+    props.postEvent(reaction);
 
-  isFavorited.value = true;
+    isFavorited.value = true;
+  }
 }
 
 const repostEvent = (reposted: Nostr.Event = props.event) => {
@@ -66,17 +69,20 @@ const repostEvent = (reposted: Nostr.Event = props.event) => {
     return;
   }
 
-  const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
-  reaction.tags = [
-    ['e', reposted.id],
-    ['p', reposted.pubkey],
-  ]
-  reaction.content = "";
-  reaction.created_at = Math.floor(Date.now() / 1000);
+  const confirmed = window.confirm(`リポストしますか？\n\n"${reposted.content}"`);
+  if (confirmed) {
+    const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
+    reaction.tags = [
+      ['e', reposted.id],
+      ['p', reposted.pubkey],
+    ]
+    reaction.content = "";
+    reaction.created_at = Math.floor(Date.now() / 1000);
 
-  props.postEvent(reaction);
+    props.postEvent(reaction);
 
-  isReposted.value = true;
+    isReposted.value = true;
+  }
 }
 
 function copyNoteId(): void {
@@ -96,16 +102,6 @@ function getLinkUrl(): string {
   return 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id);
 }
 
-const route = useRoute();
-const linkTo = ref({});
-onMounted(() => {
-  let query = { ...route.query };
-  let noteText = encodeURI();
-
-  query[noteText] = "";
-
-  linkTo.value = { path: "/", query: query };
-})
 </script>
 <template>
   <div class="c-feed-footer">
