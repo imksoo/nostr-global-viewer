@@ -199,7 +199,7 @@ watch(() => route.query, async (newQuery) => {
     const until = Math.floor(npubDateTomorrow.value.getTime() / 1000) + 1;
     pool.subscribe(
       [{
-        kinds: [1],
+        kinds: [1, 6, 7],
         authors: [npubId.value],
         since, until,
       }],
@@ -261,7 +261,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
 
   const eventsIter = fetcher.allEventsIterator(
     [...new Set(normalizeUrls(relays))],
-    { kinds: [1, 5], authors: [pubkey] },
+    { kinds: [1, 5, 6, 7], authors: [pubkey] },
     { since, until }
   );
 
@@ -269,10 +269,16 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
     if (since <= ev.created_at && ev.created_at <= until) {
       const usertext = profile.display_name + profile.name + ev.content;
       const japaneseRegex = /[亜-熙ぁ-んァ-ヶ]/;
-      if (ev.kind === 5 || !eventsReceived.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
+      if (ev.kind === 5) {
+        console.log("Broadcast kind=5", JSON.stringify(ev));
+        pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays]))]);
+      } else if (!eventsReceived.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
-      addEvent(ev);
+
+      if (ev.kind !== 5) {
+        addEvent(ev);
+      }
       npubMode.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)`;
     }
   }
@@ -519,7 +525,7 @@ async function collectFollowsAndSubscribe() {
           addEvent(ev);
           break;
         case 5:
-          pool.publish(ev, normalizeUrls(feedRelays));
+          pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays])]));
           break;
       }
     }
