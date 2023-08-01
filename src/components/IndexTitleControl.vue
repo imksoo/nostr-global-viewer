@@ -67,6 +67,6 @@ function appVersion() {
   -webkit-text-fill-color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
-  background-image: linear-gradient(to right, red, orange, yellow, green, violet);
+  background-image: linear-gradient(to top right, red 20%, orange 25% 35%, yellow 45% 55%, green 65% 75%, blue 80% 95%, violet 100%);
 }
 </style>
