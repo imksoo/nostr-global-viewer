@@ -101,11 +101,6 @@ async function copyToClipboard(text: string) {
   font-size: 14px;
 }
 
-@keyframes hue-rotate-animation {
-  0% { filter: hue-rotate(0deg); }
-  100% { filter: hue-rotate(360deg); }
-}
-
 .c-feed-profile__picture {
   max-height: 3rem;
   max-width: 3rem;
@@ -114,8 +109,6 @@ async function copyToClipboard(text: string) {
   margin: 0;
   object-fit: cover;
   border-radius: 4px;
-
-  animation: hue-rotate-animation 30s linear infinite;
 }
 
 .c-feed-profile-copy-button {

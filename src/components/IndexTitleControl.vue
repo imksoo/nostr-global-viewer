@@ -62,4 +62,19 @@ function appVersion() {
       width: 100%;
     }
   }
-}</style>
+}
+
+@keyframes hue-rotate-animation {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.p-index-title a {
+  animation: hue-rotate-animation 5s infinite;
+
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-image: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet);
+}
+</style>
