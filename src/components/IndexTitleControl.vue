@@ -13,7 +13,7 @@ function appVersion() {
 </script>
 <template>
   <h1 class="p-index-title">
-    <a href="/">
+    <a href="/" :class="(Math.floor(new Date().getTime()/1000) % 10 === 0) ? ['gaming'] : []">
       <span class="p-index-title__main">
         Nozokimado
       </span>
@@ -63,7 +63,8 @@ function appVersion() {
     }
   }
 }
-.p-index-title a {
+
+.p-index-title a.gaming {
   -webkit-text-fill-color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
