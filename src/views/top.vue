@@ -777,7 +777,12 @@ function normalizeUrls(urls: string[]): string[] {
 const isFaved = new Set<string>();
 const isReposted = new Set<string>();
 
+const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+const konamiIndex = ref(0);
+
 function handleKeydownShortcuts(e: KeyboardEvent): void {
+  console.log("keydown", e.key);
+
   const target = e.target as HTMLElement;
   if (target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea') {
     return;
@@ -785,6 +790,20 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
   if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) {
     return;
   }
+
+  if (e.key === konamiCode[konamiIndex.value]) {
+    console.log("KONAMI COUNT=", konamiIndex.value);
+    konamiIndex.value += 1;
+  } else {
+    konamiIndex.value = 0;
+  }
+
+  if (konamiIndex.value === konamiCode.length) {
+    console.log("!!!KONAMI COMMAND!!!");
+    rotateImages();
+    konamiIndex.value = 0;
+  }
+
   if (e.key === 'n' && logined.value && !isPostOpen.value) {
     isPostOpen.value = true;
     e.preventDefault();
@@ -873,6 +892,16 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
 })
+
+function rotateImages() {
+  const images = document.getElementsByTagName("img");
+  for (let i = 0; i < images.length; i++) {
+    images[i].classList.add('rotate')
+    images[i].addEventListener('animationend', () => {
+      images[i].classList.remove('rotate')
+    }, { once: true })
+  }
+}
 
 function loggingStatistics(): void {
   console.log(JSON.stringify({
@@ -977,10 +1006,11 @@ function gotoTop() {
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
-            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost" :open-quote-post="openReplyPost"></FeedContent>
+            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
+            :open-quote-post="openReplyPost"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost" :open-quote-post="openQuotePost"
-            :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :open-quote-post="openQuotePost" :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
@@ -1078,5 +1108,21 @@ function gotoTop() {
 .p-index-npub-next {
   flex-grow: 1;
   text-align: right;
+}
+</style>
+
+<style>
+.rotate {
+  animation: rotation 2s linear;
+}
+
+@keyframes rotation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
