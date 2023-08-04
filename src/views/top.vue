@@ -630,11 +630,24 @@ function openReplyPost(reply: nostr.Event): void {
   isPostOpen.value = true;
 }
 
+function openQuotePost(repost: nostr.Event): void {
+  // 投稿欄をすべて空っぽにする
+  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
+  // 投稿欄にnoteidを追加する
+  draftEvent.value.content = "\n\nnostr:" + nostr.nip19.noteEncode(repost.id);
+
+  isPostOpen.value = true;
+}
+
 const noteTextarea = ref<HTMLTextAreaElement | null>(null);
 watch(isPostOpen, async (isPostOpened) => {
   if (isPostOpened) {
     await nextTick();
     noteTextarea.value?.focus();
+    if (noteTextarea.value) {
+      noteTextarea.value.selectionStart = 0;
+      noteTextarea.value.selectionEnd = 0;
+    }
   }
 });
 
@@ -813,6 +826,13 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
       e.stopPropagation();
       openReplyPost(targetEvent);
     }
+  } else if (e.key === 'q' && logined.value && !isPostOpen.value) {
+    const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
+    if (targetEvent && targetEvent.kind === 1) {
+      e.preventDefault();
+      e.stopPropagation();
+      openQuotePost(targetEvent);
+    }
   } else if (e.key === "f" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1 && !isFaved.has(targetEvent.id)) {
@@ -957,9 +977,9 @@ function gotoTop() {
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
-            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"></FeedContent>
+            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost" :open-quote-post="openReplyPost"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost" :open-quote-post="openQuotePost"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>

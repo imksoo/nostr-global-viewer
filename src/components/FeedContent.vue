@@ -41,6 +41,10 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  openQuotePost: {
+    type: Function,
+    required: true,
+  },
 });
 
 const emojiMap = new Map();
@@ -306,8 +310,7 @@ while (rest.length > 0) {
         </a>
       </template>
       <template v-else-if="token?.type === 'youtube'">
-        <iframe :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player"
-          frameborder="0"
+        <iframe :src="'https://www.youtube.com/embed/' + token.href" title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen></iframe>
       </template>
@@ -316,8 +319,7 @@ while (rest.length > 0) {
           {{ token.content }}
         </a>
         <br />
-        <iframe frameborder="0" :src="'https://twitframe.com/show?url=' + token.src"
-          @load="onIframeLoad"></iframe>
+        <iframe frameborder="0" :src="'https://twitframe.com/show?url=' + token.src" @load="onIframeLoad"></iframe>
       </template>
       <template v-else-if="token?.type === 'nostr'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
@@ -330,11 +332,12 @@ while (rest.length > 0) {
             <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
             <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
               :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
-              :get-profile="props.getProfile" :open-reply-post="props.openReplyPost">
+              :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"
+              :open-quote-post="props.openQuotePost">
             </FeedContent>
             <FeedFooter v-bind:event="props.getEvent(token.id)" :speak-note="props.speakNote" :volume="volume"
               :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile"
-              :open-reply-post="props.openReplyPost"></FeedFooter>
+              :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost"></FeedFooter>
           </template>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">

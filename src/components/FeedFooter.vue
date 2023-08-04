@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import * as Nostr from "nostr-tools";
-import { useRoute } from "vue-router";
 
 const props = defineProps({
   event: {
@@ -30,6 +29,10 @@ const props = defineProps({
     required: true,
   },
   openReplyPost: {
+    type: Function,
+    required: true,
+  },
+  openQuotePost: {
     type: Function,
     required: true,
   },
@@ -85,6 +88,10 @@ const repostEvent = (reposted: Nostr.Event = props.event) => {
   }
 }
 
+const quoteEvent = (quote: Nostr.Event = props.event) => {
+  props.openQuotePost(quote);
+}
+
 function copyNoteId(): void {
   const text = Nostr.nip19.noteEncode(props.event.id);
   copyToClipboard('nostr:' + text);
@@ -114,6 +121,11 @@ function getLinkUrl(): string {
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
       <span @click="(_$event) => { repostEvent() }">
         <mdicon name="multicast" :height="14" />
+      </span>
+    </p>
+    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-quote': true }">
+      <span @click="(_$event) => { quoteEvent() }">
+        <mdicon name="comment-quote-outline" :height="14" />
       </span>
     </p>
     <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
@@ -177,6 +189,10 @@ function getLinkUrl(): string {
     &-actioned {
       color: #3faf83;
     }
+  }
+
+  &-quote {
+    color: #213547;
   }
 
   &-fav {
