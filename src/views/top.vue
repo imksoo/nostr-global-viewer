@@ -60,7 +60,7 @@ const eventsReceived = new Set<string>();
 
 let firstFetching = true;
 let autoSpeech = ref(false);
-let volume = ref(0.5);
+let volume = ref("0.5");
 let searchWords = ref("");
 let soundEffect = ref(true);
 
@@ -301,7 +301,7 @@ function addEvent(event: nostr.Event): void {
       return obj.id === event.id;
     })
   ) {
-    speakNote(event, getProfile(event.pubkey), volume.value);
+    speakNote(event, getProfile(event.pubkey), volume.value.toString());
   }
 }
 
@@ -781,8 +781,6 @@ const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft',
 const konamiIndex = ref(0);
 
 function handleKeydownShortcuts(e: KeyboardEvent): void {
-  console.log("keydown", e.key);
-
   const target = e.target as HTMLElement;
   if (target.tagName.toLowerCase() === 'input' || target.tagName.toLocaleLowerCase() === 'textarea') {
     return;

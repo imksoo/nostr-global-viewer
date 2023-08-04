@@ -17,7 +17,7 @@ const props = defineProps({
     required: true,
   },
   volume: {
-    type: Number,
+    type: String,
     required: true,
   },
   isLogined: {

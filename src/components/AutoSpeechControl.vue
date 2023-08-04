@@ -3,17 +3,17 @@ import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
-    volume: number,
+    volume: string,
     autoSpeech: boolean,
   }>(),
   {
-    volume: 0.5, // デフォルト値を指定
+    volume: "0.5", // デフォルト値を指定
     autoSpeech: false,
   }
 );
 
 const emit = defineEmits<{
-  (e: 'update:volume', volume: number): void
+  (e: 'update:volume', volume: string): void
   (e: 'update:autoSpeech', autoSpeech: boolean): void
 }>();
 

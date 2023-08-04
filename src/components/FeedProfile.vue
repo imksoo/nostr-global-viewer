@@ -45,16 +45,12 @@ async function copyToClipboard(text: string) {
       </p>
     </a>
     <a :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
-      <span class="c-feed-profile__display-name">
-        {{
+      <span class="c-feed-profile__display-name">{{
           props.profile.display_name ||
           props.profile.name ||
           props.profile.pubkey.substring(props.profile.pubkey.length - 8)
-        }}
-      </span>
-      <span class="c-feed-profile__user-name">
-        @{{ props.profile.name ?? "" }}
-      </span>
+        }}</span>
+      <span class="c-feed-profile__user-name">@{{ props.profile.name ?? "" }}</span>
     </a>
     <span class="c-feed-profile-copy-button">
       <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)">
