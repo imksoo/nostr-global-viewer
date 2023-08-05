@@ -293,7 +293,7 @@ function addEvent(event: nostr.Event): void {
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
-  search();
+  searchAndBlockFilter();
   if (
     !firstFetching &&
     autoSpeech.value &&
@@ -448,6 +448,7 @@ let myWriteRelays: string[] = [];
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
 let myFollows: string[] = [];
+let myBlockList: string[] = [];
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? "";
@@ -456,6 +457,7 @@ async function login() {
     logined.value = true;
     countOfDisplayEvents *= 2;
     collectMyRelay();
+    collectMyBlockList();
     if (!noteId.value && !npubId.value) {
       setTimeout(() => {
         collectFollowsAndSubscribe();
@@ -491,9 +493,9 @@ function collectMyRelay() {
         limit: 1,
       },
     ],
-    [... new Set(normalizeUrls(profileRelays))],
+    [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
     (ev, _relayURL) => {
-      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
+      if (ev.content && myRelaysCreatedAt < ev.created_at) {
         myWriteRelays.slice(0);
         const content = JSON.parse(ev.content);
         myRelaysCreatedAt = ev.created_at;
@@ -503,6 +505,42 @@ function collectMyRelay() {
             myWriteRelays.push(r);
           }
         }
+      }
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+}
+
+function collectMyBlockList() {
+  pool.subscribe(
+    [
+      {
+        // @ts-ignore
+        kinds: [10000],
+        authors: [myPubkey],
+        limit: 1,
+      },
+    ],
+    [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
+    async (ev, _relayURL) => {
+      if (ev.content && myRelaysCreatedAt < ev.created_at) {
+        // @ts-ignore
+        const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey, ev.content)) || "[]";
+        const blockList = JSON.parse(blockListJSON);
+        let blocks: string[] = [];
+        for (let i = 0; i < blockList.length; ++i) {
+          if (blockList[i][0] === 'p') {
+            blocks.push(blockList[i][1]);
+          }
+        }
+        for (let i = 0; i < ev.tags.length; ++i) {
+          if (ev.tags[i][0] === 'p') {
+            blocks.push(ev.tags[i][1]);
+          }
+        }
+        myBlockList = [... new Set(blocks)];
       }
     },
     undefined,
@@ -704,9 +742,16 @@ function checkSend(event: KeyboardEvent) {
   }
 }
 
-function search() {
+function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
-    return searchSubstring(e.content, searchWords.value);
+    const isBlocked = !npubMode.value && myBlockList.includes(e.pubkey);
+    if (isBlocked) {
+      console.log("Blocked by pubkey:", e.pubkey, e.kind, e.content);
+    }
+
+    const searchMatched = searchSubstring(e.content, searchWords.value);
+
+    return !isBlocked && searchMatched;
   });
   if (cutoffMode.value) {
     events.value = events.value.slice(0, countOfDisplayEvents);
@@ -979,7 +1024,7 @@ function gotoTop() {
         <IndexIntroControl :is-logined="logined" :login="login"></IndexIntroControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
-        <SearchWordControl v-model:search-words="searchWords" v-on:change="search()"></SearchWordControl>
+        <SearchWordControl v-model:search-words="searchWords" v-on:change="searchAndBlockFilter()"></SearchWordControl>
         <RelayStatus v-bind:relays="relayStatus"></RelayStatus>
       </div>
     </div>
