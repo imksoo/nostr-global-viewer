@@ -309,13 +309,17 @@ let oldEventCacheMismatch = false;
 let cacheMissHitEventIds = new Set<string>();
 
 function getEvent(id: string): nostr.Event | undefined {
-  const event = eventsToSearch.value.find((e) => (e.id === id));
+  if (myBlockedEvents.has(id)) {
+    return undefined;
+  } else {
+    const event = eventsToSearch.value.find((e) => (e.id === id));
 
-  if (!event) {
-    oldEventCacheMismatch = true;
-    cacheMissHitEventIds.add(id);
+    if (!event) {
+      oldEventCacheMismatch = true;
+      cacheMissHitEventIds.add(id);
+    }
+    return event;
   }
-  return event;
 }
 
 async function collectEvents() {
