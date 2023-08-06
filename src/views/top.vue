@@ -54,6 +54,10 @@ const pool = new RelayPool(normalizeUrls(feedRelays), {
   subscriptionCache: true,
   useEventCache: true,
 });
+pool.onerror((url, msg) => { console.log("pool.error", url, msg) });
+pool.onnotice((url, msg) => { console.log("pool.onnotice", url, msg) });
+pool.ondisconnect((url, msg) => { console.log("pool.ondisconnect", url, msg) });
+
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
 const eventsReceived = new Set<string>();
