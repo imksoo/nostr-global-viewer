@@ -282,7 +282,6 @@ while (rest.length > 0) {
   }
 }
 
-let isShowJSONData = ref(false);
 </script>
 <template>
   <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
@@ -365,12 +364,6 @@ let isShowJSONData = ref(false);
       </template>
     </template>
   </p>
-  <span class="c-feed-show-json-button" @click="(_$event) => { isShowJSONData = !isShowJSONData }">
-    <mdicon name="code-json" :width="14" :height="14" title="Show event json" />
-  </span>
-  <p class="c-feed-json-data" v-if="isShowJSONData">
-    {{ props.event }}
-  </p>
 </template>
 <style lang="scss" scoped>
 .c-feed-content {
@@ -449,18 +442,5 @@ let isShowJSONData = ref(false);
 .c-feed-warning {
   margin: 2em auto 1em auto;
   background-color: #df3d81;
-}
-
-.c-feed-show-json-button {
-  float: right;
-  color: #213547;
-}
-
-.c-feed-json-data {
-  border: gray dashed 1px;
-  font-size: 0.8em;
-  margin: 0.2em 1.5em;
-  padding: 0.5em;
-  color: #213547;
 }
 </style>

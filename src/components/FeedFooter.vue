@@ -40,6 +40,7 @@ const props = defineProps({
 
 let isFavorited = ref(false);
 let isReposted = ref(false);
+let isShowJSONData = ref(false);
 
 const favEvent = (reacted: Nostr.Event = props.event) => {
   if (isFavorited.value) {
@@ -111,6 +112,9 @@ function getLinkUrl(): string {
 
 </script>
 <template>
+  <p class="c-feed-json-data" v-if="isShowJSONData">
+    {{ props.event }}
+  </p>
   <div class="c-feed-footer">
     <p class="c-feed-speak">
       <span @click="(_$event) => props.speakNote(props.event, props.getProfile(props.event.pubkey), props.volume)"
@@ -118,24 +122,29 @@ function getLinkUrl(): string {
         <mdicon name="play" :height="14" />
       </span>
     </p>
-    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
-      <span @click="(_$event) => { repostEvent() }">
+    <p :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
+      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { repostEvent() }">
         <mdicon name="multicast" :height="14" />
       </span>
     </p>
-    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-quote': true }">
-      <span @click="(_$event) => { quoteEvent() }">
+    <p :class="{ 'c-feed-quote': true }">
+      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { quoteEvent() }">
         <mdicon name="comment-quote-outline" :height="14" />
       </span>
     </p>
-    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
-      <span @click="(_$event) => { favEvent() }">
+    <p :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
+      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { favEvent() }">
         <mdicon name="star-shooting" :height="14" />
       </span>
     </p>
-    <p v-if="isLogined && props.event.kind == 1" :class="{ 'c-feed-reply': true }">
-      <span @click="(_$event) => { openReplyPost(props.event) }">
+    <p :class="{ 'c-feed-reply': true }">
+      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { openReplyPost(props.event) }">
         <mdicon name="reply" :height="14" />
+      </span>
+    </p>
+    <p :class="{ 'c-feed-json': true }">
+      <span @click="(_$event) => { isShowJSONData = !isShowJSONData }">
+        <mdicon name="code-json" :width="14" :height="14" title="Show event json" />
       </span>
     </p>
     <p class="c-feed-date">
@@ -181,22 +190,27 @@ function getLinkUrl(): string {
 
   &-speak {
     color: #213547;
+    flex-basis: 18px;
   }
 
   &-repost {
     color: #213547;
+    flex-basis: 18px;
 
     &-actioned {
       color: #3faf83;
+      flex-basis: auto;
     }
   }
 
   &-quote {
     color: #213547;
+    flex-basis: 18px;
   }
 
   &-fav {
     color: #213547;
+    flex-basis: 18px;
 
     &-actioned {
       color: #df3d81;
@@ -205,6 +219,12 @@ function getLinkUrl(): string {
 
   &-reply {
     color: #213547;
+    flex-basis: 18px;
+  }
+
+  &-json {
+    color: #213547;
+    flex-basis: 18px;
   }
 
   &-date {
@@ -215,5 +235,13 @@ function getLinkUrl(): string {
       color: #213547;
     }
   }
+}
+
+.c-feed-json-data {
+  border: gray dashed 1px;
+  font-size: 0.8em;
+  margin: 0.2em 1.5em;
+  padding: 0.5em;
+  color: #213547;
 }
 </style>
