@@ -449,6 +449,7 @@ let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
 let myFollows: string[] = [];
 let myBlockList: string[] = [];
+let myBlockedEvents = new Set<string>();
 async function login() {
   // @ts-ignore
   myPubkey = (await window.nostr?.getPublicKey()) ?? "";
@@ -745,8 +746,9 @@ function checkSend(event: KeyboardEvent) {
 function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
     const isBlocked = !npubMode.value && myBlockList.includes(e.pubkey);
-    if (isBlocked) {
+    if (isBlocked && !myBlockedEvents.has(e.id)) {
       console.log("Blocked by pubkey:", e.pubkey, e.kind, e.content);
+      myBlockedEvents.add(e.id);
     }
 
     const searchMatched = searchSubstring(e.content, searchWords.value);
@@ -948,7 +950,10 @@ function rotateImages() {
 
 function loggingStatistics(): void {
   console.log(JSON.stringify({
+    eventsReceivedSize: eventsReceived.size,
     eventsToSearchSize: eventsToSearch.value.length,
+    blockedPubkeys: myBlockList.length,
+    eventsBlocked: myBlockedEvents.size,
     profilesSize: profiles.value.size,
   }));
 }
