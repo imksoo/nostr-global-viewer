@@ -285,7 +285,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
 }
 
 function addEvent(event: nostr.Event): void {
-  if (eventsReceived.has(event.id)) {
+  if (eventsReceived.has(event.id) || event.kind === 3) {
     return;
   }
   eventsReceived.add(event.id);
