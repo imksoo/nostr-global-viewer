@@ -600,6 +600,7 @@ function subscribeReactions() {
       if (
         !firstReactionFetching &&
         soundEffect.value &&
+        myBlockList.includes(ev.pubkey) &&
         events.value[events.value.length - 1].created_at < ev.created_at
       ) {
         console.log("reactioned", ev);
