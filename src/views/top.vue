@@ -75,7 +75,7 @@ let countOfDisplayEvents = 100;
 const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
 let japaneseUsers: string[] = [];
 function collectJapaneseUsers() {
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
     [...new Set(normalizeUrls(profileRelays))],
     (ev, _relayURL) => {
@@ -87,6 +87,7 @@ function collectJapaneseUsers() {
     undefined,
     { unsubscribeOnEose: true }
   );
+  setTimeout(()=>{unsub()}, 10 * 1000);
 }
 collectJapaneseUsers();
 
@@ -201,7 +202,7 @@ watch(() => route.query, async (newQuery) => {
 
     const since = Math.floor(targetDate.getTime() / 1000) - 1;
     const until = Math.floor(npubDateTomorrow.value.getTime() / 1000) + 1;
-    pool.subscribe(
+    const unsub1 = pool.subscribe(
       [{
         kinds: [1, 6, 7],
         authors: [npubId.value],
@@ -218,9 +219,10 @@ watch(() => route.query, async (newQuery) => {
       undefined,
       { unsubscribeOnEose: true }
     );
+    setTimeout(()=>{unsub1()}, 60 * 1000);
 
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
-    pool.subscribe(
+    const unsub2 = pool.subscribe(
       [{ kinds: [3], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(profileRelays))],
       (ev, _relayURL) => {
@@ -240,6 +242,7 @@ watch(() => route.query, async (newQuery) => {
       undefined,
       { unsubscribeOnEose: true }
     );
+    setTimeout(()=>{unsub2()}, 5000);
 
     collectUserDailyEvents(npubId.value, searchRelays, targetDate);
     setTimeout(async () => {
@@ -334,7 +337,7 @@ async function collectEvents() {
   const eventIds = Array.from(cacheMissHitEventIds).filter((e) => (!eventsReceived.has(e)));
   cacheMissHitEventIds.clear();
 
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [
       {
         ids: eventIds
@@ -353,8 +356,9 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
+  setTimeout(()=>{unsub()}, 4500);
 }
-setInterval(collectEvents, 1000);
+setInterval(collectEvents, 5000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -404,7 +408,7 @@ async function collectProfiles() {
   }
   cacheMissHitPubkeys.length = 0;
   const pubkeys = Array.from(pubkeySet);
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [
       {
         kinds: [0],
@@ -444,8 +448,9 @@ async function collectProfiles() {
     },
     { unsubscribeOnEose: true }
   );
+  setTimeout(()=>{unsub()}, 5000);
 }
-setInterval(collectProfiles, 1000);
+setInterval(collectProfiles, 5000);
 
 let logined = ref(false);
 let isPostOpen = ref(false);
@@ -494,7 +499,7 @@ function autoLogin() {
 autoLogin();
 
 function collectMyRelay() {
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [
       {
         kinds: [3],
@@ -520,10 +525,11 @@ function collectMyRelay() {
     undefined,
     { unsubscribeOnEose: true }
   );
+  setTimeout(()=>{unsub()}, 30 * 1000);
 }
 
 function collectMyBlockList() {
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [
       {
         // @ts-ignore
@@ -556,13 +562,14 @@ function collectMyBlockList() {
     undefined,
     { unsubscribeOnEose: true }
   );
+  setTimeout(()=>{unsub()}, 30 * 1000);
 }
 
 async function collectFollowsAndSubscribe() {
   const contactList = await pool.fetchAndCacheContactList(myPubkey);
   myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
-  pool.subscribe([
+  const unsub = pool.subscribe([
     { kinds: [1, 5], authors: myFollows, limit: 20 },
   ],
     [...new Set(normalizeUrls(myReadRelays))],
@@ -577,6 +584,7 @@ async function collectFollowsAndSubscribe() {
       }
     }
   );
+  setTimeout(()=>{unsub()}, 30 * 1000);
 }
 
 function subscribeReactions() {
