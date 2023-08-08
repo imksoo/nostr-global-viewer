@@ -17,6 +17,7 @@ import AutoSpeechControl from "../components/AutoSpeechControl.vue";
 import SearchWordControl from "../components/SearchWordControl.vue";
 
 import RelayStatus from "../components/RelayStatus.vue";
+import RiverStatus from "../components/RiverStatus.vue";
 import FeedProfile from "../components/FeedProfile.vue";
 import FeedReplies from "../components/FeedReplies.vue";
 import FeedContent from "../components/FeedContent.vue";
@@ -90,6 +91,29 @@ function collectJapaneseUsers() {
   setTimeout(() => { unsub() }, 10 * 1000);
 }
 collectJapaneseUsers();
+
+let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.nostr.wirednet.jp"))));
+const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
+let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
+function collectRyuusokuChan() {
+  const unsub = pool.subscribe(
+    // @ts-ignore
+    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], limit: 1 }],
+    [...new Set(normalizeUrls(feedRelays))],
+    (ev, _isAfterEose, _relayURL) => {
+      ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+  setTimeout(() => { unsub() }, 5 * 1000);
+}
+setInterval(() => {
+  if (isKirinoRiver) {
+    collectRyuusokuChan();
+  }
+}, 60 * 1000);
 
 let noteId = ref<string | undefined>();
 let npubId = ref<string | undefined>();
@@ -1048,6 +1072,7 @@ function gotoTop() {
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
         <SearchWordControl v-model:search-words="searchWords" v-on:change="searchAndBlockFilter()"></SearchWordControl>
+        <RiverStatus v-bind:data="ryuusokuChanData" v-if="isKirinoRiver"></RiverStatus>
         <RelayStatus v-bind:relays="relayStatus"></RelayStatus>
       </div>
     </div>
