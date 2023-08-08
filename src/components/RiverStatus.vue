@@ -10,11 +10,11 @@ const props = defineProps({
 <template>
   <div class="p-index-river">
     <h2 class="p-index-river__head">
-      流速情報
+      <a href="https://nostr-hotter-site.vercel.app/" target="_blank">流速情報 (直近の観測状況10個)</a>
     </h2>
     <div class="p-index-river-list">
       <p v-for="t in props.data">
-        {{ t[0].replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1/$2/$3 $4:$5") }} {{ "🌊".repeat(parseInt(t[1])) }}
+        {{ t[0].replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1/$2/$3 $4:$5") }} {{ "🌊".repeat(parseInt(t[1]) / 3) }}
       </p>
     </div>
   </div>
@@ -40,7 +40,15 @@ const props = defineProps({
   }
 }
 
+a {
+  color: #ffffff;
+}
+
 p {
+  font-size: 10px;
   margin: 0 0 0 1rem;
+  vertical-align: bottom;
+  height: 14px;
+  overflow: hidden;
 }
 </style>

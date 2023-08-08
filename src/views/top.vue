@@ -109,11 +109,12 @@ function collectRyuusokuChan() {
   );
   setTimeout(() => { unsub() }, 5 * 1000);
 }
-setInterval(() => {
-  if (isKirinoRiver) {
+if (isKirinoRiver) {
+  collectRyuusokuChan();
+  setInterval(() => {
     collectRyuusokuChan();
-  }
-}, 60 * 1000);
+  }, 60 * 1000);
+}
 
 let noteId = ref<string | undefined>();
 let npubId = ref<string | undefined>();
