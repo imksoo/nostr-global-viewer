@@ -96,24 +96,31 @@ let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.no
 const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
 let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
 function collectRyuusokuChan() {
-  const unsub = pool.subscribe(
+  console.log("collectRyuusokuChan begin");
+
+  const poolRiver = new RelayPool(normalizeUrls(feedRelays), {});
+  poolRiver.subscribe(
     // @ts-ignore
-    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], limit: 1 }],
+    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
     [...new Set(normalizeUrls(feedRelays))],
     (ev, _isAfterEose, _relayURL) => {
+      console.log("collectRyuusokuChan get", ev);
+      ryuusokuChanData.value.length = 0;
       ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
+      ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
+      console.log("collectRyuusokuChan get", ryuusokuChanData.value);
     },
     undefined,
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 5 * 1000);
+  setTimeout(() => { poolRiver.close(); }, 5 * 1000);
 }
 if (isKirinoRiver) {
   collectRyuusokuChan();
   setInterval(() => {
     collectRyuusokuChan();
-  }, 60 * 1000);
+  }, 30 * 1000);
 }
 
 let noteId = ref<string | undefined>();
