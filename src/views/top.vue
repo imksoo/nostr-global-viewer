@@ -793,7 +793,7 @@ function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
     const isBlocked = !npubMode.value && myBlockList.includes(e.pubkey);
     if (isBlocked && !myBlockedEvents.has(e.id)) {
-      console.log("Blocked by pubkey:", e.pubkey, e.kind, e.content);
+      console.log("Blocked by pubkey:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
       myBlockedEvents.add(e.id);
     }
 
