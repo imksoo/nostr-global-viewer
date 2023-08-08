@@ -13,7 +13,7 @@ const props = defineProps({
       <a href="https://nostr-hotter-site.vercel.app/" target="_blank">流速情報 (直近の観測状況10個)</a>
     </h2>
     <div class="p-index-river-list">
-      <p v-for="t in props.data">
+      <p v-for="t in props.data" :title="parseInt(t[1])">
         {{ t[0].replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1/$2/$3 $4:$5") }} {{ "🌊".repeat(parseInt(t[1]) / 3) }}
       </p>
     </div>
