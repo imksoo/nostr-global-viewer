@@ -78,7 +78,7 @@ function collectJapaneseUsers() {
   const unsub = pool.subscribe(
     [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
     [...new Set(normalizeUrls(profileRelays))],
-    (ev, _relayURL) => {
+    (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
         japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
       }
@@ -87,7 +87,7 @@ function collectJapaneseUsers() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(()=>{unsub()}, 10 * 1000);
+  setTimeout(() => { unsub() }, 10 * 1000);
 }
 collectJapaneseUsers();
 
@@ -219,13 +219,13 @@ watch(() => route.query, async (newQuery) => {
       undefined,
       { unsubscribeOnEose: true }
     );
-    setTimeout(()=>{unsub1()}, 60 * 1000);
+    setTimeout(() => { unsub1() }, 60 * 1000);
 
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
     const unsub2 = pool.subscribe(
       [{ kinds: [3], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(profileRelays))],
-      (ev, _relayURL) => {
+      (ev, _isAfterEose, _relayURL) => {
         if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
           npubWriteRelays.slice(0);
           const content = JSON.parse(ev.content);
@@ -242,7 +242,7 @@ watch(() => route.query, async (newQuery) => {
       undefined,
       { unsubscribeOnEose: true }
     );
-    setTimeout(()=>{unsub2()}, 5000);
+    setTimeout(() => { unsub2() }, 5000);
 
     collectUserDailyEvents(npubId.value, searchRelays, targetDate);
     setTimeout(async () => {
@@ -356,7 +356,7 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(()=>{unsub()}, 4500);
+  setTimeout(() => { unsub() }, 4500);
 }
 setInterval(collectEvents, 5000);
 
@@ -448,7 +448,7 @@ async function collectProfiles() {
     },
     { unsubscribeOnEose: true }
   );
-  setTimeout(()=>{unsub()}, 5000);
+  setTimeout(() => { unsub() }, 5000);
 }
 setInterval(collectProfiles, 5000);
 
@@ -461,6 +461,7 @@ let myWriteRelays: string[] = [];
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
 let myFollows: string[] = [];
+let myBlockCreatedAt = 0;
 let myBlockList: string[] = [];
 let myBlockedEvents = new Set<string>();
 async function login() {
@@ -508,7 +509,7 @@ function collectMyRelay() {
       },
     ],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
-    (ev, _relayURL) => {
+    (ev, _isAfterEose, _relayURL) => {
       if (ev.content && myRelaysCreatedAt < ev.created_at) {
         myWriteRelays.slice(0);
         const content = JSON.parse(ev.content);
@@ -525,7 +526,7 @@ function collectMyRelay() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(()=>{unsub()}, 30 * 1000);
+  setTimeout(() => { unsub() }, 30 * 1000);
 }
 
 function collectMyBlockList() {
@@ -538,9 +539,9 @@ function collectMyBlockList() {
         limit: 1,
       },
     ],
-    [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
-    async (ev, _relayURL) => {
-      if (ev.content && myRelaysCreatedAt < ev.created_at) {
+    [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays, ...myWriteRelays]))],
+    async (ev, _isAfterEose, _relayURL) => {
+      if (ev.content && myBlockCreatedAt < ev.created_at) {
         // @ts-ignore
         const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey, ev.content)) || "[]";
         const blockList = JSON.parse(blockListJSON);
@@ -562,7 +563,7 @@ function collectMyBlockList() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(()=>{unsub()}, 30 * 1000);
+  setTimeout(() => { unsub() }, 30 * 1000);
 }
 
 async function collectFollowsAndSubscribe() {
@@ -584,7 +585,7 @@ async function collectFollowsAndSubscribe() {
       }
     }
   );
-  setTimeout(()=>{unsub()}, 30 * 1000);
+  setTimeout(() => { unsub() }, 30 * 1000);
 }
 
 function subscribeReactions() {
