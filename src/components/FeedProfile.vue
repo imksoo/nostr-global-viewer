@@ -34,6 +34,12 @@ async function copyToClipboard(text: string) {
   }
 }
 
+function onImageError(e: Event) {
+  const placehold = 'https://placehold.jp/60x60.png';
+  const target = e.target as HTMLImageElement;
+  target.src = placehold;
+}
+
 </script>
 <template>
   <div class="c-feed-profile">
@@ -41,15 +47,15 @@ async function copyToClipboard(text: string) {
       <p class="c-feed-profile__avatar">
         <img class="c-feed-profile__picture"
           v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/60x60.png'"
-          referrerpolicy="no-referrer" />
+          referrerpolicy="no-referrer" @error="onImageError" />
       </p>
     </a>
     <a :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">{{
-          props.profile.display_name ||
-          props.profile.name ||
-          props.profile.pubkey.substring(props.profile.pubkey.length - 8)
-        }}</span>
+        props.profile.display_name ||
+        props.profile.name ||
+        props.profile.pubkey.substring(props.profile.pubkey.length - 8)
+      }}</span>
       <span class="c-feed-profile__user-name">@{{ props.profile.name ?? "" }}</span>
     </a>
     <span class="c-feed-profile-copy-button">

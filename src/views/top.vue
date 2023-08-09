@@ -420,8 +420,8 @@ function getProfile(pubkey: string): Profile {
   return profiles.value.get(pubkey);
 }
 
-async function collectProfiles() {
-  if (!oldProfileCacheMismatch) {
+async function collectProfiles(force = false) {
+  if (!force && !oldProfileCacheMismatch) {
     return;
   }
 
@@ -477,6 +477,7 @@ async function collectProfiles() {
   setTimeout(() => { unsub() }, 5000);
 }
 setInterval(collectProfiles, 5000);
+setInterval(() => { collectProfiles(true); }, 60 * 1000);
 
 let logined = ref(false);
 let isPostOpen = ref(false);
