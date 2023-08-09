@@ -6,11 +6,18 @@ import parser from 'html-dom-parser';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
+import { mdiFormatColorHighlight } from '@mdi/js';
 
 const props = defineProps({
   event: {
-    // @ts-ignore
-    type: Nostr.Event,
+    type: Object as () => {
+      id: string,
+      pubkey: string,
+      kind: number,
+      content: string,
+      tags: string[][],
+      created_at: number
+    },
     required: true,
   },
   getProfile: {
@@ -94,7 +101,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
   if (tag[0] === 'content-warning') {
     isHidden.value = true;
     isNIP36.value = true;
-    reasonOfNIP36 = tag[1] ? tag[1] : "Content Warning (NIP36)";
+    reasonOfNIP36.value = tag[1] ? tag[1] : "Content Warning (NIP36)";
   }
 }
 
@@ -155,7 +162,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 while (rest.length > 0) {
   const match = rest.match(regex);
   if (match) {
-    if (match.index > 0) {
+    if (match.index && match.index > 0) {
       const text = rest.substring(0, match.index);
       tokens.value.push({ type: "text", content: text });
       rest = rest.substring(match.index);

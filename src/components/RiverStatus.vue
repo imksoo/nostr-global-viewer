@@ -16,9 +16,7 @@ const props = defineProps({
       <p v-for="t in props.data" :title="t[1]">
         {{
           t[0].replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1/$2/$3 $4:$5")
-        }} {{
-          "🌊".repeat((parseInt(t[1]) + 1) / 3)
-        }}
+        }} {{ "🌊".repeat((parseInt(t[1]) + 1) / 3) }}
       </p>
     </div>
   </div>

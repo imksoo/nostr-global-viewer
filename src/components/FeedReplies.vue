@@ -59,8 +59,12 @@ function getEventLink2(id: string): string {
 
 const props = defineProps({
   event: {
-    // @ts-ignore
-    type: Nostr.Event,
+    type: Object as () => {
+      kind: Nostr.Kind,
+      content: string,
+      tags: string[][],
+      created_at: number
+    },
     required: true,
   },
   getProfile: {
@@ -78,14 +82,10 @@ const props = defineProps({
     <template v-if="tag[0] === 'p'">
       ユーザー
       <a :href="getUserLink2(tag[1])">
-        <img
-          :src="
-            getProfile(tag[1]).picture
-              ? getProfile(tag[1]).picture
-              : 'https://placehold.jp/60x60.png'
-          "
-          class="c-feed-reply-picture"
-        />
+        <img :src="getProfile(tag[1]).picture
+            ? getProfile(tag[1]).picture
+            : 'https://placehold.jp/60x60.png'
+          " class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
             getProfile(tag[1]).display_name ||
@@ -98,12 +98,7 @@ const props = defineProps({
       </a>
       <span>&nbsp;</span>
       <a target="_blank" v-bind:href="getUserLink(tag[1])">
-        <mdicon
-          name="open-in-new"
-          :width="14"
-          :height="14"
-          title="Open NosTx"
-        />
+        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
       </a>
     </template>
     <template v-else-if="tag[0] === 'e'">
@@ -118,12 +113,7 @@ const props = defineProps({
       </a>
       <span>&nbsp;</span>
       <a target="_blank" v-bind:href="getEventLink(tag[1])">
-        <mdicon
-          name="open-in-new"
-          :width="14"
-          :height="14"
-          title="Open NosTx"
-        />
+        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
       </a>
       <span v-if="tag.length > 3">({{ tag[3] }})</span>
     </template>

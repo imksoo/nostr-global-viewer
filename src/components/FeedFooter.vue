@@ -4,8 +4,14 @@ import * as Nostr from "nostr-tools";
 
 const props = defineProps({
   event: {
-    // @ts-ignore
-    type: Nostr.Event,
+    type: Object as () => {
+      id: string,
+      pubkey: string,
+      kind: Nostr.Kind,
+      content: string,
+      tags: string[][],
+      created_at: number
+    },
     required: true,
   },
   getProfile: {
@@ -42,7 +48,7 @@ let isFavorited = ref(false);
 let isReposted = ref(false);
 let isShowJSONData = ref(false);
 
-const favEvent = (reacted: Nostr.Event = props.event) => {
+const favEvent = (reacted = props.event) => {
   if (isFavorited.value) {
     return;
   }
@@ -68,7 +74,7 @@ const favEvent = (reacted: Nostr.Event = props.event) => {
   }
 }
 
-const repostEvent = (reposted: Nostr.Event = props.event) => {
+const repostEvent = (reposted = props.event) => {
   if (isReposted.value) {
     return;
   }
@@ -89,7 +95,7 @@ const repostEvent = (reposted: Nostr.Event = props.event) => {
   }
 }
 
-const quoteEvent = (quote: Nostr.Event = props.event) => {
+const quoteEvent = (quote = props.event) => {
   props.openQuotePost(quote);
 }
 
