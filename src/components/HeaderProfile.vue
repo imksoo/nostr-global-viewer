@@ -27,6 +27,7 @@ const backgroundImage = ref("url(" + props.profile.banner + ")");
 
 <style scoped lang="scss">
 .p-header-profile {
+  font-size: 12px;
   color: white;
   text-shadow: 2px 2px 8px gray,
     -2px 2px 8px gray,
