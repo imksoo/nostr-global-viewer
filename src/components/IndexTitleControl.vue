@@ -18,7 +18,7 @@ function appVersion() {
     </a>
     <span class="p-index-title__sub">From
       {{
-        feedRelays
+        props.feedRelays
           .map((s) => {
             return s.replace(/wss?:\/\/(.*)\//, "$1");
           })

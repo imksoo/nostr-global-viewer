@@ -22,6 +22,7 @@ import FeedProfile from "../components/FeedProfile.vue";
 import FeedReplies from "../components/FeedReplies.vue";
 import FeedContent from "../components/FeedContent.vue";
 import FeedFooter from "../components/FeedFooter.vue";
+import HeaderProfile from "../components/HeaderProfile.vue"
 
 const route = useRoute();
 let sushiMode = ref(false);
@@ -123,6 +124,7 @@ let npubDate = ref<Date | undefined>();
 let npubDateYesterday = ref<Date | undefined>();
 let npubDateTomorrow = ref<Date | undefined>();
 let npubMode = ref<string>("");
+let npubProfile = ref();
 let cutoffMode = ref<boolean>(true);
 
 let npubRelaysCreatedAt = 0;
@@ -163,6 +165,25 @@ watch(() => route.query, async (newQuery) => {
         npubDate.value = new Date(year, month - 1, day);
       }
     }
+  }
+
+  if (npubId.value) {
+    pool.subscribe(
+      [{
+        kinds: [0],
+        limit: 1,
+        authors: [npubId.value]
+      }],
+      [...new Set(normalizeUrls([...feedRelays]))],
+      async (ev, _isAfterEose, relayURL) => {
+        console.log("npub mode got profile", ev);
+        const profile = JSON.parse(ev.content);
+        npubProfile.value = profile;
+      },
+      undefined,
+      undefined,
+      { unsubscribeOnEose: true }
+    );
   }
 
   if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && !npubDate.value)) {
@@ -1118,6 +1139,12 @@ function gotoTop() {
       </div>
     </div>
     <div class="p-index-body">
+      <div class="p-index-profile" v-if="npubId && npubProfile">
+        <HeaderProfile :profile="npubProfile"></HeaderProfile>
+        <div class="p-index-profile-header">
+          <FeedProfile v-bind:profile="getProfile(npubId)"></FeedProfile>
+        </div>
+      </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
             :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
@@ -1220,10 +1247,17 @@ function gotoTop() {
   color: #050a30;
 }
 
-.p-index-header {
+.p-index-profile {
   margin-top: 5px;
+  &-header {
+    padding: 10px 10px 0px;
+    background-color: #ffffff;
+  }
+}
+
+.p-index-header {
   background-color: #ffffff;
-  border-radius: 4px;
+  padding: 2px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;

@@ -6,7 +6,6 @@ import parser from 'html-dom-parser';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
-import { mdiFormatColorHighlight } from '@mdi/js';
 
 const props = defineProps({
   event: {
