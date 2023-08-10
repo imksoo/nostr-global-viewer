@@ -249,17 +249,35 @@ watch(() => route.query, async (newQuery) => {
 
     let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
     const unsub2 = pool.subscribe(
-      [{ kinds: [3], authors: [npubId.value], limit: 1 }],
+      [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(profileRelays))],
       (ev, _isAfterEose, _relayURL) => {
         if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
+          npubReadRelays.slice(0);
           npubWriteRelays.slice(0);
-          const content = JSON.parse(ev.content);
           npubRelaysCreatedAt = ev.created_at;
+          const content = JSON.parse(ev.content);
           for (const r in content) {
             npubReadRelays.push(r);
             if (content[r].write) {
               npubWriteRelays.push(r);
+            }
+          }
+        } else if (ev.kind === 10002 && npubRelaysCreatedAt < ev.created_at) {
+          npubReadRelays.slice(0);
+          npubWriteRelays.slice(0);
+          npubRelaysCreatedAt = ev.created_at;
+          for (const t in ev.tags) {
+            let r = t[1];
+            let m = "";
+            if (t.length > 2) { m = t[2] }
+            if (t[0] === "r") {
+              if (m === "read") {
+                npubReadRelays.push(r);
+              } else {
+                npubReadRelays.push(r);
+                npubWriteRelays.push(r);
+              }
             }
           }
         }
@@ -530,21 +548,41 @@ function collectMyRelay() {
   const unsub = pool.subscribe(
     [
       {
-        kinds: [3],
+        kinds: [3, 10002],
         authors: [myPubkey],
         limit: 1,
       },
     ],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
     (ev, _isAfterEose, _relayURL) => {
-      if (ev.content && myRelaysCreatedAt < ev.created_at) {
+      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
+        myReadRelays.slice(0);
         myWriteRelays.slice(0);
-        const content = JSON.parse(ev.content);
         myRelaysCreatedAt = ev.created_at;
+        const content = JSON.parse(ev.content);
         for (const r in content) {
           myReadRelays.push(r);
           if (content[r].write) {
             myWriteRelays.push(r);
+          }
+        }
+      } else if (ev.kind === 10002 && myRelaysCreatedAt < ev.created_at) {
+        myReadRelays.slice(0);
+        myWriteRelays.slice(0);
+        myRelaysCreatedAt = ev.created_at;
+        for (let i = 0; i < ev.tags.length; ++i) {
+          const t = ev.tags[i];
+          if (t[0] === "r") {
+            const r = t[1];
+            let m = "";
+
+            if (t.length > 2) { m = t[2]; }
+            if (m === "read") {
+              myReadRelays.push(r);
+            } else {
+              myReadRelays.push(r);
+              myWriteRelays.push(r);
+            }
           }
         }
       }
