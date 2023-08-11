@@ -651,22 +651,26 @@ async function collectFollowsAndSubscribe() {
   const contactList = await pool.fetchAndCacheContactList(myPubkey);
   myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
-  const unsub = pool.subscribe([
-    { kinds: [1, 5], authors: myFollows, limit: 20 },
-  ],
-    [...new Set(normalizeUrls(myReadRelays))],
-    async (ev, _isAfterEose, _relayURL) => {
-      switch (ev.kind) {
-        case 1:
-          addEvent(ev);
-          break;
-        case 5:
-          pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays])]));
-          break;
+  const subscribeMaxCount = 1000;
+  for (let begin = 0; begin < myFollows.length; begin += subscribeMaxCount) {
+    const followList = myFollows.slice(begin, subscribeMaxCount);
+
+    pool.subscribe([
+      { kinds: [1, 5], authors: followList, limit: 20 },
+    ],
+      [...new Set(normalizeUrls(myReadRelays))],
+      async (ev, _isAfterEose, _relayURL) => {
+        switch (ev.kind) {
+          case 1:
+            addEvent(ev);
+            break;
+          case 5:
+            pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays])]));
+            break;
+        }
       }
-    }
-  );
-  setTimeout(() => { unsub() }, 30 * 1000);
+    );
+  }
 }
 
 function subscribeReactions() {
