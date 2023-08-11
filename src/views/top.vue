@@ -460,7 +460,10 @@ function getProfile(pubkey: string): Profile {
 }
 
 async function collectProfiles(force = false) {
-  if (!force && !oldProfileCacheMismatch) {
+  if (force) {
+    oldEventCacheMismatch = true;
+  }
+  if (!oldProfileCacheMismatch) {
     return;
   }
 
@@ -1249,6 +1252,7 @@ function gotoTop() {
 
 .p-index-profile {
   margin-top: 5px;
+
   &-header {
     padding: 10px 10px 0px;
     background-color: #ffffff;
