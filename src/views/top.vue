@@ -622,7 +622,8 @@ function collectMyBlockList() {
     ],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays, ...myWriteRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
-      if (ev.content && myBlockCreatedAt < ev.created_at) {
+      if (myBlockCreatedAt < ev.created_at) {
+        myBlockCreatedAt = ev.created_at;
         // @ts-ignore
         const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey, ev.content)) || "[]";
         const blockList = JSON.parse(blockListJSON);
