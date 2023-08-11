@@ -467,22 +467,14 @@ async function collectProfiles(force = false) {
     return;
   }
 
-  const pubkeySet = new Set<string>();
-  for (const e of events.value) {
-    pubkeySet.add(e.pubkey);
-  }
-  for (const p of cacheMissHitPubkeys) {
-    pubkeySet.add(p);
-  }
+  const pubkeys = [...new Set<string>([...events.value.map(e => e.pubkey), ...cacheMissHitPubkeys])];
   cacheMissHitPubkeys.length = 0;
-  const pubkeys = Array.from(pubkeySet);
+  console.log("collectProfiles", pubkeys);
   const unsub = pool.subscribe(
-    [
-      {
-        kinds: [0],
-        authors: pubkeys,
-      },
-    ],
+    [{
+      kinds: [0],
+      authors: pubkeys,
+    }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
@@ -516,9 +508,9 @@ async function collectProfiles(force = false) {
     },
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 1500);
+  setTimeout(() => { unsub() }, 10 * 1000);
 }
-setInterval(collectProfiles, 2000);
+setInterval(() => { collectProfiles(false); }, 1 * 1000);
 setInterval(() => { collectProfiles(true); }, 60 * 1000);
 
 let logined = ref(false);
