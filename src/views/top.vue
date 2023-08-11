@@ -513,9 +513,9 @@ async function collectProfiles(force = false) {
     },
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 5000);
+  setTimeout(() => { unsub() }, 1500);
 }
-setInterval(collectProfiles, 5000);
+setInterval(collectProfiles, 2000);
 setInterval(() => { collectProfiles(true); }, 60 * 1000);
 
 let logined = ref(false);
