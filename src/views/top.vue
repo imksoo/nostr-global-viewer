@@ -421,9 +421,9 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 4500);
+  setTimeout(() => { unsub() }, 1500);
 }
-setInterval(collectEvents, 5000);
+setInterval(collectEvents, 2000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
