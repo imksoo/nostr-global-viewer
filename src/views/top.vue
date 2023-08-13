@@ -60,7 +60,7 @@ pool.ondisconnect((url, msg) => { console.log("pool.ondisconnect", url, msg) });
 
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
-const eventsReceived = new Set<string>();
+const eventsReceived = new Map<string, nostr.Event>();
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -360,7 +360,7 @@ function addEvent(event: nostr.Event): void {
   if (eventsReceived.has(event.id) || event.kind === 3) {
     return;
   }
-  eventsReceived.add(event.id);
+  eventsReceived.set(event.id, event);
   eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
@@ -377,39 +377,39 @@ function addEvent(event: nostr.Event): void {
   }
 }
 
-let oldEventCacheMismatch = false;
 let cacheMissHitEventIds = new Set<string>();
 
 function getEvent(id: string): nostr.Event | undefined {
   if (myBlockedEvents.has(id)) {
     return undefined;
-  } else {
-    const event = eventsToSearch.value.find((e) => (e.id === id));
-
-    if (!event) {
-      oldEventCacheMismatch = true;
-      cacheMissHitEventIds.add(id);
-    }
-    return event;
   }
+  if (eventsReceived.has(id)) {
+    return eventsReceived.get(id);
+  }
+
+  cacheMissHitEventIds.add(id);
+  const event = eventsToSearch.value.find((e) => (e.id === id));
+  return event;
 }
 
 async function collectEvents() {
-  if (!oldEventCacheMismatch) {
+  if (cacheMissHitEventIds.size === 0) {
     return;
   }
 
-  const eventIds = Array.from(cacheMissHitEventIds).filter((e) => (!eventsReceived.has(e)));
-  cacheMissHitEventIds.clear();
+  const eventIds = Array.from(cacheMissHitEventIds).filter((ev) => (!eventsToSearch.value.find((e) => (e.id === ev))));
+  if (eventIds.length === 0) {
+    return;
+  }
+  console.log("collectEvents", eventIds);
 
   const unsub = pool.subscribe(
-    [
-      {
-        ids: eventIds
-      },
-    ],
+    [{
+      ids: eventIds
+    }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, relayURL) => {
+      cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
 
       if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
@@ -421,7 +421,7 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 1500);
+  setTimeout(() => { unsub() }, 2000);
 }
 setInterval(collectEvents, 2000);
 
@@ -429,8 +429,7 @@ setInterval(collectEvents, 2000);
 const profiles = ref(
   new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"))
 );
-let oldProfileCacheMismatch = false;
-let cacheMissHitPubkeys: string[] = [];
+let cacheMissHitPubkeys = new Set<string>()
 
 type Profile = {
   pubkey: string,
@@ -442,8 +441,7 @@ type Profile = {
 
 function getProfile(pubkey: string): Profile {
   if (!profiles.value.has(pubkey)) {
-    oldProfileCacheMismatch = true;
-    cacheMissHitPubkeys.push(pubkey);
+    cacheMissHitPubkeys.add(pubkey);
 
     profiles.value.set(pubkey, {
       pubkey: pubkey,
@@ -460,15 +458,11 @@ function getProfile(pubkey: string): Profile {
 }
 
 async function collectProfiles(force = false) {
-  if (force) {
-    oldEventCacheMismatch = true;
-  }
-  if (!oldProfileCacheMismatch) {
+  if (!force || cacheMissHitPubkeys.size === 0) {
     return;
   }
 
   const pubkeys = [...new Set<string>([...events.value.map(e => e.pubkey), ...cacheMissHitPubkeys])];
-  cacheMissHitPubkeys.length = 0;
   console.log("collectProfiles", pubkeys);
   const unsub = pool.subscribe(
     [{
@@ -478,6 +472,7 @@ async function collectProfiles(force = false) {
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
+        cacheMissHitPubkeys.delete(ev.pubkey);
         const content = JSON.parse(ev.content);
         if (
           !profiles.value.has(ev.pubkey) ||
@@ -497,8 +492,6 @@ async function collectProfiles(force = false) {
     },
     undefined,
     async () => {
-      oldProfileCacheMismatch = false;
-
       // ローカルストレージにプロフィール情報を保存しておく
       const validProfiles = Array.from(profiles.value.entries()).filter((p) => (p[1].created_at != 0));
       localStorage.setItem(
@@ -1059,6 +1052,8 @@ function loggingStatistics(): void {
     blockedPubkeys: myBlockList.length,
     eventsBlocked: myBlockedEvents.size,
     profilesSize: profiles.value.size,
+    cacheMissHitPubkeysSize: cacheMissHitPubkeys.size,
+    cacheMissHitEventIdsSize: cacheMissHitEventIds.size,
   }));
 }
 setInterval(loggingStatistics, 30 * 1000);
