@@ -463,7 +463,7 @@ async function collectProfiles(force = false) {
   }
 
   const pubkeys = [...new Set<string>([...events.value.map(e => e.pubkey), ...cacheMissHitPubkeys])];
-  console.log("collectProfiles", pubkeys);
+  console.log("collectProfiles", force, pubkeys);
   const unsub = pool.subscribe(
     [{
       kinds: [0],
@@ -472,7 +472,6 @@ async function collectProfiles(force = false) {
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
-        cacheMissHitPubkeys.delete(ev.pubkey);
         const content = JSON.parse(ev.content);
         if (
           !profiles.value.has(ev.pubkey) ||
@@ -487,24 +486,28 @@ async function collectProfiles(force = false) {
           };
           profiles.value.set(ev.pubkey, press);
           pool.publish(ev, feedRelays);
+          cacheMissHitPubkeys.delete(ev.pubkey);
         }
       }
     },
     undefined,
-    async () => {
-      // ローカルストレージにプロフィール情報を保存しておく
-      const validProfiles = Array.from(profiles.value.entries()).filter((p) => (p[1].created_at != 0));
-      localStorage.setItem(
-        "profiles",
-        JSON.stringify(validProfiles)
-      );
-    },
+    undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 10 * 1000);
+  setTimeout(() => { unsub() }, 3 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 1 * 1000);
+const firstFetchProfile = setTimeout(() => { collectProfiles(true); clearTimeout(firstFetchProfile); }, 3 * 1000);
 setInterval(() => { collectProfiles(true); }, 60 * 1000);
+
+setInterval(() => {
+  // ローカルストレージにプロフィール情報を保存しておく
+  const validProfiles = Array.from(profiles.value.entries()).filter((p) => (p[1].created_at != 0));
+  localStorage.setItem(
+    "profiles",
+    JSON.stringify(validProfiles)
+  );
+}, 30 * 1000);
 
 let logined = ref(false);
 let isPostOpen = ref(false);
