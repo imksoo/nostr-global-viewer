@@ -423,9 +423,9 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 2000);
+  setTimeout(() => { unsub() }, 3 * 1000);
 }
-setInterval(collectEvents, 2000);
+setInterval(collectEvents, 0.6 * 1000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -496,11 +496,10 @@ async function collectProfiles(force = false) {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 3 * 1000);
+  setTimeout(() => { unsub() }, 2 * 1000);
 }
-setInterval(() => { collectProfiles(false); }, 1 * 1000);
-const firstFetchProfile = setTimeout(() => { collectProfiles(true); clearTimeout(firstFetchProfile); }, 3 * 1000);
-setInterval(() => { collectProfiles(true); }, 60 * 1000);
+setInterval(() => { collectProfiles(false); }, 0.7 * 1000);
+setInterval(() => { collectProfiles(true); }, 4.5 * 1000);
 
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
