@@ -176,7 +176,6 @@ watch(() => route.query, async (newQuery) => {
       }],
       [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, relayURL) => {
-        console.log("npub mode got profile", ev);
         const profile = JSON.parse(ev.content);
         npubProfile.value = profile;
       },
@@ -206,7 +205,6 @@ watch(() => route.query, async (newQuery) => {
       [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, relayURL) => {
         if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-          console.log("Publish event from collectEvents", relayURL, ev);
           pool.publish(ev, normalizeUrls(feedRelays));
         }
 
@@ -342,7 +340,12 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
       const usertext = profile.display_name + profile.name + ev.content;
       const japaneseRegex = /[亜-熙ぁ-んァ-ヶ]/;
       if (ev.kind === 5) {
-        console.log("Broadcast kind=5", JSON.stringify(ev));
+        for (let i = 0; i < ev.tags.length; ++i) {
+          const t = ev.tags[i];
+          if (t[0] === "e") {
+            cacheBlacklistEventIds.add(t[1]);
+          }
+        }
         pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays]))]);
       } else if (!eventsReceived.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
@@ -357,7 +360,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
 }
 
 function addEvent(event: nostr.Event): void {
-  if (eventsReceived.has(event.id) || event.kind === 3) {
+  if (eventsReceived.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
   eventsReceived.set(event.id, event);
@@ -378,6 +381,7 @@ function addEvent(event: nostr.Event): void {
 }
 
 let cacheMissHitEventIds = new Set<string>();
+let cacheBlacklistEventIds = new Set<string>();
 
 function getEvent(id: string): nostr.Event | undefined {
   if (myBlockedEvents.has(id)) {
@@ -397,11 +401,10 @@ async function collectEvents() {
     return;
   }
 
-  const eventIds = Array.from(cacheMissHitEventIds).filter((ev) => (!eventsToSearch.value.find((e) => (e.id === ev))));
+  const eventIds = Array.from(cacheMissHitEventIds).filter((ev) => (!eventsToSearch.value.find((e) => (e.id === ev)) && !cacheBlacklistEventIds.has(ev)));
   if (eventIds.length === 0) {
     return;
   }
-  console.log("collectEvents", eventIds);
 
   const unsub = pool.subscribe(
     [{
@@ -412,8 +415,7 @@ async function collectEvents() {
       cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
 
-      if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-        console.log("Publish event from collectEvents", relayURL, ev);
+      if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     },
@@ -463,7 +465,6 @@ async function collectProfiles(force = false) {
   }
 
   const pubkeys = [...new Set<string>([...events.value.map(e => e.pubkey), ...cacheMissHitPubkeys])];
-  console.log("collectProfiles", force, pubkeys);
   const unsub = pool.subscribe(
     [{
       kinds: [0],
@@ -473,6 +474,8 @@ async function collectProfiles(force = false) {
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
+
+        pool.publish(ev, feedRelays);
         if (
           !profiles.value.has(ev.pubkey) ||
           profiles.value.get(ev.pubkey)?.created_at < ev.created_at
@@ -485,7 +488,6 @@ async function collectProfiles(force = false) {
             created_at: ev.created_at,
           };
           profiles.value.set(ev.pubkey, press);
-          pool.publish(ev, feedRelays);
           cacheMissHitPubkeys.delete(ev.pubkey);
         }
       }
@@ -507,7 +509,7 @@ setInterval(() => {
     "profiles",
     JSON.stringify(validProfiles)
   );
-}, 30 * 1000);
+}, 2 * 1000);
 
 let logined = ref(false);
 let isPostOpen = ref(false);
@@ -662,6 +664,12 @@ async function collectFollowsAndSubscribe() {
             addEvent(ev);
             break;
           case 5:
+            for (let i = 0; i < ev.tags.length; ++i) {
+              const t = ev.tags[i];
+              if (t[0] === "e") {
+                cacheBlacklistEventIds.add(t[1]);
+              }
+            }
             pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays])]));
             break;
         }
@@ -1057,6 +1065,7 @@ function loggingStatistics(): void {
     profilesSize: profiles.value.size,
     cacheMissHitPubkeysSize: cacheMissHitPubkeys.size,
     cacheMissHitEventIdsSize: cacheMissHitEventIds.size,
+    cacheBlacklistEventIdsSize: cacheBlacklistEventIds.size,
   }));
 }
 setInterval(loggingStatistics, 30 * 1000);
@@ -1159,7 +1168,7 @@ function gotoTop() {
         <div v-for="e in events" :key="e.id"
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
-          @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)); console.log(JSON.stringify({ focusedItemId, focusItemIndex })) }">
+          @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
           <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
