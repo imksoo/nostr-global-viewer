@@ -609,17 +609,15 @@ function collectMyRelay() {
 
 function collectMyBlockList() {
   const unsub = pool.subscribe(
-    [
-      {
-        // @ts-ignore
-        kinds: [10000],
-        authors: [myPubkey],
-        limit: 1,
-      },
-    ],
+    [{
+      // @ts-ignore
+      kinds: [10000, 30000],
+      authors: [myPubkey],
+    }],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays, ...myWriteRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
-      if (myBlockCreatedAt < ev.created_at) {
+      // @ts-ignore
+      if (myBlockCreatedAt < ev.created_at && ((ev.kind === 10000) || (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
         myBlockCreatedAt = ev.created_at;
         // @ts-ignore
         const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey, ev.content)) || "[]";
