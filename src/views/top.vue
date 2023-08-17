@@ -60,7 +60,7 @@ pool.ondisconnect((url, msg) => { console.log("pool.ondisconnect", url, msg) });
 
 const events = ref(new Array<nostr.Event>());
 const eventsToSearch = ref(new Array<nostr.Event>());
-const eventsReceived = new Map<string, nostr.Event>();
+const eventsReceived = ref(new Map<string, nostr.Event>());
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -204,7 +204,7 @@ watch(() => route.query, async (newQuery) => {
       ],
       [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, relayURL) => {
-        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
           pool.publish(ev, normalizeUrls(feedRelays));
         }
 
@@ -347,7 +347,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
           }
         }
         pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays]))]);
-      } else if (!eventsReceived.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
+      } else if (!eventsReceived.value.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
 
@@ -360,10 +360,10 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
 }
 
 function addEvent(event: nostr.Event): void {
-  if (eventsReceived.has(event.id) || event.kind === 3 || event.kind === 5) {
+  if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
-  eventsReceived.set(event.id, event);
+  eventsReceived.value.set(event.id, event);
   eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
@@ -387,8 +387,17 @@ function getEvent(id: string): nostr.Event | undefined {
   if (myBlockedEvents.has(id)) {
     return undefined;
   }
-  if (eventsReceived.has(id)) {
-    return eventsReceived.get(id);
+  if (eventsReceived.value.has(id)) {
+    const ev = eventsReceived.value.get(id);
+    if (ev) {
+      if (myBlockList.includes(ev.pubkey)) {
+        myBlockedEvents.add(ev.id);
+        return undefined;
+      } else {
+        return eventsReceived.value.get(id);
+      }
+    }
+    return undefined;
   }
 
   cacheMissHitEventIds.add(id);
@@ -415,7 +424,7 @@ async function collectEvents() {
       cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
 
-      if (!eventsReceived.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+      if (!eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     },
@@ -1059,7 +1068,7 @@ function rotateImages() {
 
 function loggingStatistics(): void {
   console.log(JSON.stringify({
-    eventsReceivedSize: eventsReceived.size,
+    eventsReceivedSize: eventsReceived.value.size,
     eventsToSearchSize: eventsToSearch.value.length,
     blockedPubkeys: myBlockList.length,
     eventsBlocked: myBlockedEvents.size,
@@ -1176,8 +1185,9 @@ function gotoTop() {
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
             :open-quote-post="openReplyPost" :broadcast-event="broadcastEvent"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost" :broadcast-event="broadcastEvent"
-            :open-quote-post="openQuotePost" :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :broadcast-event="broadcastEvent" :open-quote-post="openQuotePost"
+            :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
