@@ -392,17 +392,17 @@ function getEvent(id: string): nostr.Event | undefined {
     if (ev) {
       if (myBlockList.includes(ev.pubkey)) {
         myBlockedEvents.add(ev.id);
+        console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
         return undefined;
       } else {
         return eventsReceived.value.get(id);
       }
     }
     return undefined;
+  } else {
+    cacheMissHitEventIds.add(id);
+    return eventsReceived.value.get(id);
   }
-
-  cacheMissHitEventIds.add(id);
-  const event = eventsToSearch.value.find((e) => (e.id === id));
-  return event;
 }
 
 async function collectEvents() {
