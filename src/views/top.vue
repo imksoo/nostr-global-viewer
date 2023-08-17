@@ -741,6 +741,10 @@ async function postEvent(event: nostr.Event) {
   addEvent(event);
 }
 
+async function broadcastEvent(event: nostr.Event) {
+  pool.publish(event, normalizeUrls(myWriteRelays));
+}
+
 function openReplyPost(reply: nostr.Event): void {
   // 投稿欄をすべて空っぽにする
   draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
@@ -1013,7 +1017,7 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
       const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
       if (confirmed) {
         const reaction = createFavEvent(targetEvent) as nostr.Event;
-        reaction.pubkey = myPubkey;
+        broadcastEvent(targetEvent);
         postEvent(reaction);
         isFaved.add(targetEvent.id);
       }
@@ -1027,7 +1031,7 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
       const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
       if (confirmed) {
         const repost = createRepostEvent(targetEvent) as nostr.Event;
-        repost.pubkey = myPubkey;
+        broadcastEvent(targetEvent);
         postEvent(repost);
         isReposted.add(targetEvent.id);
       }
@@ -1172,9 +1176,9 @@ function gotoTop() {
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
-            :open-quote-post="openReplyPost"></FeedContent>
+            :open-quote-post="openReplyPost" :broadcast-event="broadcastEvent"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost" :broadcast-event="broadcastEvent"
             :open-quote-post="openQuotePost" :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>

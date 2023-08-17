@@ -1,6 +1,15 @@
 import * as Nostr from 'nostr-tools';
 
-export function createFavEvent(reacted: Nostr.Event) {
+type NostrEvent = {
+  id: string,
+  pubkey: string,
+  kind: Nostr.Kind,
+  content: string,
+  tags: string[][],
+  created_at: number
+};
+
+export function createFavEvent(reacted: NostrEvent) {
   const inheritedTags = reacted.tags.filter(
     (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
   )
@@ -17,7 +26,7 @@ export function createFavEvent(reacted: Nostr.Event) {
   return reaction;
 }
 
-export function createRepostEvent(reposted: Nostr.Event) {
+export function createRepostEvent(reposted: NostrEvent) {
   const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
   reaction.tags = [
     ['e', reposted.id],

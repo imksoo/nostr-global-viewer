@@ -51,6 +51,10 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  broadcastEvent: {
+    type: Function,
+    required: true,
+  },
 });
 
 const emojiMap = new Map();
@@ -323,11 +327,11 @@ while (rest.length > 0) {
             <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
               :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
               :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"
-              :open-quote-post="props.openQuotePost">
+              :open-quote-post="props.openQuotePost" :broadcast-event="props.broadcastEvent">
             </FeedContent>
             <FeedFooter v-bind:event="props.getEvent(token.id)" :speak-note="props.speakNote" :volume="volume"
               :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile"
-              :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost"></FeedFooter>
+              :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost" :broadcast-event="props.broadcastEvent"></FeedFooter>
           </template>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">

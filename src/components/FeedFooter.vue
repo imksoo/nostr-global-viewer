@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import * as Nostr from "nostr-tools";
+import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
 
 const props = defineProps({
   event: {
@@ -42,6 +43,10 @@ const props = defineProps({
     type: Function,
     required: true,
   },
+  broadcastEvent: {
+    type: Function,
+    required: true,
+  },
 });
 
 let isFavorited = ref(false);
@@ -55,21 +60,9 @@ const favEvent = (reacted = props.event) => {
 
   const confirmed = window.confirm(`ふぁぼりますか？\n\n"${reacted.content}"`);
   if (confirmed) {
-    const inheritedTags = reacted.tags.filter(
-      (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
-    )
-
-    const reaction = Nostr.getBlankEvent(Nostr.Kind.Reaction);
-    reaction.tags = [
-      ...inheritedTags,
-      ['e', reacted.id],
-      ['p', reacted.pubkey],
-    ]
-    reaction.content = "+";
-    reaction.created_at = Math.floor(Date.now() / 1000);
-
+    const reaction = createFavEvent(reacted);
+    props.broadcastEvent(reacted);
     props.postEvent(reaction);
-
     isFavorited.value = true;
   }
 }
@@ -81,16 +74,9 @@ const repostEvent = (reposted = props.event) => {
 
   const confirmed = window.confirm(`リポストしますか？\n\n"${reposted.content}"`);
   if (confirmed) {
-    const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
-    reaction.tags = [
-      ['e', reposted.id],
-      ['p', reposted.pubkey],
-    ]
-    reaction.content = "";
-    reaction.created_at = Math.floor(Date.now() / 1000);
-
+    const reaction = createRepostEvent(reposted);
+    props.broadcastEvent(reposted);
     props.postEvent(reaction);
-
     isReposted.value = true;
   }
 }
