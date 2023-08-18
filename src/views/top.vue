@@ -392,17 +392,17 @@ function getEvent(id: string): nostr.Event | undefined {
     if (ev) {
       if (myBlockList.includes(ev.pubkey)) {
         myBlockedEvents.add(ev.id);
+        console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
         return undefined;
       } else {
         return eventsReceived.value.get(id);
       }
     }
     return undefined;
+  } else {
+    cacheMissHitEventIds.add(id);
+    return eventsReceived.value.get(id);
   }
-
-  cacheMissHitEventIds.add(id);
-  const event = eventsToSearch.value.find((e) => (e.id === id));
-  return event;
 }
 
 async function collectEvents() {
@@ -788,7 +788,7 @@ function openReplyPost(reply: nostr.Event): void {
 }
 
 function openQuotePost(repost: nostr.Event): void {
-  // 投稿欄をすべて空っぽにする
+    // 投稿欄をすべて空っぽにする
   draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
   // 投稿欄にnoteidを追加する
   draftEvent.value.content = "\n\nnostr:" + nostr.nip19.noteEncode(repost.id);
@@ -1183,7 +1183,7 @@ function gotoTop() {
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
-            :open-quote-post="openReplyPost" :broadcast-event="broadcastEvent"></FeedContent>
+            :open-quote-post="openQuotePost" :broadcast-event="broadcastEvent"></FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
             :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :broadcast-event="broadcastEvent" :open-quote-post="openQuotePost"
