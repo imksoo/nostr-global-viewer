@@ -21,5 +21,5 @@ export function playReactionSound() {
 
 export default {
   playActionSound : playActionSound,
-  playRectionSound : playReactionSound,
+  playReactionSound : playReactionSound,
 }
