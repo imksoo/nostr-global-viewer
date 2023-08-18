@@ -15,11 +15,11 @@ export function playActionSound() {
   playSound(actionSound);
 }
 
-export function playRectionSound() {
+export function playReactionSound() {
   playSound(reactionSound);
 }
 
 export default {
   playActionSound : playActionSound,
-  playRectionSound : playRectionSound,
+  playRectionSound : playReactionSound,
 }

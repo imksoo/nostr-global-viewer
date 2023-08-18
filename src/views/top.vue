@@ -5,7 +5,7 @@ import { RelayPool } from "nostr-relaypool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
-import { playActionSound, playRectionSound } from '../hooks/usePlaySound';
+import { playActionSound, playReactionSound } from '../hooks/usePlaySound';
 import { getRandomProfile } from '../hooks/useEmojiProfiles';
 import { speakNote } from '../hooks/useSpeakNote';
 import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
@@ -697,11 +697,11 @@ function subscribeReactions() {
       if (
         !firstReactionFetching &&
         soundEffect.value &&
-        myBlockList.includes(ev.pubkey) &&
+        !myBlockList.includes(ev.pubkey) &&
         events.value[events.value.length - 1].created_at < ev.created_at
       ) {
         console.log("reactioned", ev);
-        playRectionSound();
+        playReactionSound();
       }
     },
     undefined,
