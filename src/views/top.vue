@@ -689,6 +689,7 @@ function subscribeReactions() {
 
   pool.subscribe([
     { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 },
+    { kinds: [6, 7], authors: [myPubkey], limit: 10 },
   ],
     [...new Set(normalizeUrls(myReadRelays))],
     async (ev, _isAfterEose, _relayURL) => {
@@ -697,6 +698,7 @@ function subscribeReactions() {
       if (
         !firstReactionFetching &&
         soundEffect.value &&
+        ev.pubkey !== myPubkey &&
         !myBlockList.includes(ev.pubkey) &&
         events.value[events.value.length - 1].created_at < ev.created_at
       ) {
