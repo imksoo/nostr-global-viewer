@@ -252,91 +252,30 @@ watch(() => route.query, async (newQuery) => {
       now.setDate(1);
       const targetMonth = new Date(now.getTime());
 
-      npubDate.value = new Date(targetDate.getTime());
-      npubDateYesterday.value = new Date(targetDate.getTime());
-      npubDateYesterday.value.setDate(npubDateYesterday.value.getDate() - 1);
-      npubDateTomorrow.value = new Date(targetDate.getTime());
-      npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
-
-      npubMonth.value = new Date(targetMonth.getTime());
-      npubPrevMonth.value = new Date(targetMonth.getTime());
-      npubPrevMonth.value.setDate(1);
-      npubPrevMonth.value.setMonth(npubPrevMonth.value.getMonth() - 1);
-      npubPrevMonth.value.setHours(0, 0, 0, 0);
-      npubNextMonth.value = new Date(targetMonth.getTime());
-      npubNextMonth.value.setDate(1);
-      npubNextMonth.value.setMonth(npubNextMonth.value.getMonth() + 1);
-      npubNextMonth.value.setHours(0, 0, 0, 0);
+      setupNpubDate(targetDate);
+      setupNpubMonth(targetMonth);
     }
   } else if (npubId.value) {
-    let since: number = 0;
-    let until: number = 0;
-    let targetDate: Date = new Date();
-    let targetMonth: Date = new Date();
-
-    let nowDate = new Date();
-    nowDate.setHours(0, 0, 0, 0);
-    targetDate = npubDate.value ? npubDate.value : nowDate;
-
-    npubDate.value = new Date(targetDate.getTime());
-    npubDateYesterday.value = new Date(targetDate.getTime());
-    npubDateYesterday.value.setDate(npubDateYesterday.value.getDate() - 1);
-    npubDateTomorrow.value = new Date(targetDate.getTime());
-    npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
-
-    let nowMonth = new Date();
-    nowMonth.setHours(0, 0, 0, 0);
-    nowMonth.setDate(1);
-    targetMonth = npubMonth.value ? npubMonth.value : nowMonth;
-
-    npubMonth.value = new Date(targetMonth.getTime());
-    npubPrevMonth.value = new Date(targetMonth.getTime());
-    npubPrevMonth.value.setDate(1);
-    npubPrevMonth.value.setMonth(npubPrevMonth.value.getMonth() - 1);
-    npubPrevMonth.value.setHours(0, 0, 0, 0);
-    npubNextMonth.value = new Date(targetMonth.getTime());
-    npubNextMonth.value.setDate(1);
-    npubNextMonth.value.setMonth(npubNextMonth.value.getMonth() + 1);
-    npubNextMonth.value.setHours(0, 0, 0, 0);
-
-    if (npubDateOrMonth.value === "date") {
-      since = Math.floor(targetDate.getTime() / 1000) - 1;
-      until = Math.floor(npubDateTomorrow.value.getTime() / 1000) + 1;
-
-      console.log("npubDate", npubDate.value, npubDateYesterday.value, npubDateTomorrow.value);
-    } else {
-      since = Math.floor(targetMonth.getTime() / 1000) - 1;
-      until = Math.floor(npubNextMonth.value.getTime() / 1000) + 1;
-
-      console.log("npubMonth", npubMonth.value, npubPrevMonth.value, npubNextMonth.value);
-    }
-
     cutoffMode.value = false;
 
-    const unsub1 = pool.subscribe(
-      [{
-        kinds: [1],
-        authors: [npubId.value],
-        since, until,
-      }],
-      [...new Set(normalizeUrls([...feedRelays]))],
-      async (ev, _isAfterEose, _relayURL) => {
-        if (since <= ev.created_at && ev.created_at <= until) {
-          if (npubDateOrMonth.value === "date") {
-            npubModeText.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
-          } else if (npubDateOrMonth.value === "month") {
-            npubModeText.value = `${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(今日へ)`;
-          }
-          addEvent(ev);
-        }
-      },
-      undefined,
-      undefined,
-      { unsubscribeOnEose: true }
-    );
-    setTimeout(() => { unsub1() }, 60 * 1000);
+    const targetDate = npubDate.value ? npubDate.value : npubMonth.value;
+    const targetMonth = npubMonth.value ? npubMonth.value : npubDate.value;
 
-    let searchRelays = [...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays];
+    if (!targetDate || !targetMonth) {
+      return;
+    }
+
+    setupNpubDate(targetDate);
+    setupNpubMonth(targetMonth);
+
+    let searchRelays = [... new Set([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays])];
+
+    if (npubDateOrMonth.value === "date" && npubDateTomorrow.value) {
+      collectUserDailyEvents(npubId.value, searchRelays, targetDate);
+    } else if (npubDateOrMonth.value === "month" && npubNextMonth.value) {
+      collectUserMonthlyEvents(npubId.value, searchRelays, targetMonth);
+    }
+
     const unsub2 = pool.subscribe(
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(profileRelays))],
@@ -375,14 +314,9 @@ watch(() => route.query, async (newQuery) => {
       undefined,
       { unsubscribeOnEose: true }
     );
-    setTimeout(() => { unsub2() }, 5000);
+    setTimeout(() => {
+      unsub2();
 
-    if (npubDateOrMonth.value === "date") {
-      collectUserDailyEvents(npubId.value, searchRelays, targetDate);
-    } else if (npubDateOrMonth.value === "month") {
-      collectUserMonthlyEvents(npubId.value, searchRelays, targetMonth);
-    }
-    setTimeout(async () => {
       if (npubId.value && npubDateOrMonth.value === "date") {
         let searchRelays = [...npubReadRelays, ...npubWriteRelays];
         collectUserDailyEvents(npubId.value, searchRelays, targetDate);
@@ -390,64 +324,59 @@ watch(() => route.query, async (newQuery) => {
         let searchRelays = [...npubReadRelays, ...npubWriteRelays];
         collectUserMonthlyEvents(npubId.value, searchRelays, targetMonth);
       }
-    }, 5000);
+    }, 30 * 1000);
   }
 });
 
+function setupNpubMonth(targetMonth: Date) {
+  npubMonth.value = new Date(targetMonth.getTime());
+  npubPrevMonth.value = new Date(targetMonth.getTime());
+  npubPrevMonth.value.setDate(1);
+  npubPrevMonth.value.setMonth(npubPrevMonth.value.getMonth() - 1);
+  npubPrevMonth.value.setHours(0, 0, 0, 0);
+  npubNextMonth.value = new Date(targetMonth.getTime());
+  npubNextMonth.value.setDate(1);
+  npubNextMonth.value.setMonth(npubNextMonth.value.getMonth() + 1);
+  npubNextMonth.value.setHours(0, 0, 0, 0);
+}
+
+function setupNpubDate(targetDate: Date) {
+  npubDate.value = new Date(targetDate.getTime());
+  npubDateYesterday.value = new Date(targetDate.getTime());
+  npubDateYesterday.value.setDate(npubDateYesterday.value.getDate() - 1);
+  npubDateTomorrow.value = new Date(targetDate.getTime());
+  npubDateTomorrow.value.setDate(npubDateTomorrow.value.getDate() + 1);
+}
+
 // 指定されたユーザーのその一日のイベントを取得する
 async function collectUserDailyEvents(pubkey: string, relays: string[], targetDate: Date) {
-  const profile = getProfile(pubkey);
-
-  const fetcher = NostrFetcher.init();
-
   let nextDay = new Date(targetDate.getTime());
   nextDay.setDate(nextDay.getDate() + 1);
 
   const since = Math.floor(targetDate.getTime() / 1000);
   const until = Math.floor(nextDay.getTime() / 1000);
 
-  const eventsIter = fetcher.allEventsIterator(
-    [...new Set(normalizeUrls(relays))],
-    { kinds: [1, 5, 6, 7], authors: [pubkey] },
-    { since, until }
-  );
-
-  for await (const ev of eventsIter) {
-    if (since <= ev.created_at && ev.created_at <= until) {
-      const usertext = profile.display_name + profile.name + ev.content;
-      const japaneseRegex = /[亜-熙ぁ-んァ-ヶ]/;
-      if (ev.kind === 5) {
-        for (let i = 0; i < ev.tags.length; ++i) {
-          const t = ev.tags[i];
-          if (t[0] === "e") {
-            cacheBlacklistEventIds.add(t[1]);
-          }
-        }
-        pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays]))]);
-      } else if (!eventsReceived.value.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
-        pool.publish(ev, normalizeUrls(feedRelays));
-      }
-
-      if (ev.kind !== 5) {
-        addEvent(ev);
-      }
-      npubModeText.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)`;
-    }
-  }
+  collectUserEventsRange(pubkey, relays, since, until, () => {
+    npubModeText.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)`;
+  });
 }
 
 // 指定されたユーザーのその一ヶ月間のイベントを取得する
 async function collectUserMonthlyEvents(pubkey: string, relays: string[], targetMonth: Date) {
-  const profile = getProfile(pubkey);
-
-  const fetcher = NostrFetcher.init();
-
   let nextMonth = new Date(targetMonth.getTime());
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
   const since = Math.floor(targetMonth.getTime() / 1000) - 1;
   const until = Math.floor(nextMonth.getTime() / 1000) + 1;
 
+  collectUserEventsRange(pubkey, relays, since, until, () => {
+    npubModeText.value = `${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)(今日へ)`;
+  });
+}
+
+async function collectUserEventsRange(pubkey: string, relays: string[], since: number, until: number, cb: () => void) {
+  const profile = getProfile(pubkey);
+  const fetcher = NostrFetcher.init();
   const eventsIter = fetcher.allEventsIterator(
     [...new Set(normalizeUrls(relays))],
     { kinds: [1, 5], authors: [pubkey] },
@@ -473,11 +402,11 @@ async function collectUserMonthlyEvents(pubkey: string, relays: string[], target
       if (ev.kind !== 5) {
         addEvent(ev);
       }
-      npubModeText.value = `${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)(今日へ)`;
+
+      cb();
     }
   }
 }
-
 
 function addEvent(event: NostrEvent | Nostr.Event): void {
   if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
