@@ -3,10 +3,12 @@ import * as Nostr from 'nostr-tools';
 type NostrEvent = {
   id: string,
   pubkey: string,
-  kind: Nostr.Kind,
+  kind: Nostr.Kind | number,
   content: string,
   tags: string[][],
-  created_at: number
+  created_at: number,
+  isReposted: Boolean | undefined,
+  isFavorited: Boolean | undefined,
 };
 
 export function createFavEvent(reacted: NostrEvent) {
@@ -37,3 +39,8 @@ export function createRepostEvent(reposted: NostrEvent) {
 
   return reaction;
 }
+
+export default {
+  createFavEvent,
+  createRepostEvent
+};

@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import * as Nostr from "nostr-tools";
 import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
+import { ADDRCONFIG } from "dns";
 
 const props = defineProps({
   event: {
@@ -11,7 +12,9 @@ const props = defineProps({
       kind: Nostr.Kind,
       content: string,
       tags: string[][],
-      created_at: number
+      created_at: number,
+      isReposted: Boolean | undefined,
+      isFavorited: Boolean | undefined,
     },
     required: true,
   },
@@ -43,42 +46,26 @@ const props = defineProps({
     type: Function,
     required: true,
   },
-  broadcastEvent: {
+  addFavEvent: {
+    type: Function,
+    required: true,
+  },
+  addRepostEvent: {
     type: Function,
     required: true,
   },
 });
 
-let isFavorited = ref(false);
-let isReposted = ref(false);
+const isFavorited = computed(()=>(props.event.isFavorited));
+const isReposted = computed(()=>(props.event.isReposted));
 let isShowJSONData = ref(false);
 
 const favEvent = (reacted = props.event) => {
-  if (isFavorited.value) {
-    return;
-  }
-
-  const confirmed = window.confirm(`ふぁぼりますか？\n\n"${reacted.content}"`);
-  if (confirmed) {
-    const reaction = createFavEvent(reacted);
-    props.broadcastEvent(reacted);
-    props.postEvent(reaction);
-    isFavorited.value = true;
-  }
+  props.addFavEvent(reacted);
 }
 
 const repostEvent = (reposted = props.event) => {
-  if (isReposted.value) {
-    return;
-  }
-
-  const confirmed = window.confirm(`リポストしますか？\n\n"${reposted.content}"`);
-  if (confirmed) {
-    const reaction = createRepostEvent(reposted);
-    props.broadcastEvent(reposted);
-    props.postEvent(reaction);
-    isReposted.value = true;
-  }
+  props.addRepostEvent(reposted);
 }
 
 const quoteEvent = (quote = props.event) => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
-import * as nostr from "nostr-tools";
+import * as Nostr from "nostr-tools";
 import { RelayPool } from "nostr-relaypool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
@@ -58,9 +58,21 @@ pool.onerror((url, msg) => { console.log("pool.error", url, msg) });
 pool.onnotice((url, msg) => { console.log("pool.onnotice", url, msg) });
 pool.ondisconnect((url, msg) => { console.log("pool.ondisconnect", url, msg) });
 
-const events = ref(new Array<nostr.Event>());
-const eventsToSearch = ref(new Array<nostr.Event>());
-const eventsReceived = ref(new Map<string, nostr.Event>());
+type NostrEvent = {
+  id: string,
+  sig: string,
+  pubkey: string,
+  kind: Nostr.Kind | number,
+  content: string,
+  tags: string[][],
+  created_at: number,
+  isReposted: Boolean | undefined,
+  isFavorited: Boolean | undefined,
+};
+
+const events = ref(new Array<NostrEvent>());
+const eventsToSearch = ref(new Array<NostrEvent>());
+const eventsReceived = ref(new Map<string, NostrEvent>());
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -138,7 +150,7 @@ watch(() => route.query, async (newQuery) => {
   for (let key in newQuery) {
     if (key.match(nostrRegex)) {
       try {
-        const data = nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
+        const data = Nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
         switch (data.type) {
           case "nevent": {
             noteId.value = data.data.id;
@@ -359,12 +371,12 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
   }
 }
 
-function addEvent(event: nostr.Event): void {
+function addEvent(event: NostrEvent | Nostr.Event): void {
   if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
-  eventsReceived.value.set(event.id, event);
-  eventsToSearch.value = nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event);
+  eventsReceived.value.set(event.id, event as NostrEvent);
+  eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event) as NostrEvent[];
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
@@ -383,7 +395,7 @@ function addEvent(event: nostr.Event): void {
 let cacheMissHitEventIds = new Set<string>();
 let cacheBlacklistEventIds = new Set<string>();
 
-function getEvent(id: string): nostr.Event | undefined {
+function getEvent(id: string): Nostr.Event | undefined {
   if (myBlockedEvents.has(id)) {
     return undefined;
   }
@@ -688,22 +700,44 @@ function subscribeReactions() {
   relayStatus.value = pool.getRelayStatuses();
 
   pool.subscribe([
-    { kinds: [1, 6, 7], "#p": [myPubkey], limit: 10 },
-    { kinds: [6, 7], authors: [myPubkey], limit: 10 },
+    { kinds: [1, 6, 7], "#p": [myPubkey], limit: countOfDisplayEvents / 10 },
+    { kinds: [6, 7], authors: [myPubkey], limit: countOfDisplayEvents / 10 },
   ],
     [...new Set(normalizeUrls(myReadRelays))],
     async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
 
-      if (
-        !firstReactionFetching &&
-        soundEffect.value &&
-        ev.pubkey !== myPubkey &&
-        !myBlockList.includes(ev.pubkey) &&
-        events.value[events.value.length - 1].created_at < ev.created_at
-      ) {
-        console.log("reactioned", ev);
-        playReactionSound();
+      if (ev.pubkey !== myPubkey) {
+        if (
+          !firstReactionFetching &&
+          soundEffect.value &&
+          !myBlockList.includes(ev.pubkey) &&
+          events.value[events.value.length - 1].created_at < ev.created_at
+        ) {
+          console.log("reactioned", ev);
+          playReactionSound();
+        }
+      } if (ev.pubkey === myPubkey) {
+        for (let i = 0; i < ev.tags.length; ++i) {
+          const t = ev.tags[i];
+          if (t[0] === 'e') {
+            const et = t[1];
+
+            if (ev.kind === 6) {
+              eventsToSearch.value.filter((ee) => (ee.id === et)).map((ee) => (ee.isReposted = true));
+              const ef = eventsReceived.value.get(et);
+              if (ef) {
+                ef.isReposted = true;
+              }
+            } else if (ev.kind === 7) {
+              eventsToSearch.value.filter((ee) => (ee.id === et)).map((ee) => (ee.isFavorited = true));
+              const ef = eventsReceived.value.get(et);
+              if (ef) {
+                ef.isFavorited = true;
+              }
+            }
+          }
+        }
       }
     },
     undefined,
@@ -718,8 +752,8 @@ function subscribeReactions() {
   );
 }
 
-let draftEvent = ref(nostr.getBlankEvent(nostr.Kind.Text));
-let editingTags = ref(nostr.getBlankEvent(nostr.Kind.Text));
+let draftEvent = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
+let editingTags = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
 async function post() {
   if (!draftEvent.value.content) {
     return;
@@ -734,10 +768,10 @@ async function post() {
   await postEvent(ev);
 
   isPostOpen.value = false;
-  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
+  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
 }
 
-async function postEvent(event: nostr.Event) {
+async function postEvent(event: Nostr.Event) {
   // @ts-ignore
   event = await window.nostr?.signEvent(JSON.parse(JSON.stringify(event)));
 
@@ -750,14 +784,10 @@ async function postEvent(event: nostr.Event) {
   addEvent(event);
 }
 
-async function broadcastEvent(event: nostr.Event) {
-  pool.publish(event, normalizeUrls(myWriteRelays));
-}
-
-function openReplyPost(reply: nostr.Event): void {
+function openReplyPost(reply: Nostr.Event): void {
   // 投稿欄をすべて空っぽにする
-  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
-  const parsedTags = nostr.nip10.parse(reply);
+  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  const parsedTags = Nostr.nip10.parse(reply);
   if (parsedTags.root) {
     draftEvent.value.tags.push(['e', parsedTags.root.id, "", "root"]);
   }
@@ -789,11 +819,11 @@ function openReplyPost(reply: nostr.Event): void {
   isPostOpen.value = true;
 }
 
-function openQuotePost(repost: nostr.Event): void {
-    // 投稿欄をすべて空っぽにする
-  draftEvent.value = nostr.getBlankEvent(nostr.Kind.Text);
+function openQuotePost(repost: Nostr.Event): void {
+  // 投稿欄をすべて空っぽにする
+  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
   // 投稿欄にnoteidを追加する
-  draftEvent.value.content = "\n\nnostr:" + nostr.nip19.noteEncode(repost.id);
+  draftEvent.value.content = "\n\nnostr:" + Nostr.nip19.noteEncode(repost.id);
 
   isPostOpen.value = true;
 }
@@ -818,7 +848,7 @@ function extractTags() {
     for (let i = 0; i < nostrStr.length; ++i) {
       const ns = nostrStr[i];
       try {
-        const d = nostr.nip19.decode(ns.replace('nostr:', '').replace('@', ''));
+        const d = Nostr.nip19.decode(ns.replace('nostr:', '').replace('@', ''));
         switch (d.type) {
           case "nevent": {
             editingTags.value.tags.push(['e', d.data.id])
@@ -887,6 +917,8 @@ function searchAndBlockFilter() {
       sig: "",
       tags: [],
       content: searchWords.value + " is not found.",
+      isFavorited: false,
+      isReposted: false,
     };
   }
 }
@@ -938,11 +970,8 @@ setInterval(() => {
 }, 1000);
 
 function normalizeUrls(urls: string[]): string[] {
-  return urls.map((url) => (nostr.utils.normalizeURL(url)));
+  return urls.map((url) => (Nostr.utils.normalizeURL(url)));
 }
-
-const isFaved = new Set<string>();
-const isReposted = new Set<string>();
 
 const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const konamiIndex = ref(0);
@@ -1019,31 +1048,17 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     }
   } else if (e.key === "f" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
-    if (targetEvent && targetEvent.kind === 1 && !isFaved.has(targetEvent.id)) {
+    if (targetEvent && targetEvent.kind === 1 && !targetEvent.isFavorited) {
       e.preventDefault();
       e.stopPropagation();
-
-      const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
-      if (confirmed) {
-        const reaction = createFavEvent(targetEvent) as nostr.Event;
-        broadcastEvent(targetEvent);
-        postEvent(reaction);
-        isFaved.add(targetEvent.id);
-      }
+      addFavEvent(targetEvent);
     }
   } else if (e.key === "e" && logined.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
-    if (targetEvent && targetEvent.kind === 1 && !isReposted.has(targetEvent.id)) {
+    if (targetEvent && targetEvent.kind === 1 && !targetEvent.isReposted) {
       e.preventDefault();
       e.stopPropagation();
-
-      const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
-      if (confirmed) {
-        const repost = createRepostEvent(targetEvent) as nostr.Event;
-        broadcastEvent(targetEvent);
-        postEvent(repost);
-        isReposted.add(targetEvent.id);
-      }
+      addRepostEvent(targetEvent);
     }
   }
 }
@@ -1057,6 +1072,26 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
 })
+
+function addRepostEvent(targetEvent: NostrEvent) {
+  const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
+  if (confirmed) {
+    const repost = createRepostEvent(targetEvent) as Nostr.Event;
+    pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+    postEvent(repost);
+    targetEvent.isReposted = true;
+  }
+}
+
+function addFavEvent(targetEvent: NostrEvent) {
+  const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
+  if (confirmed) {
+    const reaction = createFavEvent(targetEvent) as Nostr.Event;
+    pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+    postEvent(reaction);
+    targetEvent.isFavorited = true;
+  }
+}
 
 function rotateImages() {
   const images = document.getElementsByTagName("img");
@@ -1166,14 +1201,14 @@ function gotoTop() {
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
               npubMode
             }}</span></a></div>
         <div class="p-index-npub-next"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
       <div class="p-index-feeds" :ref="(el) => { itemsTop = el as HTMLElement }">
@@ -1185,23 +1220,24 @@ function gotoTop() {
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
-            :open-quote-post="openQuotePost" :broadcast-event="broadcastEvent"></FeedContent>
+            :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent">
+          </FeedContent>
           <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
             :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
-            :broadcast-event="broadcastEvent" :open-quote-post="openQuotePost"
+            :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
               npubMode
             }}</span></a></div>
         <div class="p-index-npub-next"><a
-            :href="'?' + nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
       <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
@@ -1221,7 +1257,7 @@ function gotoTop() {
     <label class="c-post-wrap__bg" @click="isPostOpen = !isPostOpen"></label>
     <div class="c-post-body">
       <div class="c-post-cancel">
-        <button @click="isPostOpen = !isPostOpen; draftEvent = nostr.getBlankEvent(nostr.Kind.Text);"
+        <button @click="isPostOpen = !isPostOpen; draftEvent = Nostr.getBlankEvent(Nostr.Kind.Text);"
           class="c-post-cancel__btn">
           <span class="c-post-cancel__icon">☓</span>
         </button>
