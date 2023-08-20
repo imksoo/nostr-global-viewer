@@ -184,6 +184,8 @@ while (rest.length > 0) {
           const ext = url.pathname.split(".").pop()?.toLocaleLowerCase() ?? "";
           if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
             tokens.value.push({ type: "img", src: text });
+          } else if (['mp4', 'webm', 'ogg', 'mov', 'ogv', 'wmv', 'avi'].includes(ext)) {
+            tokens.value.push({ type: "video", src: text });
           } else {
             if (url.hostname === "youtu.be") {
               tokens.value.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
@@ -331,7 +333,8 @@ while (rest.length > 0) {
             </FeedContent>
             <FeedFooter v-bind:event="props.getEvent(token.id)" :speak-note="props.speakNote" :volume="volume"
               :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile"
-              :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost" :broadcast-event="props.broadcastEvent"></FeedFooter>
+              :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost"
+              :broadcast-event="props.broadcastEvent"></FeedFooter>
           </template>
           <template v-else>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
@@ -351,6 +354,9 @@ while (rest.length > 0) {
         <a :href="token.src" target="_blank" referrerpolicy="no-referrer">
           <img :src="token.src" class="c-feed-content-image" referrerpolicy="no-referrer" />
         </a>
+      </template>
+      <template v-else-if="token?.type === 'video'">
+        <video :src="token.src" class="c-feed-content-video" controls="true" preload="metadata" />
       </template>
       <template v-else-if="token?.type === 'emoji'">
         <img :src="token.src" class="c-feed-content-emoji" :alt="token.content" />
@@ -394,7 +400,8 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-ogp-box {
-  display: flex;
+  display: flexbox;
+  overflow: auto;
 }
 
 .c-feed-content-ogp-title {
@@ -404,9 +411,10 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-ogp-image {
+  float: left;
   max-width: 25%;
   max-height: 240px;
-  margin: auto 12px auto 4px;
+  margin: 8px 12px 4px 4px;
 }
 
 .c-feed-content-ogp-description {
@@ -414,6 +422,13 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-image {
+  max-width: 90%;
+  max-height: 600px;
+  display: block;
+  margin: auto;
+}
+
+.c-feed-content-video {
   max-width: 90%;
   max-height: 600px;
   display: block;
