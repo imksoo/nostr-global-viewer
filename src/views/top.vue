@@ -1074,22 +1074,26 @@ onBeforeUnmount(() => {
 })
 
 function addRepostEvent(targetEvent: NostrEvent) {
-  const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
-  if (confirmed) {
-    const repost = createRepostEvent(targetEvent) as Nostr.Event;
-    pool.publish(targetEvent, normalizeUrls(myWriteRelays));
-    postEvent(repost);
-    targetEvent.isReposted = true;
+  if (!targetEvent.isReposted) {
+    const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
+    if (confirmed) {
+      const repost = createRepostEvent(targetEvent) as Nostr.Event;
+      pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+      postEvent(repost);
+      targetEvent.isReposted = true;
+    }
   }
 }
 
 function addFavEvent(targetEvent: NostrEvent) {
-  const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
-  if (confirmed) {
-    const reaction = createFavEvent(targetEvent) as Nostr.Event;
-    pool.publish(targetEvent, normalizeUrls(myWriteRelays));
-    postEvent(reaction);
-    targetEvent.isFavorited = true;
+  if (!targetEvent.isFavorited) {
+    const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
+    if (confirmed) {
+      const reaction = createFavEvent(targetEvent) as Nostr.Event;
+      pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+      postEvent(reaction);
+      targetEvent.isFavorited = true;
+    }
   }
 }
 
