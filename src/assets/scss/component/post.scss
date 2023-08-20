@@ -67,6 +67,11 @@
   transition: all 0.4s;
   border: none;
   cursor: pointer;
+
+  @media screen and (max-width: 640px) {
+    display: block;
+    vertical-align: bottom;
+  }
 }
 
 .b-login:hover,
@@ -81,4 +86,18 @@
   padding: 5px;
   background-color: #213547;
   color: #ffffff;
+
+  @media screen and (max-width: 640px) {
+    height: 13lh;
+  }
+}
+
+.c-post-tags {
+  @media screen and (max-width: 640px) {
+    max-height: 5lh;
+    overflow-y: scroll;
+    border: #050a30 1px dotted;
+    padding: 2px 4px;
+    margin-bottom: 8px;
+  }
 }
