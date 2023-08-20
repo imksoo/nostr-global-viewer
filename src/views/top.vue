@@ -315,7 +315,7 @@ watch(() => route.query, async (newQuery) => {
 
     const unsub1 = pool.subscribe(
       [{
-        kinds: [1, 6, 7],
+        kinds: [1],
         authors: [npubId.value],
         since, until,
       }],
@@ -450,7 +450,7 @@ async function collectUserMonthlyEvents(pubkey: string, relays: string[], target
 
   const eventsIter = fetcher.allEventsIterator(
     [...new Set(normalizeUrls(relays))],
-    { kinds: [1, 5, 6, 7], authors: [pubkey] },
+    { kinds: [1, 5], authors: [pubkey] },
     { since, until }
   );
 
