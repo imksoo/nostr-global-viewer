@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import * as Nostr from "nostr-tools";
-import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
-import { ADDRCONFIG } from "dns";
 
 const props = defineProps({
   event: {
