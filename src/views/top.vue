@@ -309,9 +309,10 @@ watch(() => route.query, async (newQuery) => {
 
     const unsub2 = pool.subscribe(
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
-      [...new Set(normalizeUrls(profileRelays))],
+      [...new Set(normalizeUrls(searchRelays))],
       (ev, _isAfterEose, _relayURL) => {
         if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
+          pool.publish(ev, normalizeUrls(feedRelays));
           npubReadRelays.slice(0);
           npubWriteRelays.slice(0);
           npubRelaysCreatedAt = ev.created_at;
@@ -323,6 +324,7 @@ watch(() => route.query, async (newQuery) => {
             }
           }
         } else if (ev.kind === 10002 && npubRelaysCreatedAt < ev.created_at) {
+          pool.publish(ev, normalizeUrls(feedRelays));
           npubReadRelays.slice(0);
           npubWriteRelays.slice(0);
           npubRelaysCreatedAt = ev.created_at;
