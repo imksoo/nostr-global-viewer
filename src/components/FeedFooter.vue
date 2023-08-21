@@ -56,8 +56,8 @@ const props = defineProps({
   },
 });
 
-const isFavorited = computed(()=>(props.event.isFavorited));
-const isReposted = computed(()=>(props.event.isReposted));
+const isFavorited = computed(() => (props.event.isFavorited));
+const isReposted = computed(() => (props.event.isReposted));
 let isShowJSONData = ref(false);
 
 const favEvent = (reacted = props.event) => {
@@ -128,11 +128,16 @@ function getLinkUrl(): string {
     </p>
     <p class="c-feed-date">
       <span>
-        <a :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
+        <a target="_blank" :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
           {{ new Date(props.event.created_at * 1000).toLocaleString("ja-JP", {
             month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
           }) }}
+        </a>
+        <span>&nbsp;</span>
+        <a target="_blank"
+          :href="'?' + Nostr.nip19.npubEncode(props.event.pubkey) + '&date=' + new Date(props.event.created_at * 1000).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">
+          <mdicon name="calendar-today" :width="14" :height="14" title="Open posts of the day" />
         </a>
         <span>&nbsp;</span>
         <a target="_blank" v-bind:href="getLinkUrl()">

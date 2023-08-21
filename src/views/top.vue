@@ -210,22 +210,24 @@ watch(() => route.query, async (newQuery) => {
   }
 
   if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && npubDateOrMonth.value === "")) {
-    const timelineFilter = (noteId.value) ? {
+    const timelineFilter = (noteId.value) ? [{
       kinds: [1, 6],
-      limit: initialNumberOfEventToGet,
       ids: [noteId.value],
-    } : (npubId.value) ? {
+    }, {
+      kinds: [1, 6, 7],
+      '#e': [noteId.value],
+    }] : (npubId.value) ? [{
       kinds: [1],
       limit: countOfDisplayEvents,
       authors: [npubId.value]
-    } : {
+    }] : [{
       kinds: [1, 6],
       limit: initialNumberOfEventToGet,
-    };
+    }];
+    console.log(timelineFilter);
     pool.subscribe(
-      [
-        timelineFilter
-      ],
+      // @ts-ignore
+      timelineFilter,
       [...new Set(normalizeUrls([...feedRelays]))],
       async (ev, _isAfterEose, relayURL) => {
         if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
@@ -244,7 +246,7 @@ watch(() => route.query, async (newQuery) => {
     );
 
     if (npubId.value && npubDateOrMonth.value === "") {
-      npubModeText.value = `直近の ${countOfDisplayEvents} 件の投稿を表示しています。(今日へ)`;
+      npubModeText.value = `接続中のリレーから直近の ${countOfDisplayEvents} 件の投稿を表示しています。(今日へ)`;
 
       let now = new Date();
       now.setHours(0, 0, 0, 0);
@@ -270,11 +272,40 @@ watch(() => route.query, async (newQuery) => {
 
     let searchRelays = [... new Set([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays])];
 
+    let since = 0;
+    let until = 0;
     if (npubDateOrMonth.value === "date" && npubDateTomorrow.value) {
-      collectUserDailyEvents(npubId.value, searchRelays, targetDate);
+      since = Math.floor(targetDate.getTime() / 1000) - 1;
+      until = Math.floor(npubDateTomorrow.value.getTime() / 1000) + 1;
+      console.log("npubDate", npubDate.value, npubDateYesterday.value, npubDateTomorrow.value);
     } else if (npubDateOrMonth.value === "month" && npubNextMonth.value) {
-      collectUserMonthlyEvents(npubId.value, searchRelays, targetMonth);
+      since = Math.floor(targetMonth.getTime() / 1000) - 1;
+      until = Math.floor(npubNextMonth.value.getTime() / 1000) + 1;
+      console.log("npubMonth", npubMonth.value, npubPrevMonth.value, npubNextMonth.value);
     }
+
+    const unsub1 = pool.subscribe(
+      [{
+        kinds: [1],
+        authors: [npubId.value],
+        since, until,
+      }],
+      searchRelays,
+      async (ev, _isAfterEose, _relayURL) => {
+        if (since <= ev.created_at && ev.created_at <= until) {
+          if (npubDateOrMonth.value === "date") {
+            npubModeText.value = `接続中のリレーから ${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
+          } else if (npubDateOrMonth.value === "month") {
+            npubModeText.value = `接続中のリレーから  ${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(今日へ)`;
+          }
+          addEvent(ev);
+        }
+      },
+      undefined,
+      undefined,
+      { unsubscribeOnEose: true }
+    );
+    setTimeout(() => { unsub1() }, 60 * 1000);
 
     const unsub2 = pool.subscribe(
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
@@ -324,7 +355,7 @@ watch(() => route.query, async (newQuery) => {
         let searchRelays = [...npubReadRelays, ...npubWriteRelays];
         collectUserMonthlyEvents(npubId.value, searchRelays, targetMonth);
       }
-    }, 30 * 1000);
+    }, 5 * 1000);
   }
 });
 
@@ -357,7 +388,7 @@ async function collectUserDailyEvents(pubkey: string, relays: string[], targetDa
   const until = Math.floor(nextDay.getTime() / 1000);
 
   collectUserEventsRange(pubkey, relays, since, until, () => {
-    npubModeText.value = `${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)`;
+    npubModeText.value = `複数のリレーから探索した ${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
   });
 }
 
@@ -370,7 +401,7 @@ async function collectUserMonthlyEvents(pubkey: string, relays: string[], target
   const until = Math.floor(nextMonth.getTime() / 1000) + 1;
 
   collectUserEventsRange(pubkey, relays, since, until, () => {
-    npubModeText.value = `${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(全リレー探索済み)(今日へ)`;
+    npubModeText.value = `複数のリレーから探索した ${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(今日へ)`;
   });
 }
 
@@ -1282,17 +1313,6 @@ function gotoTop() {
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
-        </div>
-        <div class="p-index-npub-now"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
-        </div>
-        <div class="p-index-npub-next"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
-        </div>
-      </div>
-      <div class="p-index-header" v-if="npubId">
-        <div class="p-index-npub-prev"><a
             :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
         <div class="p-index-npub-now"><a
@@ -1301,6 +1321,17 @@ function gotoTop() {
             }}</span></a></div>
         <div class="p-index-npub-next"><a
             :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+        </div>
+      </div>
+      <div class="p-index-header" v-if="npubId">
+        <div class="p-index-npub-prev"><a
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
+        </div>
+        <div class="p-index-npub-now"><a
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
+        </div>
+        <div class="p-index-npub-next"><a
+            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
         </div>
       </div>
       <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
