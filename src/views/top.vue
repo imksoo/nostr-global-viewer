@@ -240,7 +240,7 @@ watch(() => route.query, async (newQuery) => {
       // ユーザーの直近の投稿をプレビューするモード
       pool.subscribe(
         [{
-          kinds: [1],
+          kinds: [1, 6],
           limit: countOfDisplayEvents / 2,
           authors: [npubId.value]
         }],
@@ -302,7 +302,7 @@ watch(() => route.query, async (newQuery) => {
     setupNpubDate(targetDate);
     setupNpubMonth(targetMonth);
 
-    let searchRelays = [... new Set([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays])];
+    let searchRelays = [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))];
 
     let since = 0;
     let until = 0;
@@ -318,7 +318,7 @@ watch(() => route.query, async (newQuery) => {
 
     const unsub1 = pool.subscribe(
       [{
-        kinds: [1],
+        kinds: [1, 6],
         authors: [npubId.value],
         since,
         until,
@@ -445,7 +445,7 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
   const fetcher = NostrFetcher.init();
   const eventsIter = fetcher.allEventsIterator(
     [...new Set(normalizeUrls(relays))],
-    { kinds: [1, 5], authors: [pubkey] },
+    { kinds: [1, 5, 6], authors: [pubkey] },
     { since, until }
   );
 
