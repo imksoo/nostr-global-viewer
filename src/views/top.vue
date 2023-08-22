@@ -192,16 +192,20 @@ watch(() => route.query, async (newQuery) => {
   }
 
   if (npubId.value) {
+    let profileCreatedAt = 0;
     pool.subscribe(
       [{
         kinds: [0],
         limit: 1,
         authors: [npubId.value]
       }],
-      [...new Set(normalizeUrls([...feedRelays]))],
-      async (ev, _isAfterEose, relayURL) => {
-        const profile = JSON.parse(ev.content);
-        npubProfile.value = profile;
+      [...new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
+      async (ev, _isAfterEose, _relayURL) => {
+        if (profileCreatedAt < ev.created_at) {
+          profileCreatedAt = ev.created_at;
+          const profile = JSON.parse(ev.content);
+          npubProfile.value = profile;
+        }
       },
       undefined,
       undefined,
@@ -210,40 +214,69 @@ watch(() => route.query, async (newQuery) => {
   }
 
   if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && npubDateOrMonth.value === "")) {
-    const timelineFilter = (noteId.value) ? [{
-      kinds: [1, 6],
-      ids: [noteId.value],
-    }, {
-      kinds: [1, 6, 7],
-      '#e': [noteId.value],
-    }] : (npubId.value) ? [{
-      kinds: [1],
-      limit: countOfDisplayEvents,
-      authors: [npubId.value]
-    }] : [{
-      kinds: [1, 6],
-      limit: initialNumberOfEventToGet,
-    }];
-    console.log(timelineFilter);
-    pool.subscribe(
-      // @ts-ignore
-      timelineFilter,
-      [...new Set(normalizeUrls([...feedRelays]))],
-      async (ev, _isAfterEose, relayURL) => {
-        if (relayURL !== undefined && !feedRelays.includes(relayURL) && !eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
-          pool.publish(ev, normalizeUrls(feedRelays));
+    if (noteId.value) {
+      // 指定されたイベントIDに関連する投稿を表示するスレッドモード
+      pool.subscribe(
+        [{
+          kinds: [1, 6],
+          ids: [noteId.value],
+        }, {
+          kinds: [1, 6, 7],
+          '#e': [noteId.value],
+        }],
+        [...new Set(normalizeUrls([...feedRelays]))],
+        async (ev, _isAfterEose, _relayURL) => {
+          addEvent(ev);
+        },
+        undefined,
+        () => {
+          collectProfiles(true);
+          if (firstFetching) {
+            firstFetching = false;
+          }
         }
-
-        addEvent(ev);
-      },
-      undefined,
-      () => {
-        collectProfiles();
-        if (firstFetching) {
-          firstFetching = false;
+      );
+    } else if (npubId.value && npubDateOrMonth.value === "") {
+      // ユーザーの直近の投稿をプレビューするモード
+      pool.subscribe(
+        [{
+          kinds: [1],
+          limit: countOfDisplayEvents / 2,
+          authors: [npubId.value]
+        }],
+        [...new Set(normalizeUrls([...feedRelays]))],
+        async (ev, _isAfterEose, _relayURL) => {
+          npubModeText.value = `接続中のリレーから直近の ${events.value.length} 件の投稿を表示しています。(今日へ)`;
+          addEvent(ev);
+        },
+        undefined,
+        () => {
+          collectProfiles(true);
+          if (firstFetching) {
+            firstFetching = false;
+          }
         }
-      }
-    );
+      );
+    } else {
+      // 通常ののぞき窓グローバルモード
+      pool.subscribe(
+        [{
+          kinds: [1, 6],
+          limit: initialNumberOfEventToGet,
+        }],
+        [...new Set(normalizeUrls([...feedRelays]))],
+        async (ev, _isAfterEose, _relayURL) => {
+          addEvent(ev);
+        },
+        undefined,
+        () => {
+          collectProfiles(true);
+          if (firstFetching) {
+            firstFetching = false;
+          }
+        }
+      );
+    }
 
     if (npubId.value && npubDateOrMonth.value === "") {
       npubModeText.value = `接続中のリレーから直近の ${countOfDisplayEvents} 件の投稿を表示しています。(今日へ)`;
@@ -288,7 +321,8 @@ watch(() => route.query, async (newQuery) => {
       [{
         kinds: [1],
         authors: [npubId.value],
-        since, until,
+        since,
+        until,
       }],
       searchRelays,
       async (ev, _isAfterEose, _relayURL) => {
@@ -302,8 +336,7 @@ watch(() => route.query, async (newQuery) => {
         }
       },
       undefined,
-      undefined,
-      { unsubscribeOnEose: true }
+      undefined
     );
     setTimeout(() => { unsub1() }, 60 * 1000);
 
@@ -407,6 +440,7 @@ async function collectUserMonthlyEvents(pubkey: string, relays: string[], target
   });
 }
 
+// 指定されたユーザーの指定された範囲のイベントを取得する
 async function collectUserEventsRange(pubkey: string, relays: string[], since: number, until: number, cb: () => void) {
   const profile = getProfile(pubkey);
   const fetcher = NostrFetcher.init();
@@ -590,7 +624,7 @@ async function collectProfiles(force = false) {
   setTimeout(() => { unsub() }, 2 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 0.7 * 1000);
-setInterval(() => { collectProfiles(true); }, 4.5 * 1000);
+setInterval(() => { collectProfiles(true); }, 13 * 1000);
 
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
