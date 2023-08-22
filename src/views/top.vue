@@ -246,8 +246,8 @@ watch(() => route.query, async (newQuery) => {
         }],
         [...new Set(normalizeUrls([...feedRelays]))],
         async (ev, _isAfterEose, _relayURL) => {
-          npubModeText.value = `接続中のリレーから直近の ${events.value.length} 件の投稿を表示しています。(今日へ)`;
           addEvent(ev);
+          npubModeText.value = `接続中のリレーから直近の ${events.value.length} 件の投稿を表示しています。(今日へ)`;
         },
         undefined,
         () => {
@@ -279,8 +279,6 @@ watch(() => route.query, async (newQuery) => {
     }
 
     if (npubId.value && npubDateOrMonth.value === "") {
-      npubModeText.value = `接続中のリレーから直近の ${countOfDisplayEvents} 件の投稿を表示しています。(今日へ)`;
-
       let now = new Date();
       now.setHours(0, 0, 0, 0);
       const targetDate = new Date(now.getTime());
@@ -289,6 +287,7 @@ watch(() => route.query, async (newQuery) => {
 
       setupNpubDate(targetDate);
       setupNpubMonth(targetMonth);
+      npubModeText.value = `接続中のリレーから直近の ${countOfDisplayEvents} 件の投稿を表示しています。(今日へ)`;
     }
   } else if (npubId.value) {
     cutoffMode.value = false;
@@ -327,12 +326,12 @@ watch(() => route.query, async (newQuery) => {
       searchRelays,
       async (ev, _isAfterEose, _relayURL) => {
         if (since <= ev.created_at && ev.created_at <= until) {
+          addEvent(ev);
           if (npubDateOrMonth.value === "date") {
             npubModeText.value = `接続中のリレーから ${targetDate.toLocaleDateString()} の投稿 ${events.value.length} 件 を表示しています。`;
           } else if (npubDateOrMonth.value === "month") {
             npubModeText.value = `接続中のリレーから  ${targetMonth.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' })} の投稿 ${events.value.length} 件 を表示しています。(今日へ)`;
           }
-          addEvent(ev);
         }
       },
       undefined,
