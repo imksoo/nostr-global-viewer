@@ -35,7 +35,7 @@ async function copyToClipboard(text: string) {
 }
 
 function onImageError(e: Event) {
-  const placehold = 'https://placehold.jp/391e6c/d7c6c6/60x60.png?text=Avator%0AError';
+  const placehold = 'https://placehold.jp/391e6c/d7c6c6/60x60.png?text=Image%0ANot%20Found';
   const target = e.target as HTMLImageElement;
   target.src = placehold;
 }

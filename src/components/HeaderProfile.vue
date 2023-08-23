@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import FeedProfile from "./FeedProfile.vue";
 
 const props = defineProps({
@@ -14,7 +14,7 @@ const props = defineProps({
     required: true,
   },
   kind3Follow: {
-    type: Object,
+    type: Array<Array<Object>>,
   },
   kind3Relay: {
     type: Object,
@@ -30,14 +30,27 @@ const props = defineProps({
 
 const backgroundImage = ref("url(" + props.profile.banner + ")");
 
-const follows = ref<string[]>([]);
+const follows = computed(() => {
+  const f: string[] = [];
+  if (props.kind3Follow) {
+    console.log("props.kind3Follow", props.kind3Follow);
+    for (let i = 0; i < props.kind3Follow.length; ++i) {
+      const tag = props.kind3Follow[i];
+
+      if (tag[0] === "p") {
+        f.push(tag[1] as string);
+      }
+    }
+  }
+  return f;
+});
 if (props.kind3Follow) {
   console.log("props.kind3Follow", props.kind3Follow);
   for (let i = 0; i < props.kind3Follow.length; ++i) {
     const tag = props.kind3Follow[i];
 
     if (tag[0] === "p") {
-      follows.value.push(tag[1]);
+      follows.value.push(tag[1] as string);
     }
   }
 
