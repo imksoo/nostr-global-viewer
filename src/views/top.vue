@@ -141,6 +141,9 @@ let npubNextMonth = ref<Date | undefined>();
 let npubDateOrMonth = ref<string>("");
 let npubModeText = ref<string>("");
 let npubProfile = ref();
+let npubKind3Follow = ref();
+let npubKind3Relay = ref();
+let npubKind10002 = ref();
 let cutoffMode = ref<boolean>(true);
 
 let npubRelaysCreatedAt = 0;
@@ -193,18 +196,32 @@ watch(() => route.query, async (newQuery) => {
 
   if (npubId.value) {
     let profileCreatedAt = 0;
+    let kind3CreatedAt = 0;
+    let kind10002CreatedAt = 0;
     pool.subscribe(
       [{
-        kinds: [0],
-        limit: 1,
+        kinds: [0, 3, 10002],
         authors: [npubId.value]
       }],
       [...new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
       async (ev, _isAfterEose, _relayURL) => {
-        if (profileCreatedAt < ev.created_at) {
+        if (ev.kind === 0 && profileCreatedAt < ev.created_at) {
           profileCreatedAt = ev.created_at;
           const profile = JSON.parse(ev.content);
           npubProfile.value = profile;
+        } else if (ev.kind === 3 && kind3CreatedAt < ev.created_at) {
+          kind3CreatedAt = ev.created_at;
+          if (ev.content) {
+            try {
+              npubKind3Relay.value = JSON.parse(ev.content);
+            } catch (err) {
+              console.log(err);
+            }
+          }
+          npubKind3Follow.value = ev.tags;
+        } else if (ev.kind === 10002 && kind10002CreatedAt < ev.created_at) {
+          kind10002CreatedAt = ev.created_at;
+          npubKind10002.value = ev.tags;
         }
       },
       undefined,
@@ -1301,7 +1318,7 @@ function gotoTop() {
     </div>
     <div class="p-index-body">
       <div class="p-index-profile" v-if="npubId && npubProfile">
-        <HeaderProfile :profile="npubProfile"></HeaderProfile>
+        <HeaderProfile :profile="npubProfile" :kind3-follow="npubKind3Follow" :kind3-relay="npubKind3Relay" :kind10002="npubKind10002" :get-profile="getProfile"></HeaderProfile>
         <div class="p-index-profile-header">
           <FeedProfile v-bind:profile="getProfile(npubId)"></FeedProfile>
         </div>

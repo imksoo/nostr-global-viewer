@@ -6,4 +6,11 @@ import router from "./router";
 import mdiVue from "mdi-vue/v3";
 import * as mdiJs from "@mdi/js";
 
-createApp(App).use(router).use(mdiVue, { icons: mdiJs }).mount("#app");
+import { Tabs, Tab } from "vue3-tabs-component";
+
+createApp(App)
+.use(router)
+.use(mdiVue, { icons: mdiJs })
+.component('tabs', Tabs)
+.component('tab', Tab)
+.mount("#app");

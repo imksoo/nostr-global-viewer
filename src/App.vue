@@ -4,3 +4,7 @@ import top from './views/top.vue';
 <template>
   <top></top>
 </template>
+
+<style lang="scss">
+@import "assets/scss/component/tabs.scss";
+</style>

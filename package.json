@@ -21,6 +21,7 @@
     "nostr-tools": "1.13.1",
     "vue": "^3.2.47",
     "vue-router": "^4.2.2",
+    "vue3-tabs-component": "^1.3.4",
     "websocket-polyfill": "^0.0.3"
   },
   "devDependencies": {
