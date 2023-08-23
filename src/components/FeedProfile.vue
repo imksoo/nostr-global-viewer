@@ -35,7 +35,7 @@ async function copyToClipboard(text: string) {
 }
 
 function onImageError(e: Event) {
-  const placehold = 'https://placehold.jp/60x60.png';
+  const placehold = 'https://placehold.jp/391e6c/d7c6c6/60x60.png?text=Avator%0AError';
   const target = e.target as HTMLImageElement;
   target.src = placehold;
 }
@@ -46,7 +46,7 @@ function onImageError(e: Event) {
     <a :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">
       <p class="c-feed-profile__avatar">
         <img class="c-feed-profile__picture"
-          v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/60x60.png'"
+          v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'"
           referrerpolicy="no-referrer" @error="onImageError" />
       </p>
     </a>
