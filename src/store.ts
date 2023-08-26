@@ -5,6 +5,25 @@ import { RelayPool } from "nostr-relaypool";
 
 export const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 
+export const profileRelays = [
+  "wss://nos.lol/",
+  "wss://nostr-pub.wellorder.net/",
+  "wss://nostr-relay.nokotaro.com/",
+  "wss://nostr.fediverse.jp",
+  "wss://nostr.holybea.com/",
+  "wss://nrelay-jp.c-stellar.net",
+  "wss://nrelay.c-stellar.net",
+  "wss://offchain.pub/",
+  "wss://r.kojira.io/",
+  "wss://relay-jp.nostr.wirednet.jp/",
+  "wss://relay.current.fyi/",
+  "wss://relay.damus.io/",
+  "wss://relay.nostr.band/",
+  "wss://relay.nostr.wirednet.jp/",
+  "wss://relay.snort.social/",
+  "wss://yabu.me/",
+];
+
 export const pool = new RelayPool(normalizeUrls(feedRelays), {
   autoReconnect: true,
   logErrorsAndNotices: true,

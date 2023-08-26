@@ -5,7 +5,7 @@ import { RelayPool } from "nostr-relaypool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
-import { feedRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived } from "../store";
+import { feedRelays, profileRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived } from "../store";
 import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
@@ -35,25 +35,6 @@ import HeaderProfile from "../components/HeaderProfile.vue"
 const route = useRoute();
 let sushiMode = ref(false);
 let mahjongMode = ref(false);
-
-let profileRelays = [
-  "wss://nos.lol/",
-  "wss://nostr-pub.wellorder.net/",
-  "wss://nostr-relay.nokotaro.com/",
-  "wss://nostr.fediverse.jp",
-  "wss://nostr.holybea.com/",
-  "wss://nrelay-jp.c-stellar.net",
-  "wss://nrelay.c-stellar.net",
-  "wss://offchain.pub/",
-  "wss://r.kojira.io/",
-  "wss://relay-jp.nostr.wirednet.jp/",
-  "wss://relay.current.fyi/",
-  "wss://relay.damus.io/",
-  "wss://relay.nostr.band/",
-  "wss://relay.nostr.wirednet.jp/",
-  "wss://relay.snort.social/",
-  "wss://yabu.me/",
-];
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -749,6 +730,14 @@ function collectMyBlockList() {
           }
         }
         myBlockList.value = [... new Set(blocks)];
+
+        eventsReceived.value.forEach((val, key) => {
+          if (myBlockList.value.includes(val.pubkey)) {
+            console.log("Removed event by blocked pubkey", val);
+            eventsReceived.value.delete(key);
+          }
+        });
+        eventsToSearch.value = eventsToSearch.value.filter((e) => (!myBlockList.value.includes(e.pubkey)));
       }
     },
     undefined,

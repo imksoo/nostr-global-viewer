@@ -8,8 +8,6 @@ type Profile = {
   created_at: number,
 };
 
-const JAPANESE_REGEX = /[亜-熙ぁ-んァ-ヶ]/;
-
 const synth = window.speechSynthesis;
 export async function speakNote(event: nostr.Event, profile: Profile, vol: string, waitTime: number = 1500) {
   const volume = parseFloat(vol) || 0.5;
