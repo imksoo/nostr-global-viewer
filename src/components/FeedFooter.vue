@@ -2,6 +2,8 @@
 import { computed, ref } from "vue";
 import * as Nostr from "nostr-tools";
 
+import { broadcastEventById } from '../actions/EventBroadcast';
+
 const props = defineProps({
   event: {
     type: Object as () => {
@@ -101,25 +103,30 @@ function getLinkUrl(): string {
     </p>
     <p :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
       <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { repostEvent() }">
-        <mdicon name="multicast" :height="14" />
+        <mdicon name="repeat-variant" :height="14" title="Repost" />
       </span>
     </p>
-    <p :class="{ 'c-feed-quote': true }">
+    <p class="c-feed-quote">
       <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { quoteEvent() }">
-        <mdicon name="comment-quote-outline" :height="14" />
+        <mdicon name="comment-quote-outline" :height="14" title="Post with quoted event" />
       </span>
     </p>
     <p :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
       <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { favEvent() }">
-        <mdicon name="star-shooting" :height="14" />
+        <mdicon name="star-shooting" :height="14" title="Favorite this post" />
       </span>
     </p>
-    <p :class="{ 'c-feed-reply': true }">
+    <p class="c-feed-reply">
       <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { openReplyPost(props.event) }">
-        <mdicon name="reply" :height="14" />
+        <mdicon name="reply" :height="14" title="Reply" />
       </span>
     </p>
-    <p :class="{ 'c-feed-json': true }">
+    <p class="c-feed-broadcast">
+      <span @click="(_$event) => { broadcastEventById(props.event.id) }">
+        <mdicon name="broadcast" :width="14" :height="14" title="Broadcast event" />
+      </span>
+    </p>
+    <p class="c-feed-json">
       <span @click="(_$event) => { isShowJSONData = !isShowJSONData }">
         <mdicon name="code-json" :width="14" :height="14" title="Show event json" />
       </span>
@@ -200,6 +207,11 @@ function getLinkUrl(): string {
   }
 
   &-reply {
+    color: #213547;
+    flex-basis: 18px;
+  }
+
+  &-broadcast {
     color: #213547;
     flex-basis: 18px;
   }

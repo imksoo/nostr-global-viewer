@@ -42,5 +42,5 @@ export function createRepostEvent(reposted: NostrEvent) {
 
 export default {
   createFavEvent,
-  createRepostEvent
+  createRepostEvent,
 };

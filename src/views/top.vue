@@ -5,6 +5,14 @@ import { RelayPool } from "nostr-relaypool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
+import { feedRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived } from "../store";
+import {
+  myPubkey,
+  myRelaysCreatedAt, myReadRelays, myWriteRelays,
+  myFollows,
+  myBlockCreatedAt, myBlockList, myBlockedEvents,
+} from "../profile";
+
 import { playActionSound, playReactionSound } from '../hooks/usePlaySound';
 import { getRandomProfile } from '../hooks/useEmojiProfiles';
 import { speakNote } from '../hooks/useSpeakNote';
@@ -28,7 +36,6 @@ const route = useRoute();
 let sushiMode = ref(false);
 let mahjongMode = ref(false);
 
-const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 let profileRelays = [
   "wss://nos.lol/",
   "wss://nostr-pub.wellorder.net/",
@@ -47,32 +54,6 @@ let profileRelays = [
   "wss://relay.snort.social/",
   "wss://yabu.me/",
 ];
-
-const pool = new RelayPool(normalizeUrls(feedRelays), {
-  autoReconnect: true,
-  logErrorsAndNotices: true,
-  subscriptionCache: true,
-  useEventCache: true,
-});
-pool.onerror((url, msg) => { console.log("pool.error", url, msg) });
-pool.onnotice((url, msg) => { console.log("pool.onnotice", url, msg) });
-pool.ondisconnect((url, msg) => { console.log("pool.ondisconnect", url, msg) });
-
-type NostrEvent = {
-  id: string,
-  sig: string,
-  pubkey: string,
-  kind: Nostr.Kind | number,
-  content: string,
-  tags: string[][],
-  created_at: number,
-  isReposted: Boolean | undefined,
-  isFavorited: Boolean | undefined,
-};
-
-const events = ref(new Array<NostrEvent>());
-const eventsToSearch = ref(new Array<NostrEvent>());
-const eventsReceived = ref(new Map<string, NostrEvent>());
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -319,7 +300,7 @@ watch(() => route.query, async (newQuery) => {
     setupNpubDate(targetDate);
     setupNpubMonth(targetMonth);
 
-    let searchRelays = [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))];
+    let searchRelays = [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))];
 
     let since = 0;
     let until = 0;
@@ -477,7 +458,7 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
             cacheBlacklistEventIds.add(t[1]);
           }
         }
-        pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays]))]);
+        pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays.value]))]);
       } else if (!eventsReceived.value.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
@@ -516,14 +497,14 @@ let cacheMissHitEventIds = new Set<string>();
 let cacheBlacklistEventIds = new Set<string>();
 
 function getEvent(id: string): Nostr.Event | undefined {
-  if (myBlockedEvents.has(id)) {
+  if (myBlockedEvents.value.has(id)) {
     return undefined;
   }
   if (eventsReceived.value.has(id)) {
     const ev = eventsReceived.value.get(id);
     if (ev) {
-      if (myBlockList.includes(ev.pubkey)) {
-        myBlockedEvents.add(ev.id);
+      if (myBlockList.value.includes(ev.pubkey)) {
+        myBlockedEvents.value.add(ev.id);
         console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
         return undefined;
       } else {
@@ -551,7 +532,7 @@ async function collectEvents() {
     [{
       ids: eventIds
     }],
-    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays, ...npubReadRelays, ...npubWriteRelays]))],
+    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, relayURL) => {
       cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
@@ -611,7 +592,7 @@ async function collectProfiles(force = false) {
       kinds: [0],
       authors: pubkeys,
     }],
-    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays, ...myReadRelays]))],
+    [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
@@ -653,21 +634,14 @@ setInterval(() => {
 
 let logined = ref(false);
 let isPostOpen = ref(false);
-let myPubkey = "";
-let myRelaysCreatedAt = 0;
-let myReadRelays: string[] = [];
-let myWriteRelays: string[] = [];
+
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
-let myFollows: string[] = [];
-let myBlockCreatedAt = 0;
-let myBlockList: string[] = [];
-let myBlockedEvents = new Set<string>();
 async function login() {
   // @ts-ignore
-  myPubkey = (await window.nostr?.getPublicKey()) ?? "";
+  myPubkey.value = (await window.nostr?.getPublicKey()) ?? "";
 
-  if (myPubkey) {
+  if (myPubkey.value) {
     logined.value = true;
     countOfDisplayEvents *= 2;
     collectMyRelay();
@@ -703,27 +677,27 @@ function collectMyRelay() {
     [
       {
         kinds: [3, 10002],
-        authors: [myPubkey],
+        authors: [myPubkey.value],
         limit: 1,
       },
     ],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
     (ev, _isAfterEose, _relayURL) => {
-      if (ev.kind === 3 && ev.content && myRelaysCreatedAt < ev.created_at) {
-        myReadRelays.slice(0);
-        myWriteRelays.slice(0);
-        myRelaysCreatedAt = ev.created_at;
+      if (ev.kind === 3 && ev.content && myRelaysCreatedAt.value < ev.created_at) {
+        myReadRelays.value.slice(0);
+        myWriteRelays.value.slice(0);
+        myRelaysCreatedAt.value = ev.created_at;
         const content = JSON.parse(ev.content);
         for (const r in content) {
-          myReadRelays.push(r);
+          myReadRelays.value.push(r);
           if (content[r].write) {
-            myWriteRelays.push(r);
+            myWriteRelays.value.push(r);
           }
         }
-      } else if (ev.kind === 10002 && myRelaysCreatedAt < ev.created_at) {
-        myReadRelays.slice(0);
-        myWriteRelays.slice(0);
-        myRelaysCreatedAt = ev.created_at;
+      } else if (ev.kind === 10002 && myRelaysCreatedAt.value < ev.created_at) {
+        myReadRelays.value.slice(0);
+        myWriteRelays.value.slice(0);
+        myRelaysCreatedAt.value = ev.created_at;
         for (let i = 0; i < ev.tags.length; ++i) {
           const t = ev.tags[i];
           if (t[0] === "r") {
@@ -732,10 +706,10 @@ function collectMyRelay() {
 
             if (t.length > 2) { m = t[2]; }
             if (m === "read") {
-              myReadRelays.push(r);
+              myReadRelays.value.push(r);
             } else {
-              myReadRelays.push(r);
-              myWriteRelays.push(r);
+              myReadRelays.value.push(r);
+              myWriteRelays.value.push(r);
             }
           }
         }
@@ -753,15 +727,15 @@ function collectMyBlockList() {
     [{
       // @ts-ignore
       kinds: [10000, 30000],
-      authors: [myPubkey],
+      authors: [myPubkey.value],
     }],
-    [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays, ...myWriteRelays]))],
+    [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     async (ev, _isAfterEose, _relayURL) => {
       // @ts-ignore
-      if (myBlockCreatedAt < ev.created_at && ((ev.kind === 10000) || (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
-        myBlockCreatedAt = ev.created_at;
+      if (myBlockCreatedAt.value < ev.created_at && ((ev.kind === 10000) || (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
+        myBlockCreatedAt.value = ev.created_at;
         // @ts-ignore
-        const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey, ev.content)) || "[]";
+        const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey.value, ev.content)) || "[]";
         const blockList = JSON.parse(blockListJSON);
         let blocks: string[] = [];
         for (let i = 0; i < blockList.length; ++i) {
@@ -774,7 +748,7 @@ function collectMyBlockList() {
             blocks.push(ev.tags[i][1]);
           }
         }
-        myBlockList = [... new Set(blocks)];
+        myBlockList.value = [... new Set(blocks)];
       }
     },
     undefined,
@@ -785,17 +759,17 @@ function collectMyBlockList() {
 }
 
 async function collectFollowsAndSubscribe() {
-  const contactList = await pool.fetchAndCacheContactList(myPubkey);
-  myFollows = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+  const contactList = await pool.fetchAndCacheContactList(myPubkey.value);
+  myFollows.value = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
 
   const subscribeMaxCount = 1000;
-  for (let begin = 0; begin < myFollows.length; begin += subscribeMaxCount) {
-    const followList = myFollows.slice(begin, subscribeMaxCount);
+  for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
+    const followList = myFollows.value.slice(begin, subscribeMaxCount);
 
     pool.subscribe([
       { kinds: [1, 5], authors: followList, limit: 20 },
     ],
-      [...new Set(normalizeUrls(myReadRelays))],
+      [...new Set(normalizeUrls(myReadRelays.value))],
       async (ev, _isAfterEose, _relayURL) => {
         switch (ev.kind) {
           case 1:
@@ -808,7 +782,7 @@ async function collectFollowsAndSubscribe() {
                 cacheBlacklistEventIds.add(t[1]);
               }
             }
-            pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays])]));
+            pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays.value])]));
             break;
         }
       }
@@ -820,24 +794,24 @@ function subscribeReactions() {
   relayStatus.value = pool.getRelayStatuses();
 
   pool.subscribe([
-    { kinds: [1, 6, 7], "#p": [myPubkey], limit: countOfDisplayEvents / 10 },
-    { kinds: [6, 7], authors: [myPubkey], limit: countOfDisplayEvents / 10 },
+    { kinds: [1, 6, 7], "#p": [myPubkey.value], limit: countOfDisplayEvents / 10 },
+    { kinds: [6, 7], authors: [myPubkey.value], limit: countOfDisplayEvents / 10 },
   ],
-    [...new Set(normalizeUrls(myReadRelays))],
+    [...new Set(normalizeUrls(myReadRelays.value))],
     async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
 
-      if (ev.pubkey !== myPubkey) {
+      if (ev.pubkey !== myPubkey.value) {
         if (
           !firstReactionFetching &&
           soundEffect.value &&
-          !myBlockList.includes(ev.pubkey) &&
+          !myBlockList.value.includes(ev.pubkey) &&
           events.value[events.value.length - 1].created_at < ev.created_at
         ) {
           console.log("reactioned", ev);
           playReactionSound();
         }
-      } if (ev.pubkey === myPubkey) {
+      } if (ev.pubkey === myPubkey.value) {
         for (let i = 0; i < ev.tags.length; ++i) {
           const t = ev.tags[i];
           if (t[0] === 'e') {
@@ -863,7 +837,7 @@ function subscribeReactions() {
     undefined,
     async () => {
       firstReactionFetchedRelays++;
-      if (firstReactionFetchedRelays > myReadRelays.length / 2) {
+      if (firstReactionFetchedRelays > myReadRelays.value.length / 2) {
         setTimeout(() => {
           firstReactionFetching = false;
         }, 10 * 1000);
@@ -895,7 +869,7 @@ async function postEvent(event: Nostr.Event) {
   // @ts-ignore
   event = await window.nostr?.signEvent(JSON.parse(JSON.stringify(event)));
 
-  pool.publish(event, normalizeUrls(myWriteRelays));
+  pool.publish(event, normalizeUrls(myWriteRelays.value));
 
   if (soundEffect.value) {
     playActionSound();
@@ -1015,10 +989,10 @@ function checkSend(event: KeyboardEvent) {
 
 function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
-    const isBlocked = !npubModeText.value && myBlockList.includes(e.pubkey);
-    if (isBlocked && !myBlockedEvents.has(e.id)) {
+    const isBlocked = !npubModeText.value && myBlockList.value.includes(e.pubkey);
+    if (isBlocked && !myBlockedEvents.value.has(e.id)) {
       console.log("Blocked by pubkey:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
-      myBlockedEvents.add(e.id);
+      myBlockedEvents.value.add(e.id);
     }
 
     const searchMatched = searchSubstring(e.content, searchWords.value);
@@ -1088,10 +1062,6 @@ let relayStatus = ref(pool.getRelayStatuses());
 setInterval(() => {
   relayStatus.value = pool.getRelayStatuses();
 }, 1000);
-
-function normalizeUrls(urls: string[]): string[] {
-  return urls.map((url) => (Nostr.utils.normalizeURL(url)));
-}
 
 const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
 const konamiIndex = ref(0);
@@ -1198,7 +1168,7 @@ function addRepostEvent(targetEvent: NostrEvent) {
     const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
       const repost = createRepostEvent(targetEvent) as Nostr.Event;
-      pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+      pool.publish(targetEvent, normalizeUrls(myWriteRelays.value));
       postEvent(repost);
       targetEvent.isReposted = true;
     }
@@ -1210,7 +1180,7 @@ function addFavEvent(targetEvent: NostrEvent) {
     const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
       const reaction = createFavEvent(targetEvent) as Nostr.Event;
-      pool.publish(targetEvent, normalizeUrls(myWriteRelays));
+      pool.publish(targetEvent, normalizeUrls(myWriteRelays.value));
       postEvent(reaction);
       targetEvent.isFavorited = true;
     }
@@ -1231,8 +1201,8 @@ function loggingStatistics(): void {
   console.log(JSON.stringify({
     eventsReceivedSize: eventsReceived.value.size,
     eventsToSearchSize: eventsToSearch.value.length,
-    blockedPubkeys: myBlockList.length,
-    eventsBlocked: myBlockedEvents.size,
+    blockedPubkeys: myBlockList.value.length,
+    eventsBlocked: myBlockedEvents.value.size,
     profilesSize: profiles.value.size,
     cacheMissHitPubkeysSize: cacheMissHitPubkeys.size,
     cacheMissHitEventIdsSize: cacheMissHitEventIds.size,
@@ -1318,7 +1288,8 @@ function gotoTop() {
     </div>
     <div class="p-index-body">
       <div class="p-index-profile" v-if="npubId && npubProfile">
-        <HeaderProfile :profile="npubProfile" :kind3-follow="npubKind3Follow" :kind3-relay="npubKind3Relay" :kind10002="npubKind10002" :get-profile="getProfile"></HeaderProfile>
+        <HeaderProfile :profile="npubProfile" :kind3-follow="npubKind3Follow" :kind3-relay="npubKind3Relay"
+          :kind10002="npubKind10002" :get-profile="getProfile"></HeaderProfile>
         <div class="p-index-profile-header">
           <FeedProfile v-bind:profile="getProfile(npubId)"></FeedProfile>
         </div>
