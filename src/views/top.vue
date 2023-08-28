@@ -978,10 +978,17 @@ function checkSend(event: KeyboardEvent) {
 
 function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
-    const isBlocked = !npubModeText.value && myBlockList.value.includes(e.pubkey);
-    if (isBlocked && !myBlockedEvents.value.has(e.id)) {
-      console.log("Blocked by pubkey:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
-      myBlockedEvents.value.add(e.id);
+    let isBlocked = false;
+    if (myBlockList.value.includes(e.pubkey)) {
+      isBlocked = true;
+      if (!myBlockedEvents.value.has(e.id)) {
+        console.log("Blocked by pubkey:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
+        myBlockedEvents.value.add(e.id);
+      }
+    }
+    if (cacheBlacklistEventIds.has(e.id)) {
+      isBlocked = true;
+      console.log("Deleted by kind5:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
     }
 
     const searchMatched = searchSubstring(e.content, searchWords.value);

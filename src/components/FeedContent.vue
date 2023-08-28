@@ -236,17 +236,17 @@ while (rest.length > 0) {
           const data = Nostr.nip19.decode(text.replace('nostr:', '').replace('@', ''));
           switch (data.type) {
             case "nevent": {
-              const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data.id);
+              const href = '?' + Nostr.nip19.noteEncode(data.data.id);
               const id = data.data.id;
               tokens.value.push({ type: 'nostr-note', content: text, href, id });
             } break;
             case "note": {
-              const href = 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(data.data);
+              const href = '?' + Nostr.nip19.noteEncode(data.data);
               const id = data.data;
               tokens.value.push({ type: 'nostr-note', content: text, href, id });
             } break;
             case "nprofile": {
-              const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data.pubkey);
+              const href = '?' + Nostr.nip19.npubEncode(data.data.pubkey);
               if (props.getProfile) {
                 const profile = props.getProfile(data.data.pubkey);
                 const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
@@ -256,7 +256,7 @@ while (rest.length > 0) {
               }
             } break;
             case "npub": {
-              const href = 'https://nostx.shino3.net/' + Nostr.nip19.npubEncode(data.data);
+              const href = '?' + Nostr.nip19.npubEncode(data.data);
               if (props.getProfile) {
                 const profile = props.getProfile(data.data);
                 const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)

@@ -15,7 +15,7 @@ const props = defineProps({
 
 function getProfileLink(pubkey: string) {
   if (pubkey) {
-    return 'https://nostx.shino3.net/' + nostr.nip19.npubEncode(pubkey);
+    return '?' + nostr.nip19.npubEncode(pubkey);
   } else {
     return ""
   }
@@ -43,14 +43,14 @@ function onImageError(e: Event) {
 </script>
 <template>
   <div class="c-feed-profile">
-    <a :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">
+    <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">
       <p class="c-feed-profile__avatar">
         <img class="c-feed-profile__picture"
           v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'"
           referrerpolicy="no-referrer" @error="onImageError" />
       </p>
     </a>
-    <a :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
+    <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">{{
         props.profile.display_name ||
         props.profile.name ||
@@ -58,11 +58,6 @@ function onImageError(e: Event) {
       }}</span>
       <span class="c-feed-profile__user-name">@{{ props.profile.name ?? "" }}</span>
     </a>
-    <span class="c-feed-profile-copy-button">
-      <a target="_blank" v-bind:href="getProfileLink(props.profile.pubkey)">
-        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
-      </a>
-    </span>
     <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
       <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />
     </span>

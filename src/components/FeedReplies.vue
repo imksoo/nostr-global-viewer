@@ -4,20 +4,6 @@ import * as Nostr from "nostr-tools";
 function getUserLink(pubkey: string): string {
   if (pubkey) {
     try {
-      const href = "https://nostx.shino3.net/" + Nostr.nip19.npubEncode(pubkey);
-      return href;
-    } catch (err) {
-      console.error(err);
-      return "";
-    }
-  } else {
-    return "";
-  }
-}
-
-function getUserLink2(pubkey: string): string {
-  if (pubkey) {
-    try {
       const href = "?" + Nostr.nip19.npubEncode(pubkey);
       return href;
     } catch (err) {
@@ -30,20 +16,6 @@ function getUserLink2(pubkey: string): string {
 }
 
 function getEventLink(id: string): string {
-  if (id) {
-    try {
-      const href = "https://nostx.shino3.net/" + Nostr.nip19.noteEncode(id);
-      return href;
-    } catch (err) {
-      console.error(err);
-      return "";
-    }
-  } else {
-    return "";
-  }
-}
-
-function getEventLink2(id: string): string {
   if (id) {
     try {
       const href = "?" + Nostr.nip19.noteEncode(id);
@@ -81,7 +53,7 @@ const props = defineProps({
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー
-      <a :href="getUserLink2(tag[1])">
+      <a target="_blank" :href="getUserLink(tag[1])">
         <img :src="getProfile(tag[1]).picture
             ? getProfile(tag[1]).picture
             : 'https://placehold.jp/60x60.png'
@@ -96,14 +68,10 @@ const props = defineProps({
           }}
         </span>
       </a>
-      <span>&nbsp;</span>
-      <a target="_blank" v-bind:href="getUserLink(tag[1])">
-        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
-      </a>
     </template>
     <template v-else-if="tag[0] === 'e'">
       投稿
-      <a :href="getEventLink2(tag[1])">
+      <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
           getEvent(tag[1])?.content
         }}</span>
@@ -112,14 +80,11 @@ const props = defineProps({
         }}</span>
       </a>
       <span>&nbsp;</span>
-      <a target="_blank" v-bind:href="getEventLink(tag[1])">
-        <mdicon name="open-in-new" :width="14" :height="14" title="Open NosTx" />
-      </a>
       <span v-if="tag.length > 3">({{ tag[3] }})</span>
     </template>
     <template v-else-if="tag[0] === 'q'">
       引用
-      <a target="_blank" v-bind:href="getEventLink(tag[1])">
+      <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
           getEvent(tag[1])?.content
         }}</span>
@@ -127,12 +92,13 @@ const props = defineProps({
           tag[1].substring(tag[1].length - 8)
         }}</span>
       </a>
+      <span>&nbsp;</span>
       <span v-if="tag.length > 3">({{ tag[3] }})</span>
     </template>
     <template v-else-if="tag[0] === 't'"> ハッシュタグ #{{ tag[1] }} </template>
     <template v-else-if="tag[0] === 'r'">
       リンク
-      <a target="_blank" v-bind:href="tag[1]">
+      <a target="_blank" :href="tag[1]">
         {{ decodeURI(tag[1]) }}
       </a>
     </template>
