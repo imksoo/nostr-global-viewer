@@ -44,7 +44,7 @@ let soundEffect = ref(true);
 
 const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
-let countOfDisplayEvents = 100;
+let countOfDisplayEvents = 200;
 
 const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
 let japaneseUsers: string[] = [];
@@ -733,7 +733,7 @@ function collectMyBlockList() {
 
         eventsReceived.value.forEach((val, key) => {
           if (myBlockList.value.includes(val.pubkey)) {
-            console.log("Removed event by blocked pubkey", val);
+            console.log("Removed event by blocked pubkey", val.pubkey, getProfile(val.pubkey).display_name, `kind=${val.kind}`, val.content);
             eventsReceived.value.delete(key);
           }
         });
@@ -988,7 +988,6 @@ function searchAndBlockFilter() {
     }
     if (cacheBlacklistEventIds.has(e.id)) {
       isBlocked = true;
-      console.log("Deleted by kind5:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
     }
 
     const searchMatched = searchSubstring(e.content, searchWords.value);
