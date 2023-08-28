@@ -4,6 +4,8 @@ import * as Nostr from "nostr-tools";
 import axios from 'axios';
 import parser from 'html-dom-parser';
 
+import { myBlockedEvents } from '../profile';
+
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
 
@@ -122,10 +124,10 @@ if (props.event.kind === 6) {
   for (let i = 0; i < props.event.tags.length; ++i) {
     const t = props.event.tags[i];
     if (t[0] === 'e') {
-      note = Nostr.nip19.noteEncode(t[1]);
+      note += Nostr.nip19.noteEncode(t[1]) + "\n";
     }
   }
-  rest = `📬りぽすと！ ${note}`;
+  rest = `📬りぽすと！\n${note}`;
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {
@@ -342,6 +344,7 @@ while (rest.length > 0) {
               :add-fav-event="props.addFavEvent" :add-repost-event="props.addRepostEvent"></FeedFooter>
           </template>
           <template v-else>
+            <div v-if="token.id && myBlockedEvents.has(token.id)">Blocked event</div>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
               {{ token.content }}
             </a>
