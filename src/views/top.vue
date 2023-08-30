@@ -197,7 +197,7 @@ watch(() => route.query, async (newQuery) => {
       // 指定されたイベントIDに関連する投稿を表示するスレッドモード
       pool.subscribe(
         [{
-          kinds: [1, 6],
+          kinds: [1, 6, 7],
           ids: [noteId.value],
         }, {
           kinds: [1, 6, 7],
@@ -219,7 +219,7 @@ watch(() => route.query, async (newQuery) => {
       // ユーザーの直近の投稿をプレビューするモード
       pool.subscribe(
         [{
-          kinds: [1, 6],
+          kinds: [1, 6, 7],
           limit: countOfDisplayEvents / 2,
           authors: [npubId.value]
         }],
@@ -481,21 +481,18 @@ function getEvent(id: string): Nostr.Event | undefined {
   if (myBlockedEvents.value.has(id)) {
     return undefined;
   }
-  if (eventsReceived.value.has(id)) {
-    const ev = eventsReceived.value.get(id);
-    if (ev) {
-      if (myBlockList.value.includes(ev.pubkey)) {
-        myBlockedEvents.value.add(ev.id);
-        console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
-        return undefined;
-      } else {
-        return eventsReceived.value.get(id);
-      }
+
+  const ev = eventsReceived.value.get(id);
+  if (ev) {
+    if (myBlockList.value.includes(ev.pubkey)) {
+      myBlockedEvents.value.add(ev.id);
+      console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
+      return undefined;
     }
-    return undefined;
+    return ev;
   } else {
     cacheMissHitEventIds.add(id);
-    return eventsReceived.value.get(id);
+    return undefined;
   }
 }
 
@@ -509,12 +506,12 @@ async function collectEvents() {
     return;
   }
 
-  const unsub = pool.subscribe(
+  pool.subscribe(
     [{
       ids: eventIds
     }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
-    async (ev, _isAfterEose, relayURL) => {
+    async (ev, _isAfterEose, _relayURL) => {
       cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
 
@@ -526,9 +523,9 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  setTimeout(() => { unsub() }, 3 * 1000);
+  cacheMissHitEventIds.clear();
 }
-setInterval(collectEvents, 0.6 * 1000);
+setInterval(collectEvents, 2 * 1000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
@@ -790,6 +787,7 @@ function subscribeReactions() {
     async (ev, _isAfterEose, _relayURL) => {
       addEvent(ev);
 
+      // 自分宛のリアクションが来ていたら音を鳴らす
       if (ev.pubkey !== myPubkey.value) {
         if (
           !firstReactionFetching &&
@@ -800,7 +798,10 @@ function subscribeReactions() {
           console.log("reactioned", ev);
           playReactionSound();
         }
-      } if (ev.pubkey === myPubkey.value) {
+      }
+
+      // 自分のリアクション(リポスト、ファボ)があればイベントに色をつけておく
+      if (ev.pubkey === myPubkey.value) {
         for (let i = 0; i < ev.tags.length; ++i) {
           const t = ev.tags[i];
           if (t[0] === 'e') {
@@ -808,16 +809,8 @@ function subscribeReactions() {
 
             if (ev.kind === 6) {
               eventsToSearch.value.filter((ee) => (ee.id === et)).map((ee) => (ee.isReposted = true));
-              const ef = eventsReceived.value.get(et);
-              if (ef) {
-                ef.isReposted = true;
-              }
             } else if (ev.kind === 7) {
               eventsToSearch.value.filter((ee) => (ee.id === et)).map((ee) => (ee.isFavorited = true));
-              const ef = eventsReceived.value.get(et);
-              if (ef) {
-                ef.isFavorited = true;
-              }
             }
           }
         }
