@@ -940,6 +940,7 @@ watch(isPostOpen, async (isPostOpened) => {
       noteTextarea.value.selectionStart = 0;
       noteTextarea.value.selectionEnd = 0;
     }
+    extractTags();
   }
 });
 
@@ -957,7 +958,7 @@ function extractTags() {
             editingTags.value.tags.push(['e', d.data.id])
           } break;
           case "note": {
-            editingTags.value.tags.push(['e', d.data])
+            editingTags.value.tags.push(['e', d.data, "mention"])
           } break;
           case "nprofile": {
             editingTags.value.tags.push(['p', d.data.pubkey]);
