@@ -23,6 +23,7 @@ import IndexIntroControl from "../components/IndexIntroControl.vue";
 import SoundEffectControl from "../components/SoundEffectControl.vue";
 import AutoSpeechControl from "../components/AutoSpeechControl.vue";
 import SearchWordControl from "../components/SearchWordControl.vue";
+import AutoLoginControl from "../components/AutoLoginControl.vue";
 
 import RelayStatus from "../components/RelayStatus.vue";
 import RiverStatus from "../components/RiverStatus.vue";
@@ -633,7 +634,8 @@ async function login() {
   }
 }
 
-function autoLogin() {
+const autoLogin = ref(localStorage.getItem("autoLogin") === "true");
+function tryAutoLogin() {
   let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
     // @ts-ignore
@@ -648,7 +650,9 @@ function autoLogin() {
     }
   }, 500);
 }
-autoLogin();
+if ( autoLogin.value ) {
+  tryAutoLogin();
+}
 
 function collectMyRelay() {
   const unsub = pool.subscribe(
@@ -886,11 +890,15 @@ function openReplyPost(reply: Nostr.Event): void {
     draftEvent.value.tags.push(['e', reply.id, "", "root"]);
   }
 
+  const pTags = new Set<string>();
   for (let i = 0; i < parsedTags.profiles.length; ++i) {
     const p = parsedTags.profiles[i];
-    draftEvent.value.tags.push(['p', p.pubkey]);
+    pTags.add(p.pubkey);
   }
-  draftEvent.value.tags.push(['p', reply.pubkey]);
+  pTags.add(reply.pubkey);
+  pTags.forEach((p)=>{
+    draftEvent.value.tags.push(['p', p]);
+  });
 
   isPostOpen.value = true;
 }
@@ -1267,6 +1275,7 @@ function gotoTop() {
       <div class="p-index-heading__inner">
         <IndexTitleControl :feed-relays="feedRelays"></IndexTitleControl>
         <IndexIntroControl :is-logined="logined" :login="login"></IndexIntroControl>
+        <AutoLoginControl v-model:autoLogin="autoLogin"></AutoLoginControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
         <SearchWordControl v-model:search-words="searchWords" v-on:change="searchAndBlockFilter()"></SearchWordControl>
