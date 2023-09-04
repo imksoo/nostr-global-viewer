@@ -630,6 +630,9 @@ async function login() {
       const firstRelays = await window.nostr?.getRelays() as { [url: string]: { read: boolean, write: boolean } };
       console.log("NIP-07 First relay = ", JSON.stringify(firstRelays));
 
+      if (Object.keys(firstRelays).length === 0) {
+        window.alert("NIP-07拡張機能にリレーリストを設定するのをおすすめしています。");
+      }
       for (const r in firstRelays) {
         if (firstRelays[r].read) {
           myReadRelays.value.push(r);
