@@ -623,6 +623,25 @@ async function login() {
   if (myPubkey.value) {
     logined.value = true;
     countOfDisplayEvents *= 2;
+
+    // @ts-ignore
+    if (window.nostr?.getRelays) {
+      // @ts-ignore
+      const firstRelays = await window.nostr?.getRelays() as { [url: string]: { read: boolean, write: boolean } };
+      console.log("NIP-07 First relay = ", JSON.stringify(firstRelays));
+
+      for (const r in firstRelays) {
+        if (firstRelays[r].read) {
+          myReadRelays.value.push(r);
+        }
+        if (firstRelays[r].write) {
+          myWriteRelays.value.push(r);
+        }
+      }
+
+      console.log("NIP-07 First read relay: ", JSON.stringify(myReadRelays.value));
+      console.log("NIP-07 First write relay: ", JSON.stringify(myWriteRelays.value));
+    }
     collectMyRelay();
     collectMyBlockList();
     if (!noteId.value && !npubId.value) {
@@ -650,7 +669,7 @@ function tryAutoLogin() {
     }
   }, 500);
 }
-if ( autoLogin.value ) {
+if (autoLogin.value) {
   tryAutoLogin();
 }
 
@@ -663,7 +682,7 @@ function collectMyRelay() {
         limit: 1,
       },
     ],
-    [... new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
+    [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     (ev, _isAfterEose, _relayURL) => {
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt.value < ev.created_at) {
         myReadRelays.value.slice(0);
@@ -896,7 +915,7 @@ function openReplyPost(reply: Nostr.Event): void {
     pTags.add(p.pubkey);
   }
   pTags.add(reply.pubkey);
-  pTags.forEach((p)=>{
+  pTags.forEach((p) => {
     draftEvent.value.tags.push(['p', p]);
   });
 
