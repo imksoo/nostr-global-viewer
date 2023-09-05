@@ -54,12 +54,28 @@ function truncateName(name: string | undefined): string | undefined {
     return undefined;
   }
 
-  if (name.length > 35) {
-    return `${name.substring(0, 35)}...`
+  const maxLength = 35;
+  if (name.length > maxLength) {
+    return `${name.substring(0, maxLength)}...`
   } else {
     return name;
   }
 }
+
+function truncateContent(content: string | undefined): string | undefined {
+  if (content === undefined) {
+    return undefined;
+  }
+
+  const maxLength = 35;
+  if (content.length > maxLength) {
+    return `${content.substring(0, maxLength)}...`
+  } else {
+    return content;
+  }
+}
+
+
 </script>
 <template>
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
@@ -85,7 +101,7 @@ function truncateName(name: string | undefined): string | undefined {
       投稿
       <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
-          getEvent(tag[1])?.content
+          truncateContent(getEvent(tag[1])?.content)
         }}</span>
         <span class="c-feed-reply-link" v-else>{{
           tag[1].substring(tag[1].length - 8)
@@ -98,7 +114,7 @@ function truncateName(name: string | undefined): string | undefined {
       引用
       <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
-          getEvent(tag[1])?.content
+          truncateContent(getEvent(tag[1])?.content)
         }}</span>
         <span class="c-feed-reply-link" v-else>{{
           tag[1].substring(tag[1].length - 8)
