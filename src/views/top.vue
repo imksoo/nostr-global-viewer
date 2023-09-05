@@ -298,7 +298,7 @@ watch(() => route.query, async (newQuery) => {
 
     const unsub1 = pool.subscribe(
       [{
-        kinds: [1, 6],
+        kinds: [1, 6, 7],
         authors: [npubId.value],
         since,
         until,
@@ -1342,7 +1342,7 @@ function gotoTop() {
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
           @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
-          <FeedProfile v-bind:profile="getProfile(e.pubkey)"></FeedProfile>
+          <FeedProfile v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"></FeedProfile>
           <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
           <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
