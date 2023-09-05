@@ -1252,15 +1252,14 @@ const observer = new IntersectionObserver((entries) => {
 });
 
 function scrollToItem(el: HTMLElement) {
-  // const offsetY = (window.innerHeight - el.getBoundingClientRect().height) / 2;
   const offsetY = 80;
-  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset - offsetY;
-  window.scrollTo({ top: yCoodinate, behavior: 'smooth' });
+  const yCoordinate = el.getBoundingClientRect().top + document.documentElement.scrollTop - offsetY;
+  window.scrollTo({ top: yCoordinate, behavior: 'smooth' });
 }
 
 function scrollToItemTop(el: HTMLElement) {
-  const yCoodinate = el.getBoundingClientRect().top + window.pageYOffset;
-  window.scrollTo({ top: yCoodinate, behavior: 'smooth' });
+  const yCoordinate = el.getBoundingClientRect().top + document.documentElement.scrollTop;
+  window.scrollTo({ top: yCoordinate, behavior: 'smooth' });
 }
 
 function moveToItemById(id: string): void {
