@@ -610,6 +610,7 @@ setInterval(() => {
       diskProfiles.set(key, val);
     }
   }
+  profiles.value = diskProfiles;
   const validProfiles = Array.from(diskProfiles.entries());
   localStorage.setItem(
     "profiles",
