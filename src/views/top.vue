@@ -604,7 +604,13 @@ setInterval(() => { collectProfiles(true); }, 13 * 1000);
 
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
-  const validProfiles = Array.from(profiles.value.entries()).filter((p) => (p[1].created_at != 0));
+  const diskProfiles = new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"));
+  for (const [key, val] of profiles.value.entries()) {
+    if (val.created_at !== 0) {
+      diskProfiles.set(key, val);
+    }
+  }
+  const validProfiles = Array.from(diskProfiles.entries());
   localStorage.setItem(
     "profiles",
     JSON.stringify(validProfiles)
