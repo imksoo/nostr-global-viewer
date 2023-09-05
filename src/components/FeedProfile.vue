@@ -40,6 +40,18 @@ function onImageError(e: Event) {
   target.src = placehold;
 }
 
+function truncateName(name: string | undefined): string | undefined {
+  if (name === undefined) {
+    return undefined;
+  }
+
+  if (name.length > 35) {
+    return `${name.substring(0, 35)}...`
+  } else {
+    return name;
+  }
+}
+
 </script>
 <template>
   <div class="c-feed-profile">
@@ -52,11 +64,11 @@ function onImageError(e: Event) {
     </a>
     <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
       <span class="c-feed-profile__display-name">{{
-        props.profile.display_name ||
-        props.profile.name ||
+        truncateName(props.profile.display_name) ||
+        truncateName(props.profile.name) ||
         props.profile.pubkey.substring(props.profile.pubkey.length - 8)
       }}</span>
-      <span class="c-feed-profile__user-name">@{{ props.profile.name ?? "" }}</span>
+      <span class="c-feed-profile__user-name">@{{ truncateName(props.profile.name) ?? "" }}</span>
     </a>
     <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
       <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />

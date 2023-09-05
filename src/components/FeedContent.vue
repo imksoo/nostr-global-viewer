@@ -249,7 +249,10 @@ while (rest.length > 0) {
               const href = '?' + Nostr.nip19.npubEncode(data.data.pubkey);
               if (props.getProfile) {
                 const profile = props.getProfile(data.data.pubkey);
-                const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
+                let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+                if (name.length > 35) {
+                  name = `${name.substring(0, 35)}...`;
+                }
                 tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
               } else {
                 tokens.value.push({ type: 'nostr', content: text, href });
@@ -259,8 +262,11 @@ while (rest.length > 0) {
               const href = '?' + Nostr.nip19.npubEncode(data.data);
               if (props.getProfile) {
                 const profile = props.getProfile(data.data);
-                const name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8)
-                tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture })
+                let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+                if (name.length > 35) {
+                  name = `${name.substring(0, 35)}...`;
+                }
+                tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
               } else {
                 tokens.value.push({ type: 'nostr', content: text, href });
               }
@@ -331,7 +337,8 @@ while (rest.length > 0) {
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
           <template v-if="props.getEvent(token.id)">
-            <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)" v-if="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
+            <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"
+              v-if="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
             <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
               :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
               :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"
