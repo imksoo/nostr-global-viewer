@@ -48,6 +48,34 @@ const props = defineProps({
     required: true,
   },
 });
+
+function truncateName(name: string | undefined): string | undefined {
+  if (name === undefined) {
+    return undefined;
+  }
+
+  const maxLength = 35;
+  if (name.length > maxLength) {
+    return `${name.substring(0, maxLength)}...`
+  } else {
+    return name;
+  }
+}
+
+function truncateContent(content: string | undefined): string | undefined {
+  if (content === undefined) {
+    return undefined;
+  }
+
+  const maxLength = 35;
+  if (content.length > maxLength) {
+    return `${content.substring(0, maxLength)}...`
+  } else {
+    return content;
+  }
+}
+
+
 </script>
 <template>
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
@@ -55,13 +83,13 @@ const props = defineProps({
       ユーザー
       <a target="_blank" :href="getUserLink(tag[1])">
         <img :src="getProfile(tag[1]).picture
-            ? getProfile(tag[1]).picture
-            : 'https://placehold.jp/60x60.png'
+          ? getProfile(tag[1]).picture
+          : 'https://placehold.jp/60x60.png'
           " class="c-feed-reply-picture" />
         <span class="c-feed-reply-profile__display-name">
           {{
-            getProfile(tag[1]).display_name ||
-            getProfile(tag[1]).name ||
+            truncateName(getProfile(tag[1]).display_name) ||
+            truncateName(getProfile(tag[1]).name) ||
             getProfile(tag[1]).pubkey.substring(
               getProfile(tag[1]).pubkey.length - 8
             )
@@ -73,7 +101,7 @@ const props = defineProps({
       投稿
       <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
-          getEvent(tag[1])?.content
+          truncateContent(getEvent(tag[1])?.content)
         }}</span>
         <span class="c-feed-reply-link" v-else>{{
           tag[1].substring(tag[1].length - 8)
@@ -86,7 +114,7 @@ const props = defineProps({
       引用
       <a target="_blank" :href="getEventLink(tag[1])">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
-          getEvent(tag[1])?.content
+          truncateContent(getEvent(tag[1])?.content)
         }}</span>
         <span class="c-feed-reply-link" v-else>{{
           tag[1].substring(tag[1].length - 8)
