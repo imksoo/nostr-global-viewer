@@ -39,61 +39,34 @@ function onImageError(e: Event) {
   const target = e.target as HTMLImageElement
   target.src = placehold
 }
-
-function truncateName(name: string | undefined): string | undefined {
-  if (name === undefined) {
-    return undefined
-  }
-
-  if (name.length > 35) {
-    return `${name.substring(0, 35)}...`
-  } else {
-    return name
-  }
-}
 </script>
 <template>
   <div class="c-feed-profile">
     <div class="c-feed-profile-parts c-feed-profile-avatar">
       <div>
         <a target="_blank" :href="getProfileLink(props.profile.pubkey)">
-          <img
-            class="c-feed-profile-picture"
-            v-bind:src="
-              props.profile.picture
-                ? props.profile.picture
-                : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'
-            "
-            referrerpolicy="no-referrer"
-            @error="onImageError"
-          />
+          <img class="c-feed-profile-picture" v-bind:src="props.profile.picture
+            ? props.profile.picture
+            : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'
+            " referrerpolicy="no-referrer" @error="onImageError" />
         </a>
       </div>
     </div>
     <div class="c-feed-profile-parts">
       <div class="c-feed-profile-display-name">
-        <span
-          class="c-feed-profile-copy-button"
-          @click="
-            (_$event) => {
-              copyNpubId()
-            }
-          "
-        >
-          <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />
-        </span>
-        <span>
-          <a target="_blank" :href="getProfileLink(props.profile.pubkey)">{{
-            truncateName(props.profile.display_name) ||
-            truncateName(props.profile.name) ||
+        <p>
+          <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId() }">
+            <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />
+          </span>
+          <span>&thinsp;</span>{{
+            props.profile.display_name ||
+            props.profile.name ||
             props.profile.pubkey.substring(props.profile.pubkey.length - 8)
-          }}</a>
-        </span>
+          }}
+        </p>
       </div>
       <div class="c-feed-profile-user-name">
-        <a target="_blank" :href="getProfileLink(props.profile.pubkey)"
-          >@{{ truncateName(props.profile.name) ?? "" }}</a
-        >
+        <a target="_blank" :href="getProfileLink(props.profile.pubkey)">@{{ props.profile.name ?? "" }}</a>
       </div>
     </div>
   </div>
@@ -133,13 +106,16 @@ function truncateName(name: string | undefined): string | undefined {
     display: flex;
   }
 
-  &-display-name a {
+  &-display-name p {
+    margin: 0;
+    padding: 0;
     color: #213547;
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
     overflow: hidden;
   }
+
   &-user-name a {
     display: -webkit-box;
     -webkit-box-orient: vertical;
