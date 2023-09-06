@@ -40,27 +40,48 @@ function onImageError(e: Event) {
   target.src = placehold;
 }
 
+function truncateName(name: string | undefined): string | undefined {
+  if (name === undefined) {
+    return undefined;
+  }
+
+  if (name.length > 35) {
+    return `${name.substring(0, 35)}...`
+  } else {
+    return name;
+  }
+}
+
 </script>
 <template>
   <div class="c-feed-profile">
-    <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">
-      <p class="c-feed-profile__avatar">
-        <img class="c-feed-profile__picture"
-          v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'"
-          referrerpolicy="no-referrer" @error="onImageError" />
-      </p>
-    </a>
-    <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)" class="c-feed-profile__detail">
-      <span class="c-feed-profile__display-name">{{
-        props.profile.display_name ||
-        props.profile.name ||
-        props.profile.pubkey.substring(props.profile.pubkey.length - 8)
-      }}</span>
-      <span class="c-feed-profile__user-name">@{{ props.profile.name ?? "" }}</span>
-    </a>
-    <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
-      <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />
-    </span>
+    <div class="c-feed-profile__avatar">
+      <div>
+        <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">
+          <img class="c-feed-profile__picture"
+            v-bind:src="props.profile.picture ? props.profile.picture : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'"
+            referrerpolicy="no-referrer" @error="onImageError" />
+        </a>
+      </div>
+    </div>
+    <div>
+      <span class="c-feed-profile-copy-button" @click="(_$event) => { copyNpubId(); }">
+        <mdicon name="content-copy" :width="14" :height="14" title="Copy npub string" />
+      </span>
+    </div>
+    <div>
+      <div class="c-feed-profile__display-name">
+        <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">{{
+          truncateName(props.profile.display_name) ||
+          truncateName(props.profile.name) ||
+          props.profile.pubkey.substring(props.profile.pubkey.length - 8)
+        }}</a>
+      </div>
+      <div class="c-feed-profile__user-name">
+        <a target="_blank" :href="'?' + nostr.nip19.npubEncode(props.profile.pubkey)">@{{
+          truncateName(props.profile.name) ?? "" }}</a>
+      </div>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -68,47 +89,44 @@ function onImageError(e: Event) {
   display: flex;
   gap: 10px;
 
-  &-copy-button {
+  &__avatar {
+    padding: 0;
+    margin: 0;
+    flex-grow: 0;
+    flex-shrink: 0;
+    max-width: 3rem;
+    word-wrap: break-word;
+    word-break: break-all;
+  }
+
+  &__picture {
+    max-height: 3rem;
+    max-width: 3rem;
+    height: 3rem;
+    width: 3rem;
+    margin: 0;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+
+  &__display-name,
+  &__user-name {
+    font-size: 14px;
+    max-width: min(100%, 200px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-text-overflow: ellipsis;
+  }
+
+  &__display-name a {
     color: #213547;
   }
-}
 
-.c-feed-profile__avatar {
-  padding: 0;
-  margin: 0;
-  flex-grow: 0;
-  flex-shrink: 0;
-  max-width: 3rem;
-  word-wrap: break-word;
-  word-break: break-all;
-}
-
-.c-feed-profile__detail {
-  width: max-content;
-}
-
-.c-feed-profile__display-name {
-  display: block;
-  font-size: 14px;
-  color: #213547;
-}
-
-.c-feed-profile__user-name {
-  display: block;
-  font-size: 14px;
-}
-
-.c-feed-profile__picture {
-  max-height: 3rem;
-  max-width: 3rem;
-  height: 3rem;
-  width: 3rem;
-  margin: 0;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.c-feed-profile-copy-button {
-  vertical-align: middle;
+  &-copy-button {
+    display: inline;
+    color: #213547;
+    vertical-align: bottom;
+  }
 }
 </style>
