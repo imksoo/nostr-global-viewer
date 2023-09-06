@@ -116,10 +116,10 @@ function truncateName(name: string | undefined): string | undefined {
   &-user-name {
     font-size: 14px;
     white-space: nowrap;
-    max-width: min(35em, 400px);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
     overflow: hidden;
-    text-overflow: ellipsis;
-    -webkit-text-overflow: ellipsis;
   }
 
   &-display-name a {
