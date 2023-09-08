@@ -54,6 +54,11 @@ function collectJapaneseUsers() {
     [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
     [...new Set(normalizeUrls(profileRelays))],
     (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
       if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
         japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
       }
@@ -76,6 +81,12 @@ function collectRyuusokuChan() {
     [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
     [...new Set(normalizeUrls(feedRelays))],
     (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
+
       ryuusokuChanData.value.length = 0;
       ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
       ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
@@ -168,6 +179,11 @@ watch(() => route.query, async (newQuery) => {
       }],
       [...new Set(normalizeUrls([...feedRelays, ...profileRelays]))],
       async (ev, _isAfterEose, _relayURL) => {
+        if (!Nostr.verifySignature(ev)) {
+          console.log('Invalid nostr event, signature invalid', ev);
+          return;
+        }
+
         if (ev.kind === 0 && profileCreatedAt < ev.created_at) {
           profileCreatedAt = ev.created_at;
           const profile = JSON.parse(ev.content);
@@ -323,6 +339,11 @@ watch(() => route.query, async (newQuery) => {
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
       [...new Set(normalizeUrls(searchRelays))],
       (ev, _isAfterEose, _relayURL) => {
+        if (!Nostr.verifySignature(ev)) {
+          console.log('Invalid nostr event, signature invalid', ev);
+          return;
+        }
+
         if (ev.kind === 3 && ev.content && npubRelaysCreatedAt < ev.created_at) {
           pool.publish(ev, normalizeUrls(feedRelays));
           npubReadRelays.slice(0);
@@ -518,6 +539,10 @@ async function collectEvents() {
     }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
       cacheMissHitEventIds.delete(ev.id);
       addEvent(ev);
 
@@ -578,6 +603,11 @@ async function collectProfiles(force = false) {
     }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
     async (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
 
@@ -699,6 +729,11 @@ function collectMyRelay() {
     ],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt.value < ev.created_at) {
         myReadRelays.value.slice(0);
         myWriteRelays.value.slice(0);
@@ -795,6 +830,11 @@ async function collectFollowsAndSubscribe() {
     ],
       [...new Set(normalizeUrls(myReadRelays.value))],
       async (ev, _isAfterEose, _relayURL) => {
+        if (!Nostr.verifySignature(ev)) {
+          console.log('Invalid nostr event, signature invalid', ev);
+          return;
+        }
+
         switch (ev.kind) {
           case 1:
             addEvent(ev);

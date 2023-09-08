@@ -30,6 +30,7 @@ export const pool = new RelayPool(normalizeUrls(feedRelays), {
   logErrorsAndNotices: true,
   subscriptionCache: true,
   useEventCache: true,
+  skipVerification: false,
 });
 pool.onerror((url, msg) => { console.log("pool.error", url, msg) });
 pool.onnotice((url, msg) => { console.log("pool.onnotice", url, msg) });
