@@ -67,7 +67,7 @@ function truncateContent(content: string | undefined): string | undefined {
     return undefined;
   }
 
-  const maxLength = 35;
+  const maxLength = 15;
   if (content.length > maxLength) {
     return `${content.substring(0, maxLength)}...`
   } else {
@@ -81,7 +81,7 @@ function truncateContent(content: string | undefined): string | undefined {
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー
-      <a target="_blank" :href="getUserLink(tag[1])">
+      <a target="_blank" :href="getUserLink(tag[1])" :title="getProfile(tag[1]).display_name || getProfile(tag[1]).name">
         <img :src="getProfile(tag[1]).picture
           ? getProfile(tag[1]).picture
           : 'https://placehold.jp/60x60.png'
@@ -99,7 +99,7 @@ function truncateContent(content: string | undefined): string | undefined {
     </template>
     <template v-else-if="tag[0] === 'e'">
       投稿
-      <a target="_blank" :href="getEventLink(tag[1])">
+      <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
           truncateContent(getEvent(tag[1])?.content)
         }}</span>
@@ -112,7 +112,7 @@ function truncateContent(content: string | undefined): string | undefined {
     </template>
     <template v-else-if="tag[0] === 'q'">
       引用
-      <a target="_blank" :href="getEventLink(tag[1])">
+      <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
         <span class="c-feed-reply-link" v-if="getEvent(tag[1])?.content">{{
           truncateContent(getEvent(tag[1])?.content)
         }}</span>
@@ -126,8 +126,8 @@ function truncateContent(content: string | undefined): string | undefined {
     <template v-else-if="tag[0] === 't'"> ハッシュタグ #{{ tag[1] }} </template>
     <template v-else-if="tag[0] === 'r'">
       リンク
-      <a target="_blank" :href="tag[1]">
-        {{ decodeURI(tag[1]) }}
+      <a target="_blank" :href="tag[1]" :title="decodeURI(tag[1])">
+        {{ truncateContent(decodeURI(tag[1])) }}
       </a>
     </template>
     <template v-else> その他タグ {{ JSON.stringify(tag) }} </template>
