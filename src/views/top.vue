@@ -455,6 +455,11 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
 }
 
 function addEvent(event: NostrEvent | Nostr.Event): void {
+  if (!Nostr.verifySignature(event)) {
+    console.log('Invalid nostr event, signature invalid', event);
+    return;
+  }
+
   if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
