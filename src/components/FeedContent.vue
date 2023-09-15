@@ -203,7 +203,7 @@ while (rest.length > 0) {
                 const v = getParam('v', text);
                 tokens.value.push({ type: "youtube", href: v, content: decodeURI(text) });
               }
-            } else if (url.hostname.endsWith("twitter.com")) {
+            } else if (url.hostname.endsWith("twitter.com") || url.hostname.endsWith("x.com")) {
               const src = encodeURI(text);
               twitterSources.push(src);
               tokens.value.push({ type: "twitter", href: text, src, content: decodeURI(text) });
