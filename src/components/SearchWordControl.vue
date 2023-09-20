@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed } from "vue"
 
 const props = withDefaults(
   defineProps<{
-    searchWords: string;
+    searchWords: string
   }>(),
   {
-    searchWords: "" // デフォルト値を指定
+    searchWords: "", // デフォルト値を指定
   }
-);
+)
 
 const emit = defineEmits<{
-  (e: 'update:searchWords', searchWords: string): void
-}>();
+  (e: "update:searchWords", searchWords: string): void
+}>()
 
 const searchWords = computed({
   get: () => props.searchWords,
-  set: (value) => { // 値に変更があると呼ばれるsetter
-    emit('update:searchWords', value);
+  set: (value) => {
+    // 値に変更があると呼ばれるsetter
+    emit("update:searchWords", value)
   },
-});
-
+})
 </script>
 
 <template>
@@ -36,7 +36,7 @@ const searchWords = computed({
 .p-index-search {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -44,7 +44,8 @@ const searchWords = computed({
 
   &__head {
     color: #ffffff;
-    font-size: 14px;
+    font-size: 13px;
+    width: 6em;
   }
 
   &__body {

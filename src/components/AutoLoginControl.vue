@@ -48,7 +48,7 @@ const autoLogin = computed({
 .p-index-auto-login {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -57,7 +57,8 @@ const autoLogin = computed({
 
 .p-index-auto-login__head {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
+  width: 6em;
 }
 
 .p-index-auto-login__body {
@@ -139,7 +140,7 @@ const autoLogin = computed({
 .p-index-auto-login-cb__text-label {
   margin-left: 12px;
   display: block;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: #fff;
 }
