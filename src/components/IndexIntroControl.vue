@@ -18,7 +18,7 @@ const props = defineProps({
     </div>
   </div>
   <div class="p-index-intro" v-if="!props.isLogined">
-    <h2 class="p-index-intro__head">はじめに</h2>
+    <h2 class="p-index-intro__head"><span>はじめに</span></h2>
     <p class="p-index-intro__text">Nostr を始めてみたくなった方は</p>
     <p class="p-index-intro__text">
       <a href="https://welcome.nostr-jp.org/" rel="noopener" target="_blank" class="p-index-intro__btn">Welcome to
@@ -30,15 +30,13 @@ const props = defineProps({
         rel="noopener" target="_blank" class="p-index-intro__btn">はじめてのNostr【はじめての方はこちら】</a>
     </p>
     <p class="p-index-intro__text">などを起点に調べてる見ると面白いと思います。</p>
-    <h2 class="p-index-intro__head">このリレーについて</h2>
-    <p class="p-index-intro__text">
-      日本向けリレーとしてこのページの裏側にある
+    <h2 class="p-index-intro__head"><span>このリレーについて</span></h2>
+    <p class="p-index-intro__text">日本向けリレーとしてこのページの裏側にある
       <code>wss://relay-jp.nostr.wirednet.jp</code>
       を是非 Nostr クライアントに設定してお使いください。
     </p>
     <h2 class="p-index-intro__head">ライセンス、ソースコードなど</h2>
-    <p class="p-index-intro__text">
-      このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
+    <p class="p-index-intro__text">このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
         target="_blank">GitHub</a>にあります。
     </p>
     <p class="p-index-intro__text">
@@ -47,11 +45,9 @@ const props = defineProps({
       <a href="https://soundeffect-lab.info/" target="_blank" class="p-index-intro__text-link">効果音ラボ</a>
       の効果音素材を利用しています。
     </p>
-    <p class="p-index-intro__text">
-      なお、私が管理する Nostr リレーの利用規約は
+    <p class="p-index-intro__text">なお、私が管理する Nostr リレーの利用規約は<br>
       <a href="https://relay.nostr.wirednet.jp/index.html" class="p-index-intro__text-link"
-        target="_blank">relay.nostr.wirednet.jp</a>
-      に掲示してあります。
+        target="_blank">relay.nostr.wirednet.jp</a><br>に掲示してあります。
     </p>
   </div>
 </template>
@@ -86,6 +82,7 @@ const props = defineProps({
     border-radius: 2rem;
     transition: all 0.4s;
     border: none;
+    line-height: 1;
     cursor: pointer;
 
     &:hover {
@@ -102,25 +99,29 @@ const props = defineProps({
   }
 
   &__head {
-    font-size: 1.5rem;
-    color: #ffffff;
+    font-size: 1.4rem;
+    color: gold;
     display: flex;
     gap: 0.4rem;
     align-items: center;
-    margin: 1em 0 0 0;
-
+    margin: 2rem 0 1rem 0;
     &::before {
       content: "";
-      width: 2em;
+      flex-grow: 1;
       height: 2px;
-      background-color: #ffffff;
+      background-color: gold;
     }
 
     &::after {
       content: "";
-      width: 2em;
+      flex-grow: 1;
       height: 2px;
-      background-color: #ffffff;
+      background-color: gold;
+    }
+    span{
+      width: max-content;
+      flex-grow: 0;
+      flex-shrink: 0;
     }
   }
 
@@ -143,10 +144,13 @@ const props = defineProps({
   &__btn {
     background-color: #fc5fa1;
     color: #ffffff;
-    display: inline-block;
+    display: block;
     padding: 0.5rem 1.4rem;
     border-radius: 2rem;
     transition: all 0.4s;
+    line-height: 1;
+    margin: 0 auto;
+    width: max-content;
   }
 
   &__btn:hover {

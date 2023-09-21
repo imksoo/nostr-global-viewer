@@ -54,7 +54,7 @@ const autoSpeech = computed({
 .p-index-speech {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -63,7 +63,8 @@ const autoSpeech = computed({
 
 .p-index-speech__head {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
+  width: 6em;
 }
 
 .p-index-speech__body {
@@ -153,6 +154,7 @@ const autoSpeech = computed({
 .p-index-speech-volume {
   color: #fff;
   margin-top: 8px;
+  text-align: center;
 }
 
 </style>

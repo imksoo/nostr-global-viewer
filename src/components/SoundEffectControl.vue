@@ -40,7 +40,7 @@ const soundEffect = computed({
 .p-index-sound-effect {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
-  padding: 12px;
+  padding: 8px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -49,7 +49,8 @@ const soundEffect = computed({
 
 .p-index-sound-effect__head {
   color: #ffffff;
-  font-size: 14px;
+  font-size: 13px;
+  width: 6em;
 }
 
 .p-index-sound-effect__body {

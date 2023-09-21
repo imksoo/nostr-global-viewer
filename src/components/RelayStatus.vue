@@ -9,9 +9,7 @@ const props = defineProps({
 
 <template>
   <div class="p-index-relay">
-    <h2 class="p-index-relay__head">
-      リレーの接続状態 (プロフ取得＆イベント投稿用)
-    </h2>
+    <h2 class="p-index-relay__head">リレーの接続状態 (プロフ取得＆イベント投稿用)</h2>
     <p class="p-index-relay-notice">wss://eu.rbr.bio と wss://us.rbr.bio は本サイトの内部で利用している nostr-relaypool がプロフ取得に既定で利用するリレーです。</p>
     <div class="p-index-relay-status-list">
       <p v-for="[url, status] in props.relays" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
