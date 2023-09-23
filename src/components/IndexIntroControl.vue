@@ -9,9 +9,11 @@ const props = defineProps({
     required: true,
   },
 });
+
+const nip07exists = ('nostr' in window);
 </script>
 <template>
-  <div class="p-index-signin" v-if="!props.isLogined">
+  <div class="p-index-signin" v-if="!props.isLogined" :style="(!nip07exists) ? { display: 'none' } : {}">
     <h2 class="p-index-signin__head">この画面からつぶやく</h2>
     <div class="p-index-signin__body">
       <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="(_$event) => props.login()" />
@@ -36,8 +38,8 @@ const props = defineProps({
       を是非 Nostr クライアントに設定してお使いください。
     </p>
     <h2 class="p-index-intro__head">ライセンス、ソースコードなど</h2>
-    <p class="p-index-intro__text">このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer" class="p-index-intro__text-link"
-        target="_blank">GitHub</a>にあります。
+    <p class="p-index-intro__text">このサイトのソースコードは<a href="https://github.com/imksoo/nostr-global-viewer"
+        class="p-index-intro__text-link" target="_blank">GitHub</a>にあります。
     </p>
     <p class="p-index-intro__text">
       <a href="https://awayuki.github.io/emojis.html" target="_blank" class="p-index-intro__text-link">SUSHIYUKI
@@ -105,6 +107,7 @@ const props = defineProps({
     gap: 0.4rem;
     align-items: center;
     margin: 2rem 0 1rem 0;
+
     &::before {
       content: "";
       flex-grow: 1;
@@ -118,7 +121,8 @@ const props = defineProps({
       height: 2px;
       background-color: gold;
     }
-    span{
+
+    span {
       width: max-content;
       flex-grow: 0;
       flex-shrink: 0;

@@ -22,23 +22,18 @@ const autoLogin = computed({
     localStorage.setItem("autoLogin", `${value}`);
   },
 });
+
+const nip07exists = ('nostr' in window);
 </script>
 
 <template>
-  <div class="p-index-auto-login">
+  <div class="p-index-auto-login" :style="(!nip07exists) ? { display: 'none' } : {}">
     <h2 class="p-index-auto-login__head">自動ログイン</h2>
     <div class="p-index-auto-login__body">
       <label class="p-index-auto-login-cb" for="auto-login">
-        <input
-          class="p-index-auto-login-cb__input"
-          type="checkbox"
-          id="auto-login"
-          v-model="autoLogin"
-        />
+        <input class="p-index-auto-login-cb__input" type="checkbox" id="auto-login" v-model="autoLogin" />
         <span class="p-index-auto-login-cb__dummy"></span>
-        <span class="p-index-auto-login-cb__text-label"
-          >次回から自動ログインする</span
-        >
+        <span class="p-index-auto-login-cb__text-label">次回から自動ログインする</span>
       </label>
     </div>
   </div>
@@ -84,19 +79,19 @@ const autoLogin = computed({
   background: rgba(0, 0, 0, 0.05) !important;
 }
 
-.p-index-auto-login-cb:hover > .p-index-auto-login-cb__dummy {
+.p-index-auto-login-cb:hover>.p-index-auto-login-cb__dummy {
   transform: scale(1.1);
 }
 
-.p-index-auto-login-cb__input:focus + .p-index-auto-login-cb__dummy {
+.p-index-auto-login-cb__input:focus+.p-index-auto-login-cb__dummy {
   transform: scale(1.1);
 }
 
-.p-index-auto-login-cb__input:checked + .p-index-auto-login-cb__dummy {
+.p-index-auto-login-cb__input:checked+.p-index-auto-login-cb__dummy {
   background: #df3d81;
 }
 
-.p-index-auto-login-cb__input:checked + .p-index-auto-login-cb__dummy::before {
+.p-index-auto-login-cb__input:checked+.p-index-auto-login-cb__dummy::before {
   content: "";
   display: block;
   position: absolute;
@@ -110,7 +105,7 @@ const autoLogin = computed({
   background: #ffffff;
 }
 
-.p-index-auto-login-cb__input:checked + .p-index-auto-login-cb__dummy::after {
+.p-index-auto-login-cb__input:checked+.p-index-auto-login-cb__dummy::after {
   content: "";
   display: block;
   position: absolute;
