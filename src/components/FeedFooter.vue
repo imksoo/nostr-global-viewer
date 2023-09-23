@@ -140,6 +140,8 @@ function getLinkUrl(): string {
         </a>
       </span>
     </p>
+  </div>
+  <div class="c-feed-footer2">
     <p class="c-feed-date">
       <span>
         <a target="_blank" :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
@@ -173,16 +175,27 @@ function getLinkUrl(): string {
   width: 100%;
 }
 
+.c-feed-footer2 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+}
+
 .c-feed-footer p {
   font-size: 14px;
-  margin: 0.7em 0 0.2em 0;
+  margin: 0.7em 0 0 0;
+}
+
+.c-feed-footer2 p {
+  font-size: 14px;
+  margin: 0.2em 0 0.2em 0;
 }
 
 .c-feed {
   white-space: pre-wrap;
   word-wrap: break-word;
   word-break: break-all;
-  padding: 0.4rem 0 0 0;
   margin: 0;
   text-align: left;
 
