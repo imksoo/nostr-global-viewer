@@ -2,6 +2,7 @@
 import { computed, ref } from "vue";
 import * as Nostr from "nostr-tools";
 
+import { pool } from "../store";
 import { broadcastEventById } from '../actions/EventBroadcast';
 
 const props = defineProps({
@@ -131,6 +132,14 @@ function getLinkUrl(): string {
         <mdicon name="code-json" :width="14" :height="14" title="Show event json" />
       </span>
     </p>
+    <p class="c-feed-event-search">
+      <span>
+        <a target="_blank"
+          :href="'https://koteitan.github.io/nostr-post-checker/?eid=' + event.id + '&kind=' + event.kind + '&relay=' + pool.getRelayStatuses().map((r) => (r[0])).join(';')">
+          <mdicon name="table-search" :width="14" :height="14" title="Search event in relays" />
+        </a>
+      </span>
+    </p>
     <p class="c-feed-date">
       <span>
         <a target="_blank" :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
@@ -217,6 +226,11 @@ function getLinkUrl(): string {
   }
 
   &-json {
+    color: #213547;
+    flex-basis: 18px;
+  }
+
+  &-event-search a {
     color: #213547;
     flex-basis: 18px;
   }
