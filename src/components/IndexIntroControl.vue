@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from "vue";
 const props = defineProps({
   isLogined: {
     type: Boolean,
@@ -10,7 +11,7 @@ const props = defineProps({
   },
 });
 
-const nip07exists = ('nostr' in window);
+const nip07exists = ref('nostr' in window);
 </script>
 <template>
   <div class="p-index-signin" v-if="!props.isLogined" :style="(!nip07exists) ? { display: 'none' } : {}">

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 const props = withDefaults(
   defineProps<{
@@ -23,7 +23,7 @@ const autoLogin = computed({
   },
 });
 
-const nip07exists = ('nostr' in window);
+const nip07exists = ref('nostr' in window);
 </script>
 
 <template>
