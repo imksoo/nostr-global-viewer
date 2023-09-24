@@ -484,7 +484,7 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
   if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
-  eventsReceived.value.set(event.id, event as NostrEvent);
+  eventsReceived.value.set(event.id, event);
   eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event) as NostrEvent[];
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
@@ -1393,13 +1393,13 @@ function gotoTop() {
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
           @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
-          <FeedProfile v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"></FeedProfile>
-          <FeedReplies v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
-          <FeedContent v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
+          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"></FeedProfile>
+          <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
+          <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
             :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent">
           </FeedContent>
-          <FeedFooter v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
+          <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
             :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>

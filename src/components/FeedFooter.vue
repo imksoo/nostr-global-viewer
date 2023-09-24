@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import * as Nostr from "nostr-tools";
+import { pool } from "../store";
 
 import { broadcastEventById } from '../actions/EventBroadcast';
 

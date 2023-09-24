@@ -11,7 +11,8 @@ const props = defineProps({
   },
 });
 
-const nip07exists = ref('nostr' in window);
+// const nip07exists = ref('nostr' in window);
+const nip07exists = true;
 </script>
 <template>
   <div class="p-index-signin" v-if="!props.isLogined" :style="(!nip07exists) ? { display: 'none' } : {}">

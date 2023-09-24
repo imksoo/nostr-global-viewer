@@ -23,7 +23,8 @@ const autoLogin = computed({
   },
 });
 
-const nip07exists = ref('nostr' in window);
+// const nip07exists = ref('nostr' in window);
+const nip07exists = true;
 </script>
 
 <template>
