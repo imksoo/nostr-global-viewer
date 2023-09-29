@@ -487,7 +487,16 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
 
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
-  eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  if (firstFetching) {
+    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  } else {
+    const now = Math.floor((new Date()).getTime() / 1000);
+    if (ev.created_at < now - 60) {
+      eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+    } else {
+      eventsToSearch.value.unshift(ev);
+    }
+  }
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
@@ -1395,14 +1404,17 @@ function gotoTop() {
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
           @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
-          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"></FeedProfile>
-          <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
-          <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
-            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
-            :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent">
+          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)">
+          </FeedProfile>
+          <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
+            v-if="e.kind !== 6"></FeedReplies>
+          <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
+            :speak-note="speakNote" :volume="volume" :is-logined="logined" :post-event="postEvent"
+            :open-reply-post="openReplyPost" :open-quote-post="openQuotePost" :add-fav-event="addFavEvent"
+            :add-repost-event="addRepostEvent">
           </FeedContent>
-          <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+          <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume"
+            :is-logined="logined" :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
