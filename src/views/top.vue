@@ -487,11 +487,11 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
 
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
-  if (firstFetching) {
+  if (firstFetching || npubId.value) {
     eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
   } else {
     const now = Math.floor((new Date()).getTime() / 1000);
-    if (ev.created_at < now - 60) {
+    if (ev.created_at < now - 600) {
       eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
     } else {
       eventsToSearch.value.unshift(ev);
