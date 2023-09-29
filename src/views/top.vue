@@ -484,8 +484,10 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
   if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
-  eventsReceived.value.set(event.id, event);
-  eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, event) as NostrEvent[];
+
+  const ev = event as unknown as NostrEvent;
+  eventsReceived.value.set(ev.id, ev);
+  eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
@@ -611,7 +613,7 @@ async function collectProfiles(force = false) {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
 
-        pool.publish(ev, feedRelays);
+        pool.publish(ev, [...new Set(normalizeUrls([...feedRelays]))]);
         if (
           !profiles.value.has(ev.pubkey) ||
           profiles.value.get(ev.pubkey)?.created_at < ev.created_at
