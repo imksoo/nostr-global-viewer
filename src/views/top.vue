@@ -653,7 +653,7 @@ setInterval(() => {
     "profiles",
     JSON.stringify(validProfiles)
   );
-}, 2 * 1000);
+}, 67 * 1000);
 
 let logined = ref(false);
 let isPostOpen = ref(false);
