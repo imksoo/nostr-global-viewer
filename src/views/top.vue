@@ -613,7 +613,11 @@ async function collectProfiles(force = false) {
       if (ev.kind === 0) {
         const content = JSON.parse(ev.content);
 
-        pool.publish(ev, [...new Set(normalizeUrls([...feedRelays]))]);
+        if (force && ev.created_at > Math.floor(new Date().getTime() / 1000) - forceProfileUpdateInterval * 2) {
+          pool.publish(ev, [...new Set(normalizeUrls([...feedRelays]))]);
+        } else if (cacheMissHitPubkeys.has(ev.pubkey)) {
+          pool.publish(ev, [...new Set(normalizeUrls([...feedRelays]))]);
+        }
         if (
           !profiles.value.has(ev.pubkey) ||
           profiles.value.get(ev.pubkey)?.created_at < ev.created_at
@@ -637,7 +641,9 @@ async function collectProfiles(force = false) {
   setTimeout(() => { unsub() }, 2 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 0.7 * 1000);
-setInterval(() => { collectProfiles(true); }, 13 * 1000);
+
+const forceProfileUpdateInterval = 13;
+setInterval(() => { collectProfiles(true); }, forceProfileUpdateInterval * 1000);
 
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
@@ -1395,14 +1401,17 @@ function gotoTop() {
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
           @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
-          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"></FeedProfile>
-          <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" v-if="e.kind !== 6"></FeedReplies>
-          <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent" :speak-note="speakNote"
-            :volume="volume" :is-logined="logined" :post-event="postEvent" :open-reply-post="openReplyPost"
-            :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent">
+          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)">
+          </FeedProfile>
+          <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
+            v-if="e.kind !== 6"></FeedReplies>
+          <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
+            :speak-note="speakNote" :volume="volume" :is-logined="logined" :post-event="postEvent"
+            :open-reply-post="openReplyPost" :open-quote-post="openQuotePost" :add-fav-event="addFavEvent"
+            :add-repost-event="addRepostEvent">
           </FeedContent>
-          <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume" :is-logined="logined"
-            :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+          <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume"
+            :is-logined="logined" :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
