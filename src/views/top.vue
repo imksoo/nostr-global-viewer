@@ -487,7 +487,16 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
 
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
-  eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  if (firstFetching || npubId.value || noteId.value) {
+    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  } else {
+    const now = Math.floor((new Date()).getTime() / 1000);
+    if (ev.created_at < now - 600) {
+      eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+    } else {
+      eventsToSearch.value.unshift(ev);
+    }
+  }
   if (cutoffMode.value) {
     eventsToSearch.value.slice(-totalNumberOfEventsToKeep);
   }
