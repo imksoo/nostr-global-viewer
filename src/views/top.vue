@@ -584,19 +584,19 @@ type Profile = {
 };
 
 function getProfile(pubkey: string): Profile {
+  if (sushiMode.value || mahjongMode.value) {
+    return getRandomProfile(pubkey, sushiMode.value, mahjongMode.value);
+  }
+
   if (!profiles.value.has(pubkey)) {
     cacheMissHitPubkeys.add(pubkey);
-
-    profiles.value.set(pubkey, {
+    return {
       pubkey: pubkey,
       picture: "https://placehold.jp/60x60.png",
       display_name: "",
       name: "",
       created_at: 0,
-    });
-  }
-  if (sushiMode.value || mahjongMode.value) {
-    return getRandomProfile(pubkey, sushiMode.value, mahjongMode.value);
+    };
   }
   return profiles.value.get(pubkey);
 }
@@ -657,16 +657,11 @@ setInterval(() => { collectProfiles(true); }, forceProfileUpdateInterval * 1000)
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
   const diskProfiles = new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"));
-  for (const [key, val] of profiles.value.entries()) {
-    if (val.created_at !== 0) {
-      diskProfiles.set(key, val);
-    }
-  }
-  profiles.value = diskProfiles;
-  const validProfiles = Array.from(diskProfiles.entries());
+  const mergedProfiles = new Map<string, any>([...diskProfiles, ...profiles.value]);
+  profiles.value = mergedProfiles;
   localStorage.setItem(
     "profiles",
-    JSON.stringify(validProfiles)
+    JSON.stringify(Array.from(mergedProfiles.entries()))
   );
 }, 67 * 1000);
 
