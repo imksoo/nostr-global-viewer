@@ -544,6 +544,7 @@ async function collectEvents() {
     return;
   }
 
+  console.log(`collectEvents(${eventIds})`);
   const unsub = pool.subscribe(
     [{
       ids: eventIds
@@ -562,11 +563,11 @@ async function collectEvents() {
       }
     },
     undefined,
-    () => { clearTimeout(timeout); console.log(`collectEvents(${unsub},${timeout}) => EOSE`); },
+    undefined,
     { unsubscribeOnEose: true }
   );
   cacheMissHitEventIds.clear();
-  const timeout = setTimeout(() => { unsub(); console.log(`collectEvents(${unsub},${timeout}) => Timeout`); }, 1.8 * 1000);
+  const timeout = setTimeout(() => { unsub(); console.log(`collectEvents(${timeout}) => Timeout`); }, 5 * 1000);
 }
 setInterval(collectEvents, 2 * 1000);
 
@@ -645,10 +646,10 @@ async function collectProfiles(force = false) {
       }
     },
     undefined,
-    () => { clearTimeout(timeout); console.log(`collectProfiles(${unsub},${timeout}) => EOSE`); },
+    undefined,
     { unsubscribeOnEose: true }
   );
-  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${unsub},${timeout}) => Timeout`); }, 4.8 * 1000);
+  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 4.8 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 5 * 1000);
 
