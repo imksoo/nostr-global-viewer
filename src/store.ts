@@ -11,6 +11,7 @@ export const profileRelays = [
   "wss://nostr-relay.nokotaro.com/",
   "wss://nostr.fediverse.jp",
   "wss://nostr.holybea.com/",
+  "wss://nostream.ocha.one/",
   "wss://nrelay-jp.c-stellar.net",
   "wss://nrelay.c-stellar.net",
   "wss://offchain.pub/",
