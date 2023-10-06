@@ -257,7 +257,7 @@ watch(() => route.query, async (newQuery) => {
       // 通常ののぞき窓グローバルモード
       pool.subscribe(
         [{
-          kinds: [1, 6],
+          kinds: [1, 6, 1984],
           limit: initialNumberOfEventToGet,
         }],
         [...new Set(normalizeUrls([...feedRelays]))],

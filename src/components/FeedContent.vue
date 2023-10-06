@@ -128,6 +128,8 @@ if (props.event.kind === 6) {
     }
   }
   rest = `📬りぽすと！\n${note}`;
+} else if (props.event.kind === 1984) {
+  rest = `👁️つうほうしますた！\n${rest}`;
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {
@@ -303,6 +305,9 @@ while (rest.length > 0) {
         <span class="c-feed-content-kind7" v-else-if="props.event.kind === 7">{{
           token.content?.replace("+", "💕").replace("-", "👎")
         }}</span>
+        <span class="c-feed-content-kind1984" v-else-if="props.event.kind === 1984">{{
+          token.content
+        }}</span>
         <span v-else>{{ token.content }}</span>
       </template>
       <template v-else-if="token?.type === 'link'">
@@ -397,6 +402,11 @@ while (rest.length > 0) {
 
 .c-feed-content-kind7 {
   font-size: 2.0em;
+}
+
+.c-feed-content-kind1984 {
+  font-size: 1.5em;
+  color: #df3d81;
 }
 
 .c-feed-content-repost {
