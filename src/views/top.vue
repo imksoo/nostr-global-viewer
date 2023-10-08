@@ -544,6 +544,7 @@ async function collectEvents() {
     return;
   }
 
+  const reqEventIds = new Set<string>(eventIds);
   console.log(`collectEvents(${eventIds})`);
   const unsub = pool.subscribe(
     [{
@@ -556,6 +557,7 @@ async function collectEvents() {
         return;
       }
       cacheMissHitEventIds.delete(ev.id);
+      reqEventIds.delete(ev.id);
       addEvent(ev);
 
       if (!eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
@@ -566,8 +568,13 @@ async function collectEvents() {
     undefined,
     { unsubscribeOnEose: true }
   );
-  cacheMissHitEventIds.clear();
-  const timeout = setTimeout(() => { unsub(); console.log(`collectEvents(${timeout}) => Timeout`); }, 10 * 1000);
+  const timeout = setTimeout(() => {
+    unsub();
+    reqEventIds.forEach((id) => {
+      cacheMissHitEventIds.delete(id);
+    });
+    console.log(`collectEvents(${timeout}) => Timeout`);
+  }, 10 * 1000);
 }
 setInterval(collectEvents, 2 * 1000);
 
@@ -651,7 +658,7 @@ async function collectProfiles(force = false) {
   );
   const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 20 * 1000);
 }
-setInterval(() => { collectProfiles(false); }, 5 * 1000);
+setInterval(() => { collectProfiles(false); }, 2 * 1000);
 
 const forceProfileUpdateInterval = 29;
 setInterval(() => { collectProfiles(true); }, forceProfileUpdateInterval * 1000);
