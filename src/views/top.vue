@@ -567,7 +567,7 @@ async function collectEvents() {
     { unsubscribeOnEose: true }
   );
   cacheMissHitEventIds.clear();
-  const timeout = setTimeout(() => { unsub(); console.log(`collectEvents(${timeout}) => Timeout`); }, 5 * 1000);
+  const timeout = setTimeout(() => { unsub(); console.log(`collectEvents(${timeout}) => Timeout`); }, 10 * 1000);
 }
 setInterval(collectEvents, 2 * 1000);
 
@@ -649,7 +649,7 @@ async function collectProfiles(force = false) {
     undefined,
     { unsubscribeOnEose: true }
   );
-  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 4.8 * 1000);
+  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 20 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 5 * 1000);
 
