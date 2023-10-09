@@ -1478,8 +1478,8 @@ function gotoTop() {
       <div class="c-post-tags">
         <FeedReplies v-bind:event="draftEvent" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
         <FeedReplies v-bind:event="editingTags" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
-        <span class="p-index-post__help">メンションしたいときは<code>nostr:</code>の後に<code>npub文字列</code>を貼り付けてください。<br />
-          引用リポストするときは<code>nostr:note文字列</code>で投稿IDを貼り付けてください。</span>
+        <span
+          class="p-index-post__help">メンションしたいときは<code>nostr:</code>の後に<code>npub文字列</code>を貼り付けてください。<br />引用リポストするときは<code>nostr:note文字列</code>で投稿IDを貼り付けてください。</span>
       </div>
       <div class="p-index-post__editer">
         <div class="p-index-post__textarea">
