@@ -127,9 +127,9 @@ if (props.event.kind === 6) {
       note += Nostr.nip19.noteEncode(t[1]) + "\n";
     }
   }
-  rest = `📬りぽすと！\n${note}`;
+  rest = `📬 りぽすと！\n${note}`;
 } else if (props.event.kind === 1984) {
-  rest = `👁️つうほうしますた！\n${rest}`;
+  rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {
