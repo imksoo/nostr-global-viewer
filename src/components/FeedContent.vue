@@ -8,6 +8,7 @@ import { myBlockedEvents } from '../profile';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
+import FeedReplies from './FeedReplies.vue';
 
 const props = defineProps({
   event: {
@@ -124,7 +125,7 @@ if (props.event.kind === 6) {
   for (let i = 0; i < props.event.tags.length; ++i) {
     const t = props.event.tags[i];
     if (t[0] === 'e') {
-      note += Nostr.nip19.noteEncode(t[1]) + "\n";
+      note = Nostr.nip19.noteEncode(t[1]);
     }
   }
   rest = `📬 りぽすと！\n${note}`;
@@ -342,8 +343,9 @@ while (rest.length > 0) {
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
           <template v-if="props.getEvent(token.id)">
-            <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"
-              v-if="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
+            <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
+            <FeedReplies v-bind:event="props.getEvent(token.id)" :get-profile="props.getProfile"
+              :get-event="props.getEvent"></FeedReplies>
             <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
               :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
               :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"
