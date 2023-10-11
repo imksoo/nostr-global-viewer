@@ -124,7 +124,7 @@ if (props.event.kind === 6) {
   for (let i = 0; i < props.event.tags.length; ++i) {
     const t = props.event.tags[i];
     if (t[0] === 'e') {
-      note += Nostr.nip19.noteEncode(t[1]) + "\n";
+      note = Nostr.nip19.noteEncode(t[1]);
     }
   }
   rest = `📬りぽすと！\n${note}`;
