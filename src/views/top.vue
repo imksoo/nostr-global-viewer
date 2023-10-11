@@ -214,13 +214,12 @@ watch(() => route.query, async (newQuery) => {
       // 指定されたイベントIDに関連する投稿を表示するスレッドモード
       pool.subscribe(
         [{
-          kinds: [1, 6, 7],
           ids: [noteId.value],
         }, {
           kinds: [1, 6, 7],
           '#e': [noteId.value],
         }],
-        [...new Set(normalizeUrls([...feedRelays]))],
+        [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
         async (ev, _isAfterEose, _relayURL) => {
           addEvent(ev);
         },
@@ -240,7 +239,7 @@ watch(() => route.query, async (newQuery) => {
           limit: countOfDisplayEvents / 2,
           authors: [npubId.value]
         }],
-        [...new Set(normalizeUrls([...feedRelays]))],
+        [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
         async (ev, _isAfterEose, _relayURL) => {
           addEvent(ev);
           npubModeText.value = `接続中のリレーから直近の ${events.value.length} 件の投稿を表示しています。(今日へ)`;
