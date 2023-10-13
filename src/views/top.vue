@@ -857,9 +857,8 @@ async function collectFollowsAndSubscribe() {
   for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
     const followList = myFollows.value.slice(begin, subscribeMaxCount);
 
-    pool.subscribe([
-      { kinds: [1, 5], authors: followList, limit: 20 },
-    ],
+    pool.subscribe(
+      [{ kinds: [1, 5], authors: followList, limit: 20 }],
       [...new Set(normalizeUrls(myReadRelays.value))],
       async (ev, _isAfterEose, _relayURL) => {
         if (!Nostr.verifySignature(ev)) {
@@ -881,7 +880,8 @@ async function collectFollowsAndSubscribe() {
             pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays.value])]));
             break;
         }
-      }
+      },
+      0
     );
   }
 }
@@ -926,7 +926,7 @@ function subscribeReactions() {
         }
       }
     },
-    undefined,
+    0,
     async () => {
       firstReactionFetchedRelays++;
       if (firstReactionFetchedRelays > myReadRelays.value.length / 2) {
