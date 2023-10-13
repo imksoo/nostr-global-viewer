@@ -616,6 +616,7 @@ function getProfile(pubkey: string): Profile {
 
   if (robohashMode.value) {
     prof.picture = `https://robohash.org/${Nostr.nip19.npubEncode(pubkey)}.png?set=${robohashMode.value}`
+    prof.created_at = 0;
   }
   return prof;
 }
