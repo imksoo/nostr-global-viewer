@@ -36,6 +36,7 @@ import HeaderProfile from "../components/HeaderProfile.vue"
 const route = useRoute();
 let sushiMode = ref(false);
 let mahjongMode = ref(false);
+let robohashMode = ref("");
 
 let firstFetching = true;
 let autoSpeech = ref(false);
@@ -128,6 +129,9 @@ watch(() => route.query, async (newQuery) => {
 
   sushiMode.value = (route.query.sushi === "on");
   mahjongMode.value = (route.query.mahjong === "on");
+  if (typeof route.query.robohash === "string" && route.query.robohash) {
+    robohashMode.value = route.query.robohash.toString();
+  }
   for (let key in newQuery) {
     if (key.match(nostrRegex)) {
       try {
@@ -596,17 +600,24 @@ function getProfile(pubkey: string): Profile {
     return getRandomProfile(pubkey, sushiMode.value, mahjongMode.value);
   }
 
+  let prof;
   if (!profiles.value.has(pubkey)) {
     cacheMissHitPubkeys.add(pubkey);
-    return {
+    prof = {
       pubkey: pubkey,
       picture: "https://placehold.jp/60x60.png",
       display_name: "",
       name: "",
       created_at: 0,
     };
+  } else {
+    prof = profiles.value.get(pubkey);
   }
-  return profiles.value.get(pubkey);
+
+  if (robohashMode.value) {
+    prof.picture = `https://robohash.org/${Nostr.nip19.npubEncode(pubkey)}.png?set=${robohashMode.value}`
+  }
+  return prof;
 }
 
 async function collectProfiles(force = false) {
