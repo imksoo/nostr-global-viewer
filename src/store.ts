@@ -18,7 +18,6 @@ export const profileRelays = [
   "wss://r.kojira.io/",
   "wss://relay-jp.nostr.wirednet.jp/",
   "wss://relay-jp.shino3.net/",
-  "wss://relay.current.fyi/",
   "wss://relay.damus.io/",
   "wss://relay.nostr.band/",
   "wss://relay.nostr.wirednet.jp/",
