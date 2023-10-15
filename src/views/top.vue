@@ -679,9 +679,12 @@ setInterval(() => {
   const diskProfiles = new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"));
   const mergedProfiles = new Map<string, any>([...diskProfiles, ...profiles.value]);
   profiles.value = mergedProfiles;
+
+  let storeProfiles = Array.from(mergedProfiles.entries());
+  storeProfiles = storeProfiles.filter((v) => (v[1].created_at > 0));
   localStorage.setItem(
     "profiles",
-    JSON.stringify(Array.from(mergedProfiles.entries()))
+    JSON.stringify(storeProfiles)
   );
 }, 8 * 1000);
 
