@@ -15,6 +15,7 @@ export const profileRelays = [
   "wss://nrelay-jp.c-stellar.net",
   "wss://nrelay.c-stellar.net",
   "wss://offchain.pub/",
+  "wss://purplepag.es/",
   "wss://r.kojira.io/",
   "wss://relay-jp.nostr.wirednet.jp/",
   "wss://relay-jp.shino3.net/",
