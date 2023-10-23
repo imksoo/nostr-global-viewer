@@ -622,7 +622,7 @@ function getProfile(pubkey: string): Profile {
 }
 
 async function collectProfiles(force = false) {
-  if (!force || cacheMissHitPubkeys.size === 0) {
+  if (cacheMissHitPubkeys.size === 0 && !force) {
     return;
   }
 
