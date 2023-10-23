@@ -677,14 +677,20 @@ setInterval(() => { collectProfiles(true); }, forceProfileUpdateInterval * 1000)
 setInterval(() => {
   // ローカルストレージにプロフィール情報を保存しておく
   const diskProfiles = new Map<string, any>(JSON.parse(localStorage.getItem("profiles") ?? "[]"));
-  const mergedProfiles = new Map<string, any>([...diskProfiles, ...profiles.value]);
-  profiles.value = mergedProfiles;
 
-  let storeProfiles = Array.from(mergedProfiles.entries());
-  storeProfiles = storeProfiles.filter((v) => (v[1].created_at > 0));
+  profiles.value.forEach((val, key) => {
+    if (val.created_at > 0) {
+      if (diskProfiles.has(key) && diskProfiles.get(key).created_at < val.created_at) {
+        diskProfiles.set(key, val);
+      } else {
+        diskProfiles.set(key, val);
+      }
+    }
+  });
+
   localStorage.setItem(
     "profiles",
-    JSON.stringify(storeProfiles)
+    JSON.stringify(Array.from(profiles.value.entries()))
   );
 }, 8 * 1000);
 
