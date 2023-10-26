@@ -10,7 +10,8 @@ const props = defineProps({
 <template>
   <div class="p-index-relay">
     <h2 class="p-index-relay__head">リレーの接続状態 (プロフ取得＆イベント投稿用)</h2>
-    <p class="p-index-relay-notice">wss://eu.rbr.bio と wss://us.rbr.bio は本サイトの内部で利用している nostr-relaypool がプロフ取得に既定で利用するリレーです。</p>
+    <p class="p-index-relay-notice">wss://eu.rbr.bio と wss://us.rbr.bio は本サイトの内部で利用している nostr-relaypool
+      がプロフ取得に既定で利用するリレーです。</p>
     <div class="p-index-relay-status-list">
       <p v-for="[url, status] in props.relays" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
         <span>{{ url }}</span>
@@ -37,46 +38,46 @@ const props = defineProps({
   }
 
   &-list {
-    font-size: 4px;
+    font-size: 10px;
   }
 
   &-status-0 ::before {
-    content: "🆖 "
+    content: "❌ "
   }
 
   &-status-0 {
     // Connecting
-    font-size: 4px;
+    font-size: 10px;
     color: red;
   }
 
   &-status-1 ::before {
-    content: "🆗 ";
+    content: "🟢 ";
   }
 
   &-status-1 {
     // OPEN
-    font-size: 4px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 1);
   }
 
   &-status-2 ::before {
-    content: "🆖 "
+    content: "🟡 "
   }
 
   &-status-2 {
     // Closing
-    font-size: 4px;
-    color: red;
+    font-size: 10px;
+    color: yellow;
   }
 
   &-status-3 ::before {
-    content: "🆖 "
+    content: "❌ "
   }
 
   &-status-3 {
     // Closed
-    font-size: 4px;
+    font-size: 10px;
     color: red;
   }
 }
