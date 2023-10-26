@@ -627,7 +627,7 @@ async function collectProfiles(force = false) {
   }
 
   const pubkeys = [...new Set<string>([...events.value.map(e => e.pubkey), ...cacheMissHitPubkeys])];
-  pool.subscribe(
+  const unsub = pool.subscribe(
     [{
       kinds: [0],
       authors: pubkeys,
@@ -667,6 +667,7 @@ async function collectProfiles(force = false) {
     undefined,
     { unsubscribeOnEose: true }
   );
+  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 5 * 1000);
 }
 setInterval(() => { collectProfiles(false); }, 2 * 1000);
 
