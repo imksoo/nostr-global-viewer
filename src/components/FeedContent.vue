@@ -131,6 +131,9 @@ if (props.event.kind === 6) {
   rest = `📬 りぽすと！\n${note}`;
 } else if (props.event.kind === 1984) {
   rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
+} else if (props.event.kind === 40) {
+  const content = JSON.parse(rest);
+  rest = `パブリックチャット はじめますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {

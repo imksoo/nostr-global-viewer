@@ -97,6 +97,26 @@ function truncateContent(content: string | undefined): string | undefined {
         </span>
       </a>
     </template>
+    <template v-else-if="tag[0] === 'e' && getEvent(tag[1])?.kind === 40">
+      パブリックチャット
+      <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
+        <span class="c-feed-reply-link" v-if="JSON.parse(getEvent(tag[1])?.content)">{{
+          truncateContent(JSON.parse(getEvent(tag[1])?.content).name)
+        }}</span>
+        <span class="c-feed-reply-link" v-else>{{
+          tag[1].substring(tag[1].length - 8)
+        }}</span>
+      </a>
+      <span>&nbsp;</span>
+      <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
+        <span class="c-feed-reply-link" v-if="JSON.parse(getEvent(tag[1])?.content)">{{
+          truncateContent(JSON.parse(getEvent(tag[1])?.content).about)
+        }}</span>
+        <span class="c-feed-reply-link" v-else>{{
+          tag[1].substring(tag[1].length - 8)
+        }}</span>
+      </a>
+    </template>
     <template v-else-if="tag[0] === 'e'">
       投稿
       <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
