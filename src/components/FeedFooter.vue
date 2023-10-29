@@ -146,7 +146,7 @@ function getLinkUrl(): string {
       <span>
         <a target="_blank" :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
           {{ new Date(props.event.created_at * 1000).toLocaleString("ja-JP", {
-            month: "numeric", day: "numeric", hour:
+            year: "numeric", month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
           }) }}
         </a>
