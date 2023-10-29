@@ -216,6 +216,7 @@ watch(() => route.query, async (newQuery) => {
   if ((!npubId.value && !noteId.value) || (noteId.value) || (npubId.value && npubDateOrMonth.value === "")) {
     if (noteId.value) {
       // 指定されたイベントIDに関連する投稿を表示するスレッドモード
+      cutoffMode.value = false;
       pool.subscribe(
         [{
           ids: [noteId.value],

@@ -97,7 +97,7 @@ function truncateContent(content: string | undefined): string | undefined {
         </span>
       </a>
     </template>
-    <template v-else-if="tag[0] === 'e' && getEvent(tag[1])?.kind === 40">
+    <template v-else-if="tag[0] === 'e' && (getEvent(tag[1])?.kind === 40 || getEvent(tag[1])?.kind === 41)">
       パブリックチャット
       <a target="_blank" :href="getEventLink(tag[1])" :title="getEvent(tag[1])?.content">
         <span class="c-feed-reply-link" v-if="JSON.parse(getEvent(tag[1])?.content)">{{

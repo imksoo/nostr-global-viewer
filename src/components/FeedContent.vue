@@ -134,6 +134,9 @@ if (props.event.kind === 6) {
 } else if (props.event.kind === 40) {
   const content = JSON.parse(rest);
   rest = `パブリックチャット はじめますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
+} else if (props.event.kind === 41) {
+  const content = JSON.parse(rest);
+  rest = `パブリックチャット 編集しますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {
