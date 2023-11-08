@@ -948,7 +948,8 @@ function subscribeReactions() {
   );
 }
 
-let draftEvent = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
+type BlankEvent = ReturnType<typeof Nostr.getBlankEvent>;
+let draftEvent = ref<BlankEvent>(Nostr.getBlankEvent(Nostr.Kind.Text));
 let editingTags = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
 async function post() {
   if (!draftEvent.value.content) {
@@ -984,7 +985,6 @@ function openReplyPost(reply: Nostr.Event): void {
   // 投稿欄をすべて空っぽにする
   draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
   if (reply.kind === 42) {
-    // @ts-ignore
     draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.ChannelMessage);
   }
   const parsedTags = Nostr.nip10.parse(reply);
