@@ -78,6 +78,9 @@ function truncateContent(content: string | undefined): string | undefined {
 
 </script>
 <template>
+  <!-- p class="c-feed-reply">
+    kind : {{ event.kind }}
+  </p -->
   <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー

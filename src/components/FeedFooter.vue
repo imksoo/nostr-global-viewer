@@ -118,7 +118,7 @@ function getLinkUrl(): string {
       </span>
     </p>
     <p class="c-feed-reply">
-      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { openReplyPost(props.event) }">
+      <span v-if="isLogined && (props.event.kind == 1  || props.event.kind == 42)" @click="(_$event) => { openReplyPost(props.event) }">
         <mdicon name="reply" :height="14" title="Reply" />
       </span>
     </p>

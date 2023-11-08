@@ -983,6 +983,10 @@ async function postEvent(event: Nostr.Event) {
 function openReplyPost(reply: Nostr.Event): void {
   // 投稿欄をすべて空っぽにする
   draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  if (reply.kind === 42) {
+    // @ts-ignore
+    draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.ChannelMessage);
+  }
   const parsedTags = Nostr.nip10.parse(reply);
   if (parsedTags.root) {
     draftEvent.value.tags.push(['e', parsedTags.root.id, "", "root"]);
