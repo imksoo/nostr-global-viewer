@@ -5,6 +5,8 @@ import { RelayPool } from "nostr-relaypool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
+import type { Nip07 } from "nostr-typedef";
+
 import { feedRelays, profileRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived } from "../store";
 import {
   myPubkey,
@@ -78,7 +80,6 @@ let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
 function collectRyuusokuChan() {
   const poolRiver = new RelayPool(normalizeUrls(feedRelays), {});
   poolRiver.subscribe(
-    // @ts-ignore
     [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
     [...new Set(normalizeUrls(feedRelays))],
     (ev, _isAfterEose, _relayURL) => {
@@ -695,6 +696,7 @@ setInterval(() => {
   );
 }, 8 * 1000);
 
+let windowNostr: Nip07.Nostr | null = null;
 let logined = ref(false);
 let isPostOpen = ref(false);
 
@@ -702,16 +704,16 @@ let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
 async function login() {
   // @ts-ignore
-  myPubkey.value = (await window.nostr?.getPublicKey()) ?? "";
+  windowNostr = window.nostr;
+
+  myPubkey.value = (await windowNostr?.getPublicKey()) ?? "";
 
   if (myPubkey.value) {
     logined.value = true;
     countOfDisplayEvents *= 2;
 
-    // @ts-ignore
-    if (window.nostr?.getRelays) {
-      // @ts-ignore
-      const firstRelays = await window.nostr?.getRelays() as { [url: string]: { read: boolean, write: boolean } };
+    if (windowNostr?.getRelays) {
+      const firstRelays = await windowNostr.getRelays();
       console.log("NIP-07 First relay = ", JSON.stringify(firstRelays));
 
       if (false && Object.keys(firstRelays).length === 0) {
@@ -745,7 +747,8 @@ function tryAutoLogin() {
   let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
     // @ts-ignore
-    if (window.nostr) {
+    windowNostr = window.nostr;
+    if (windowNostr) {
       login();
       clearInterval(checkNIP07Extention);
     }
@@ -818,17 +821,18 @@ function collectMyRelay() {
 function collectMyBlockList() {
   const unsub = pool.subscribe(
     [{
-      // @ts-ignore
       kinds: [10000, 30000],
       authors: [myPubkey.value],
     }],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     async (ev, _isAfterEose, _relayURL) => {
-      // @ts-ignore
       if (myBlockCreatedAt.value < ev.created_at && ((ev.kind === 10000) || (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
         myBlockCreatedAt.value = ev.created_at;
-        // @ts-ignore
-        const blockListJSON = (await window.nostr?.nip04.decrypt(myPubkey.value, ev.content)) || "[]";
+
+        let blockListJSON = "[]";
+        if (windowNostr && windowNostr.nip04) {
+          blockListJSON = (await windowNostr?.nip04.decrypt(myPubkey.value, ev.content))
+        }
         const blockList = JSON.parse(blockListJSON);
         let blocks: string[] = [];
         for (let i = 0; i < blockList.length; ++i) {
@@ -961,7 +965,6 @@ async function post() {
   const ev = JSON.parse(JSON.stringify(draftEvent.value));
   ev.created_at = Math.floor(Date.now() / 1000);
 
-  // @ts-ignore
   await postEvent(ev);
 
   isPostOpen.value = false;
@@ -969,16 +972,17 @@ async function post() {
 }
 
 async function postEvent(event: Nostr.Event) {
-  // @ts-ignore
-  event = await window.nostr?.signEvent(JSON.parse(JSON.stringify(event)));
+  if (windowNostr) {
+    event = await windowNostr.signEvent(JSON.parse(JSON.stringify(event)));
 
-  pool.publish(event, normalizeUrls(myWriteRelays.value));
+    pool.publish(event, normalizeUrls(myWriteRelays.value));
 
-  if (soundEffect.value) {
-    playActionSound();
+    if (soundEffect.value) {
+      playActionSound();
+    }
+
+    addEvent(event);
   }
-
-  addEvent(event);
 }
 
 function openReplyPost(reply: Nostr.Event): void {
