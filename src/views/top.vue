@@ -170,6 +170,8 @@ watch(() => route.query, async (newQuery) => {
           npubDateOrMonth.value = "month";
         }
       }
+    } else if (key === 'q') {
+      searchWords.value = route.query[key]?.toString() || "";
     }
   }
 

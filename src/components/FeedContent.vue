@@ -115,7 +115,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
   }
 }
 
-const regex = /(:\w+:|#\[\d+\]|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
+const regex = /(:\w+:|#\[\d+\]|#[^\s!@#$%^&*()=+./,\[{\]};:'"?><]+|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
 let rest = props.event.content;
 let tokens = ref<{ type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; ogp?: any; }[]>([]);
@@ -213,6 +213,9 @@ while (rest.length > 0) {
             tokens.value.push({ type: "text", content: text });
           }
         }
+      } else if (text.startsWith('#')) {
+        const href = '?q=' + text.replace('#', '%23');
+        tokens.value.push({ type: "link", href: href, content: decodeURI(text) });
       } else if (text.startsWith('http')) {
         try {
           const url = new URL(text);
@@ -339,7 +342,7 @@ while (rest.length > 0) {
       </template>
       <template v-else-if="token?.type === 'link'">
         <a :href="token.href" target="_blank" referrerpolicy="no-referrer">{{ token.content }}</a>
-        <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
+        <a :href="token.href" target="_blank" referrerpolicy="no-referrer" v-if="token.ogp">
           <div class="c-feed-content-ogp" v-if="token.ogp.title">
             <div class="c-feed-content-ogp-title">{{ token.ogp.title }}</div>
             <div class="c-feed-content-ogp-box">
