@@ -115,7 +115,7 @@ for (let i = 0; i < props.event.tags.length; ++i) {
   }
 }
 
-const regex = /(:\w+:|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
+const regex = /(:\w+:|#\[\d+\]|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
 let rest = props.event.content;
 let tokens = ref<{ type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; ogp?: any; }[]>([]);
@@ -192,6 +192,24 @@ while (rest.length > 0) {
           tokens.value.push({ type: "emoji", content: emojiName, src: emojiMap.get(emojiName) });
         } else {
           tokens.value.push({ type: "text", content: text });
+        }
+      } else if (text.startsWith('#[')) {
+        const num = parseInt(text.slice(2, -1));
+        if (0 <= num && num < props.event.tags.length) {
+          const t = props.event.tags[num];
+          if (t[0] === 'p') {
+            const href = '?' + Nostr.nip19.npubEncode(t[1]);
+            if (props.getProfile) {
+              const profile = props.getProfile(t[1]);
+              let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+              if (name.length > 35) {
+                name = `${name.substring(0, 35)}...`;
+              }
+              tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
+            } else {
+              tokens.value.push({ type: 'nostr', content: text, href });
+            }
+          }
         }
       } else if (text.startsWith('http')) {
         try {
