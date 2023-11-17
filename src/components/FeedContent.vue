@@ -209,6 +209,8 @@ while (rest.length > 0) {
             } else {
               tokens.value.push({ type: 'nostr', content: text, href });
             }
+          } else {
+            tokens.value.push({ type: "text", content: text });
           }
         }
       } else if (text.startsWith('http')) {
