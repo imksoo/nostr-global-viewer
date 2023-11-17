@@ -1047,7 +1047,9 @@ watch(isPostOpen, async (isPostOpened) => {
       noteTextarea.value.selectionStart = 0;
       noteTextarea.value.selectionEnd = 0;
 
-      draftEvent.value.content = searchWords.value + " " + draftEvent.value.content;
+      if (searchWords.value) {
+        draftEvent.value.content = searchWords.value + " " + draftEvent.value.content;
+      }
     }
     extractTags();
   }
