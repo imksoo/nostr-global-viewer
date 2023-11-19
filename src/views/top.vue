@@ -942,7 +942,7 @@ function subscribeReactions() {
         }
       }
     },
-    0,
+    undefined,
     async () => {
       firstReactionFetchedRelays++;
       if (firstReactionFetchedRelays > myReadRelays.value.length / 2) {
