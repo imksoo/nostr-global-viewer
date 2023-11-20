@@ -44,6 +44,7 @@ let firstFetching = true;
 let autoSpeech = ref(false);
 let volume = ref("0.5");
 let searchWords = ref("");
+let searchEventType = ref("all");
 let soundEffect = ref(true);
 
 const totalNumberOfEventsToKeep = 5000;
@@ -1126,9 +1127,48 @@ function searchAndBlockFilter() {
       isBlocked = true;
     }
 
-    const searchMatched = searchSubstring(e.content, searchWords.value);
+    if (isBlocked) {
+      return false;
+    }
 
-    return !isBlocked && searchMatched;
+    switch (searchEventType.value) {
+      case "all": {
+        return searchSubstring(e.content, searchWords.value);
+      }
+      case "fav": {
+        return e.kind === 7;
+      }
+      case "repost": {
+        return e.kind === 6;
+      }
+      case "chat": {
+        if (e.kind === 40 || e.kind === 41 || e.kind === 42) {
+          return searchSubstring(e.content, searchWords.value);
+        }
+      }
+      case "reply": {
+        if (e.pubkey !== myPubkey.value && (e.kind === 1 || e.kind === 42 )) {
+          for (let i = 0; i < e.tags.length; ++i) {
+            const t = e.tags[i];
+            if (t[0] === "p" && t[1] === myPubkey.value) {
+              return searchSubstring(e.content, searchWords.value);
+            }
+          }
+        }
+        return false;
+      }
+      case "reaction": {
+        if (e.pubkey !== myPubkey.value && (e.kind === 6 || e.kind === 7)) {
+          for (let i = 0; i < e.tags.length; ++i) {
+            const t = e.tags[i];
+            if (t[0] === "p" && t[1] === myPubkey.value) {
+              return true;
+            }
+          }
+        }
+        return false;
+      }
+    }
   });
   if (cutoffMode.value) {
     events.value = events.value.slice(0, countOfDisplayEvents);
@@ -1412,7 +1452,8 @@ function gotoTop() {
         <AutoLoginControl v-model:autoLogin="autoLogin"></AutoLoginControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
-        <SearchWordControl v-model:search-words="searchWords" v-on:change="searchAndBlockFilter()"></SearchWordControl>
+        <SearchWordControl v-model:search-words="searchWords" v-model:event-type="searchEventType"
+          v-on:change="searchAndBlockFilter()"></SearchWordControl>
         <RiverStatus v-bind:data="ryuusokuChanData" v-if="isKirinoRiver"></RiverStatus>
         <RelayStatus v-bind:relays="relayStatus"></RelayStatus>
       </div>
