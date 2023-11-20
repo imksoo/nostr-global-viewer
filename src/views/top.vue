@@ -15,7 +15,7 @@ import {
   myBlockCreatedAt, myBlockList, myBlockedEvents,
 } from "../profile";
 
-import { playActionSound, playReactionSound } from '../hooks/usePlaySound';
+import { playActionSound, playETWSSound, playReactionSound } from '../hooks/usePlaySound';
 import { getRandomProfile } from '../hooks/useEmojiProfiles';
 import { speakNote } from '../hooks/useSpeakNote';
 import { createFavEvent, createRepostEvent } from '../hooks/useFavRepost';
@@ -510,12 +510,16 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
   searchAndBlockFilter();
   if (
     !firstFetching &&
-    autoSpeech.value &&
     events.value.some((obj) => {
       return obj.id === event.id;
     })
   ) {
-    speakNote(event, getProfile(event.pubkey), volume.value.toString());
+    if (autoSpeech.value) {
+      speakNote(event, getProfile(event.pubkey), volume.value.toString());
+    }
+    if (soundEffect.value && event.pubkey === "9f77d173dcd94cc4243d36883b157f8c3283051dc6bd237b1c5ac400fb90cecb") {
+      playETWSSound();
+    }
   }
 }
 
