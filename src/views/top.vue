@@ -1145,6 +1145,7 @@ function searchAndBlockFilter() {
         if (e.kind === 40 || e.kind === 41 || e.kind === 42) {
           return searchSubstring(e.content, searchWords.value);
         }
+        return false;
       }
       case "reply": {
         if (e.pubkey !== myPubkey.value && (e.kind === 1 || e.kind === 42 )) {
