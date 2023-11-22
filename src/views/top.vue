@@ -496,10 +496,13 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
   const now = Math.floor((new Date()).getTime() / 1000);
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
-  if (firstFetching || npubId.value) {
-    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
-  } else if (noteId.value) {
+
+  if (noteId.value) {
     eventsToSearch.value = Nostr.utils.insertEventIntoAscendingList(eventsToSearch.value, ev) as NostrEvent[];
+  } else if (npubId.value) {
+    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  } else if (firstFetching) {
+    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
   } else {
     if (ev.created_at < now - 600) {
       eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
