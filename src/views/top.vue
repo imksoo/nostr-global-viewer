@@ -493,12 +493,14 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
     return;
   }
 
+  const now = Math.floor((new Date()).getTime() / 1000);
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
-  if (firstFetching || npubId.value || noteId.value) {
+  if (firstFetching || npubId.value) {
     eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+  } else if (noteId.value) {
+    eventsToSearch.value = Nostr.utils.insertEventIntoAscendingList(eventsToSearch.value, ev) as NostrEvent[];
   } else {
-    const now = Math.floor((new Date()).getTime() / 1000);
     if (ev.created_at < now - 600) {
       eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
     } else {
@@ -518,7 +520,7 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
     if (autoSpeech.value) {
       speakNote(event, getProfile(event.pubkey), volume.value.toString());
     }
-    if (soundEffect.value && event.pubkey === "9f77d173dcd94cc4243d36883b157f8c3283051dc6bd237b1c5ac400fb90cecb") {
+    if (soundEffect.value && now - 60 < ev.created_at && event.pubkey === "9f77d173dcd94cc4243d36883b157f8c3283051dc6bd237b1c5ac400fb90cecb") {
       playETWSSound();
     }
   }
@@ -1148,7 +1150,7 @@ function searchAndBlockFilter() {
         return false;
       }
       case "reply": {
-        if (e.pubkey !== myPubkey.value && (e.kind === 1 || e.kind === 42 )) {
+        if (e.pubkey !== myPubkey.value && (e.kind === 1 || e.kind === 42)) {
           for (let i = 0; i < e.tags.length; ++i) {
             const t = e.tags[i];
             if (t[0] === "p" && t[1] === myPubkey.value) {
