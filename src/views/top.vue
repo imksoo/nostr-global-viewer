@@ -483,7 +483,7 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
   }
 }
 
-function addEvent(event: NostrEvent | Nostr.Event): void {
+function addEvent(event: NostrEvent | Nostr.Event, addFeeds : boolean = true): void {
   if (!Nostr.verifySignature(event)) {
     console.log('Invalid nostr event, signature invalid', event);
     return;
@@ -496,6 +496,10 @@ function addEvent(event: NostrEvent | Nostr.Event): void {
   const now = Math.floor((new Date()).getTime() / 1000);
   const ev = event as unknown as NostrEvent;
   eventsReceived.value.set(ev.id, ev);
+
+  if (addFeeds === false) {
+    return;
+  }
 
   const rootKind = noteId.value ? getEvent(noteId.value)?.kind || 0 : 0;
 
@@ -579,7 +583,7 @@ async function collectEvents() {
       }
       cacheMissHitEventIds.delete(ev.id);
       reqEventIds.delete(ev.id);
-      addEvent(ev);
+      addEvent(ev, false);
 
       if (!eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
         pool.publish(ev, normalizeUrls(feedRelays));
