@@ -9,6 +9,7 @@ import { myBlockedEvents } from '../profile';
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
 import FeedReplies from './FeedReplies.vue';
+import { mdiPrinterPosPlusOutline } from '@mdi/js';
 
 const props = defineProps({
   event: {
@@ -126,9 +127,20 @@ if (props.event.kind === 6) {
     const t = props.event.tags[i];
     if (t[0] === 'e') {
       note = Nostr.nip19.noteEncode(t[1]);
+      break;
     }
   }
   rest = `📬 りぽすと！\n${note}`;
+} else if (props.event.kind === 7) {
+  let note = "";
+  for (let i = 0; i < props.event.tags.length; ++i) {
+    const t = props.event.tags[i];
+    if (t[0] === 'e') {
+      note = Nostr.nip19.noteEncode(t[1]);
+      break;
+    }
+  }
+  rest = `${props.event.content} ふぁぼ！\n${note}`;
 } else if (props.event.kind === 1984) {
   rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
 } else if (props.event.kind === 40) {
@@ -432,7 +444,7 @@ while (rest.length > 0) {
 }
 
 .c-feed-content-kind7 {
-  font-size: 2.0em;
+  font-size: 1em;
 }
 
 .c-feed-content-kind1984 {
