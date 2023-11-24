@@ -130,7 +130,7 @@ if (props.event.kind === 6) {
       break;
     }
   }
-  rest = `📬 りぽすと！\n${note}`;
+  rest = `📬\n${note}`;
 } else if (props.event.kind === 7) {
   let note = "";
   for (let i = 0; i < props.event.tags.length; ++i) {
@@ -140,7 +140,7 @@ if (props.event.kind === 6) {
       break;
     }
   }
-  rest = `${props.event.content} ふぁぼ！\n${note}`;
+  rest = `${props.event.content}\n${note}`;
 } else if (props.event.kind === 1984) {
   rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
 } else if (props.event.kind === 40) {
