@@ -600,9 +600,7 @@ async function collectEvents() {
   );
   const timeout = setTimeout(() => {
     unsub();
-    reqEventIds.forEach((id) => {
-      cacheMissHitEventIds.delete(id);
-    });
+    // reqEventIds.forEach((id) => { cacheMissHitEventIds.delete(id); });
     console.log(`collectEvents(${timeout}) => Timeout`);
   }, 10 * 1000);
 }
