@@ -600,9 +600,7 @@ async function collectEvents() {
   );
   const timeout = setTimeout(() => {
     unsub();
-    reqEventIds.forEach((id) => {
-      cacheMissHitEventIds.delete(id);
-    });
+    // reqEventIds.forEach((id) => { cacheMissHitEventIds.delete(id); });
     console.log(`collectEvents(${timeout}) => Timeout`);
   }, 10 * 1000);
 }
@@ -1056,7 +1054,7 @@ function openQuotePost(repost: Nostr.Event): void {
   // 投稿欄をすべて空っぽにする
   draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
   // 投稿欄にnoteidを追加する
-  draftEvent.value.content = "\n\nnostr:" + Nostr.nip19.noteEncode(repost.id);
+  draftEvent.value.content = "\nnostr:" + Nostr.nip19.noteEncode(repost.id);
 
   isPostOpen.value = true;
 }
