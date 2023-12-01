@@ -4,12 +4,11 @@ import * as Nostr from "nostr-tools";
 import axios from 'axios';
 import parser from 'html-dom-parser';
 
-import { myBlockedEvents } from '../profile';
+import { myBlockedEvents, myBlockList } from '../profile';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
 import FeedReplies from './FeedReplies.vue';
-import { mdiPrinterPosPlusOutline } from '@mdi/js';
 
 const props = defineProps({
   event: {
@@ -149,6 +148,18 @@ if (props.event.kind === 6) {
 } else if (props.event.kind === 41) {
   const content = JSON.parse(rest);
   rest = `パブリックチャット 編集しますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
+} else {
+  // ミュートユーザーのリプライを非表示にする
+  for (let i = 0; i < props.event.tags.length; ++i) {
+    const tag = props.event.tags[i];
+    if (tag[0] === 'p') {
+      myBlockList.value.forEach((block) => {
+        if (block === tag[1]) {
+          rest = `🔇 Muted user reply hidden.`;
+        }
+      });
+    }
+  }
 }
 
 async function getOgp(url: string, ogp: Ref<{}>) {
