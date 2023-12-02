@@ -539,6 +539,7 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
 
 let cacheMissHitEventIds = new Set<string>();
 let cacheBlacklistEventIds = new Set<string>();
+let cacheMissHitCountByEventId = new Map<string, number>();
 
 function getEvent(id: string): Nostr.Event | undefined {
   if (myBlockedEvents.value.has(id)) {
@@ -595,12 +596,23 @@ async function collectEvents() {
       }
     },
     undefined,
-    undefined,
+    () => {
+      if (reqEventIds.size === 0) {
+        unsub();
+        clearTimeout(timeout);
+      }
+    },
     { unsubscribeOnEose: true }
   );
   const timeout = setTimeout(() => {
     unsub();
-    // reqEventIds.forEach((id) => { cacheMissHitEventIds.delete(id); });
+    reqEventIds.forEach((id) => {
+      cacheMissHitCountByEventId.set(id, (cacheMissHitCountByEventId.get(id) ?? 0) + 1);
+      if (cacheMissHitCountByEventId.get(id) ?? 0 > 30) {
+        cacheBlacklistEventIds.add(id);
+        console.log("Blocked by cache miss:", id);
+      }
+    });
     console.log(`collectEvents(${timeout}) => Timeout`);
   }, 10 * 1000);
 }
@@ -689,12 +701,20 @@ async function collectProfiles(force = false) {
       }
     },
     undefined,
-    undefined,
+    () => {
+      if (cacheMissHitPubkeys.size === 0) {
+        unsub();
+        clearTimeout(timeout);
+      }
+    },
     { unsubscribeOnEose: true }
   );
-  const timeout = setTimeout(() => { unsub(); console.log(`collectProfiles(${timeout}) => Timeout`); }, 5 * 1000);
+  const timeout = setTimeout(() => {
+    unsub();
+    console.log(`collectProfiles(${timeout}) => Timeout, ${cacheMissHitPubkeys.size} pubkeys remain`);
+  }, 5 * 1000);
 }
-setInterval(() => { collectProfiles(false); }, 2 * 1000);
+setInterval(() => { collectProfiles(false); }, 5 * 1000);
 
 const forceProfileUpdateInterval = 29;
 setInterval(() => { collectProfiles(true); }, forceProfileUpdateInterval * 1000);
