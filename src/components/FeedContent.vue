@@ -117,50 +117,200 @@ for (let i = 0; i < props.event.tags.length; ++i) {
 
 const regex = /(:\w+:|#\[\d+\]|#[^\s!@#$%^&*()=+./,\[{\]};:'"?><]+|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
-let rest = props.event.content;
-let tokens = ref<{ type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; ogp?: any; }[]>([]);
+function getTokens() {
+  let rest = props.event.content;
+  let tokens = ref<{ type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; ogp?: any; }[]>([]);
 
-if (props.event.kind === 6) {
-  let note = "";
-  for (let i = 0; i < props.event.tags.length; ++i) {
-    const t = props.event.tags[i];
-    if (t[0] === 'e') {
-      note = Nostr.nip19.noteEncode(t[1]);
-      break;
+  if (props.event.kind === 6) {
+    let note = "";
+    for (let i = 0; i < props.event.tags.length; ++i) {
+      const t = props.event.tags[i];
+      if (t[0] === 'e') {
+        note = Nostr.nip19.noteEncode(t[1]);
+        break;
+      }
+    }
+    rest = `📬\n${note}`;
+  } else if (props.event.kind === 7) {
+    let note = "";
+    for (let i = 0; i < props.event.tags.length; ++i) {
+      const t = props.event.tags[i];
+      if (t[0] === 'e') {
+        note = Nostr.nip19.noteEncode(t[1]);
+        break;
+      }
+    }
+    rest = `${props.event.content}\n${note}`;
+  } else if (props.event.kind === 1984) {
+    rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
+  } else if (props.event.kind === 40) {
+    const content = JSON.parse(rest);
+    rest = `パブリックチャット はじめますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
+  } else if (props.event.kind === 41) {
+    const content = JSON.parse(rest);
+    rest = `パブリックチャット 編集しますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
+  } else {
+    // ミュートユーザーのリプライを非表示にする
+    for (let i = 0; i < props.event.tags.length; ++i) {
+      const tag = props.event.tags[i];
+      if (tag[0] === 'p') {
+        myBlockList.value.forEach((block) => {
+          if (block === tag[1]) {
+            rest = `🔇 Muted event (reply to blocked user)`;
+          }
+        });
+      }
     }
   }
-  rest = `📬\n${note}`;
-} else if (props.event.kind === 7) {
-  let note = "";
-  for (let i = 0; i < props.event.tags.length; ++i) {
-    const t = props.event.tags[i];
-    if (t[0] === 'e') {
-      note = Nostr.nip19.noteEncode(t[1]);
-      break;
-    }
-  }
-  rest = `${props.event.content}\n${note}`;
-} else if (props.event.kind === 1984) {
-  rest = `👁️ つうほうしますた！ 🫵🏽\n${rest}`;
-} else if (props.event.kind === 40) {
-  const content = JSON.parse(rest);
-  rest = `パブリックチャット はじめますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
-} else if (props.event.kind === 41) {
-  const content = JSON.parse(rest);
-  rest = `パブリックチャット 編集しますた！\n\nルーム名：${content.name}\n説明：${content.about}\n${content.picture}`;
-} else {
-  // ミュートユーザーのリプライを非表示にする
-  for (let i = 0; i < props.event.tags.length; ++i) {
-    const tag = props.event.tags[i];
-    if (tag[0] === 'p') {
-      myBlockList.value.forEach((block) => {
-        if (block === tag[1]) {
-          rest = `🔇 Muted user reply hidden.`;
+
+
+  while (rest.length > 0) {
+    const match = rest.match(regex);
+    if (match) {
+      if (match.index && match.index > 0) {
+        const text = rest.substring(0, match.index);
+        tokens.value.push({ type: "text", content: text });
+        rest = rest.substring(match.index);
+      } else {
+        const text = match[0];
+        if (text.startsWith(':') && text.endsWith(':')) {
+          const emojiName = text.slice(1, -1);
+          if (emojiMap.has(emojiName)) {
+            tokens.value.push({ type: "emoji", content: emojiName, src: emojiMap.get(emojiName) });
+          } else {
+            tokens.value.push({ type: "text", content: text });
+          }
+        } else if (text.startsWith('#[')) {
+          const num = parseInt(text.slice(2, -1));
+          if (0 <= num && num < props.event.tags.length) {
+            const t = props.event.tags[num];
+            if (t[0] === 'p') {
+              const href = '?' + Nostr.nip19.npubEncode(t[1]);
+              if (props.getProfile) {
+                const profile = props.getProfile(t[1]);
+                let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+                if (name.length > 35) {
+                  name = `${name.substring(0, 35)}...`;
+                }
+                tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
+              } else {
+                tokens.value.push({ type: 'nostr', content: text, href });
+              }
+            } else {
+              tokens.value.push({ type: "text", content: text });
+            }
+          }
+        } else if (text.startsWith('#')) {
+          const href = '?q=' + text.replace('#', '%23');
+          tokens.value.push({ type: "link", href: href, content: decodeURI(text) });
+        } else if (text.startsWith('http')) {
+          try {
+            const url = new URL(text);
+            const ext = url.pathname.split(".").pop()?.toLocaleLowerCase() ?? "";
+            if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
+              tokens.value.push({ type: "img", src: text });
+            } else if (['mp4', 'webm', 'ogg', 'mov', 'ogv', 'wmv', 'avi'].includes(ext)) {
+              tokens.value.push({ type: "video", src: text });
+            } else {
+              if (url.hostname === "youtu.be") {
+                tokens.value.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
+              } else if (url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
+                if (url.pathname.startsWith("/shorts/")) {
+                  const v = url.pathname.replace('/shorts/', '');
+                  tokens.value.push({ type: "youtube", href: v, content: decodeURI(text) });
+                } else {
+                  const v = getParam('v', text);
+                  tokens.value.push({ type: "youtube", href: v, content: decodeURI(text) });
+                }
+              } else if (url.hostname.endsWith("twitter.com") || url.hostname.endsWith("x.com")) {
+                const src = encodeURI(text.replace("x.com", "twitter.com"));
+                twitterSources.push(src);
+                tokens.value.push({ type: "twitter", href: text, src, content: decodeURI(text) });
+              } else {
+                try {
+                  const ogp = ref({});
+                  getOgp(text, ogp);
+                  tokens.value.push({ type: "link", href: text, content: decodeURI(text), ogp });
+                } catch (error) {
+                  console.log(error);
+                  tokens.value.push({ type: "link", href: text, content: decodeURI(text) });
+                }
+              }
+
+              function getParam(name: string, url: string): string | null {
+                if (!url) url = window.location.href;
+                name = name.replace(/[\[\]]/g, "\\$&");
+                var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                  results = regex.exec(url);
+                if (!results) return null;
+                if (!results[2]) return '';
+                return decodeURIComponent(results[2].replace(/\+/g, " "));
+              }
+            }
+          } catch (err) {
+            tokens.value.push({ type: "text", content: text });
+          }
+        } else {
+          try {
+            const data = Nostr.nip19.decode(text.replace('nostr:', '').replace('@', ''));
+            switch (data.type) {
+              case "nevent": {
+                const href = '?' + Nostr.nip19.noteEncode(data.data.id);
+                const id = data.data.id;
+                tokens.value.push({ type: 'nostr-note', content: text, href, id });
+              } break;
+              case "note": {
+                const href = '?' + Nostr.nip19.noteEncode(data.data);
+                const id = data.data;
+                tokens.value.push({ type: 'nostr-note', content: text, href, id });
+              } break;
+              case "nprofile": {
+                const href = '?' + Nostr.nip19.npubEncode(data.data.pubkey);
+                if (props.getProfile) {
+                  const profile = props.getProfile(data.data.pubkey);
+                  let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+                  if (name.length > 35) {
+                    name = `${name.substring(0, 35)}...`;
+                  }
+                  tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
+                } else {
+                  tokens.value.push({ type: 'nostr', content: text, href });
+                }
+              } break;
+              case "npub": {
+                const href = '?' + Nostr.nip19.npubEncode(data.data);
+                if (props.getProfile) {
+                  const profile = props.getProfile(data.data);
+                  let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
+                  if (name.length > 35) {
+                    name = `${name.substring(0, 35)}...`;
+                  }
+                  tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
+                } else {
+                  tokens.value.push({ type: 'nostr', content: text, href });
+                }
+              } break;
+              default: {
+                const href = text;
+                tokens.value.push({ type: 'nostr', content: text, href });
+              }
+            }
+          } catch (err) {
+            tokens.value.push({ type: "text", content: text });
+          }
         }
-      });
+        rest = rest.substring(text.length);
+      }
+    } else {
+      const text = rest;
+      tokens.value.push({ type: "text", content: text });
+      rest = "";
     }
   }
+
+  return tokens.value;
 }
+
 
 async function getOgp(url: string, ogp: Ref<{}>) {
   try {
@@ -200,157 +350,13 @@ async function getOgp(url: string, ogp: Ref<{}>) {
   }
 }
 
-while (rest.length > 0) {
-  const match = rest.match(regex);
-  if (match) {
-    if (match.index && match.index > 0) {
-      const text = rest.substring(0, match.index);
-      tokens.value.push({ type: "text", content: text });
-      rest = rest.substring(match.index);
-    } else {
-      const text = match[0];
-      if (text.startsWith(':') && text.endsWith(':')) {
-        const emojiName = text.slice(1, -1);
-        if (emojiMap.has(emojiName)) {
-          tokens.value.push({ type: "emoji", content: emojiName, src: emojiMap.get(emojiName) });
-        } else {
-          tokens.value.push({ type: "text", content: text });
-        }
-      } else if (text.startsWith('#[')) {
-        const num = parseInt(text.slice(2, -1));
-        if (0 <= num && num < props.event.tags.length) {
-          const t = props.event.tags[num];
-          if (t[0] === 'p') {
-            const href = '?' + Nostr.nip19.npubEncode(t[1]);
-            if (props.getProfile) {
-              const profile = props.getProfile(t[1]);
-              let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
-              if (name.length > 35) {
-                name = `${name.substring(0, 35)}...`;
-              }
-              tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
-            } else {
-              tokens.value.push({ type: 'nostr', content: text, href });
-            }
-          } else {
-            tokens.value.push({ type: "text", content: text });
-          }
-        }
-      } else if (text.startsWith('#')) {
-        const href = '?q=' + text.replace('#', '%23');
-        tokens.value.push({ type: "link", href: href, content: decodeURI(text) });
-      } else if (text.startsWith('http')) {
-        try {
-          const url = new URL(text);
-          const ext = url.pathname.split(".").pop()?.toLocaleLowerCase() ?? "";
-          if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'ico', 'bmp', 'webp'].includes(ext)) {
-            tokens.value.push({ type: "img", src: text });
-          } else if (['mp4', 'webm', 'ogg', 'mov', 'ogv', 'wmv', 'avi'].includes(ext)) {
-            tokens.value.push({ type: "video", src: text });
-          } else {
-            if (url.hostname === "youtu.be") {
-              tokens.value.push({ type: "youtube", href: url.pathname, content: decodeURI(text) });
-            } else if (url.hostname === "www.youtube.com" || url.hostname === "m.youtube.com") {
-              if (url.pathname.startsWith("/shorts/")) {
-                const v = url.pathname.replace('/shorts/', '');
-                tokens.value.push({ type: "youtube", href: v, content: decodeURI(text) });
-              } else {
-                const v = getParam('v', text);
-                tokens.value.push({ type: "youtube", href: v, content: decodeURI(text) });
-              }
-            } else if (url.hostname.endsWith("twitter.com") || url.hostname.endsWith("x.com")) {
-              const src = encodeURI(text.replace("x.com", "twitter.com"));
-              twitterSources.push(src);
-              tokens.value.push({ type: "twitter", href: text, src, content: decodeURI(text) });
-            } else {
-              try {
-                const ogp = ref({});
-                getOgp(text, ogp);
-                tokens.value.push({ type: "link", href: text, content: decodeURI(text), ogp });
-              } catch (error) {
-                console.log(error);
-                tokens.value.push({ type: "link", href: text, content: decodeURI(text) });
-              }
-            }
-
-            function getParam(name: string, url: string): string | null {
-              if (!url) url = window.location.href;
-              name = name.replace(/[\[\]]/g, "\\$&");
-              var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-                results = regex.exec(url);
-              if (!results) return null;
-              if (!results[2]) return '';
-              return decodeURIComponent(results[2].replace(/\+/g, " "));
-            }
-          }
-        } catch (err) {
-          tokens.value.push({ type: "text", content: text });
-        }
-      } else {
-        try {
-          const data = Nostr.nip19.decode(text.replace('nostr:', '').replace('@', ''));
-          switch (data.type) {
-            case "nevent": {
-              const href = '?' + Nostr.nip19.noteEncode(data.data.id);
-              const id = data.data.id;
-              tokens.value.push({ type: 'nostr-note', content: text, href, id });
-            } break;
-            case "note": {
-              const href = '?' + Nostr.nip19.noteEncode(data.data);
-              const id = data.data;
-              tokens.value.push({ type: 'nostr-note', content: text, href, id });
-            } break;
-            case "nprofile": {
-              const href = '?' + Nostr.nip19.npubEncode(data.data.pubkey);
-              if (props.getProfile) {
-                const profile = props.getProfile(data.data.pubkey);
-                let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
-                if (name.length > 35) {
-                  name = `${name.substring(0, 35)}...`;
-                }
-                tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
-              } else {
-                tokens.value.push({ type: 'nostr', content: text, href });
-              }
-            } break;
-            case "npub": {
-              const href = '?' + Nostr.nip19.npubEncode(data.data);
-              if (props.getProfile) {
-                const profile = props.getProfile(data.data);
-                let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
-                if (name.length > 35) {
-                  name = `${name.substring(0, 35)}...`;
-                }
-                tokens.value.push({ type: 'nostr-npub', content: "@" + name, href, picture: profile.picture });
-              } else {
-                tokens.value.push({ type: 'nostr', content: text, href });
-              }
-            } break;
-            default: {
-              const href = text;
-              tokens.value.push({ type: 'nostr', content: text, href });
-            }
-          }
-        } catch (err) {
-          tokens.value.push({ type: "text", content: text });
-        }
-      }
-      rest = rest.substring(text.length);
-    }
-  } else {
-    const text = rest;
-    tokens.value.push({ type: "text", content: text });
-    rest = "";
-  }
-}
-
 </script>
 <template>
   <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
     {{ reasonOfNIP36 }}
   </button>
   <p class="c-feed-content" v-if="isHidden != true">
-    <template v-for="(token, _index) in tokens" :key="_index">
+    <template v-for="(token, _index) in getTokens()" :key="_index" v-if="myBlockList.length >= 0">
       <template v-if="token?.type === 'text'">
         <span class="c-feed-content-kind6" v-if="props.event.kind === 6">{{
           token.content
@@ -410,7 +416,7 @@ while (rest.length > 0) {
               :add-fav-event="props.addFavEvent" :add-repost-event="props.addRepostEvent"></FeedFooter>
           </template>
           <template v-else>
-            <div v-if="token.id && myBlockedEvents.has(token.id)">Blocked event</div>
+            <div v-if="token.id && myBlockedEvents.has(token.id)">🔇 Muted event (posted by blocked user)</div>
             <a :href="token.href" target="_blank" referrerpolicy="no-referrer">
               {{ token.content }}
             </a>
