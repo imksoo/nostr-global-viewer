@@ -608,7 +608,7 @@ async function collectEvents() {
     unsub();
     reqEventIds.forEach((id) => {
       cacheMissHitCountByEventId.set(id, (cacheMissHitCountByEventId.get(id) ?? 0) + 1);
-      if (cacheMissHitCountByEventId.get(id) ?? 0 > 60) {
+      if (cacheMissHitCountByEventId.get(id) ?? 0 > 600) {
         cacheBlacklistEventIds.add(id);
         console.log("Blocked by cache miss:", id);
       }
