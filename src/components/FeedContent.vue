@@ -522,6 +522,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 
 .c-feed-content-emoji {
   max-height: 1.3em;
+  max-width: 90%;
   vertical-align: middle;
 }
 
