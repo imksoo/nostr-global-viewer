@@ -591,7 +591,11 @@ async function collectEvents() {
         addEvent(ev, false);
       }
 
-      if (!eventsReceived.value.has(ev.id) && ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)) {
+      if (!eventsReceived.value.has(ev.id) &&
+        (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/)
+          || japaneseUsers.includes(ev.pubkey)
+          || getProfile(ev.pubkey).display_name.match(/[亜-熙ぁ-んァ-ヶ]/)
+          || getProfile(ev.pubkey).name.match(/[亜-熙ぁ-んァ-ヶ]/))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
     },
