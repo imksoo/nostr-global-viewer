@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Ref, onBeforeUnmount, onMounted, ref } from 'vue';
 import * as Nostr from "nostr-tools";
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import parser from 'html-dom-parser';
 
 import { myBlockedEvents, myBlockList } from '../profile';
@@ -163,7 +163,6 @@ function getTokens() {
     }
   }
 
-
   while (rest.length > 0) {
     const match = rest.match(regex);
     if (match) {
@@ -311,12 +310,23 @@ function getTokens() {
   return tokens.value;
 }
 
+const ogpCache = new Map<string, AxiosResponse>();
 
 async function getOgp(url: string, ogp: Ref<{}>) {
   try {
-    const res = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    let res: AxiosResponse | undefined = undefined;
+    if (ogpCache.has(url)) {
+      res = ogpCache.get(url);
+    } else {
+      res = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      if (res) {
+        ogpCache.set(url, res);
+      } else {
+        return;
+      }
+    }
 
-    const dom = parser(res.data.contents);
+    const dom = parser(res?.data.contents);
     const ogTitleMetaTag = findMetaTag(dom, 'og:title');
     const ogTitle = (ogTitleMetaTag && ogTitleMetaTag.type === 'tag') ? ogTitleMetaTag.attribs.content : '';
     const ogImageMetaTag = findMetaTag(dom, 'og:image');
@@ -356,7 +366,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
     {{ reasonOfNIP36 }}
   </button>
   <p class="c-feed-content" v-if="isHidden != true">
-    <template v-for="(token, _index) in getTokens()" :key="_index" v-if="myBlockList.length >= 0">
+    <template v-for="(token, _index) in getTokens()" :key="_index">
       <template v-if="token?.type === 'text'">
         <span class="c-feed-content-kind6" v-if="props.event.kind === 6">{{
           token.content
