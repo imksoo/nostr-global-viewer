@@ -13,6 +13,7 @@
   "dependencies": {
     "@mdi/js": "^7.2.96",
     "axios": "^1.4.0",
+    "bottleneck": "^2.19.5",
     "html-dom-parser": "^4.0.0",
     "mdi-vue": "^3.0.13",
     "nostr-fetch": "^0.13.0",
