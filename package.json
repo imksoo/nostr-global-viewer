@@ -1,7 +1,7 @@
 {
   "name": "nostrglobal",
   "private": true,
-  "version": "0.3.89",
+  "version": "0.3.90",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
