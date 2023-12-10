@@ -489,7 +489,7 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
     return;
   }
 
-  if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
+  if (eventsReceived.value.has(event.id) || event.kind === 3) {
     return;
   }
 
@@ -573,9 +573,7 @@ async function collectEvents() {
   const reqEventIds = new Set<string>(eventIds);
   console.log(`collectEvents(${eventIds})`);
   const unsub = pool.subscribe(
-    [{
-      ids: eventIds
-    }],
+    [{ ids: eventIds }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (!Nostr.verifySignature(ev)) {
@@ -609,7 +607,32 @@ async function collectEvents() {
     reqEventIds.forEach((id) => {
       cacheMissHitCountByEventId.set(id, (cacheMissHitCountByEventId.get(id) ?? 0) + 1);
       const cacheMissHitCount = cacheMissHitCountByEventId.get(id) ?? 0;
-      if (cacheMissHitCount > 16) {
+      if (cacheMissHitCount === 3) {
+        pool.subscribe(
+          [{ "#e": [id] }],
+          [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
+          async (ev, _isAfterEose, _relayURL) => {
+            if (ev.kind === 5) {
+              console.log("Delete event:", ev.id, ev.kind, ev.content);
+              addEvent(ev);
+            } else if (ev.kind === 6) {
+              try {
+                const srcEvent = JSON.parse(ev.content);
+                console.log("Reposted event:", ev.id, ev.kind, ev.content);
+                addEvent(srcEvent);
+                if (!eventsReceived.value.has(ev.id) && (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/) || japaneseUsers.includes(ev.pubkey))) {
+                  pool.publish(ev, normalizeUrls(feedRelays));
+                }
+              } catch (err) {
+                console.log(err);
+              }
+            }
+          },
+          undefined,
+          undefined,
+          { unsubscribeOnEose: true }
+        )
+      } else if (cacheMissHitCount > 16) {
         cacheBlacklistEventIds.add(id);
         console.log("Blocked by cache miss:", id, cacheMissHitCount);
       }
