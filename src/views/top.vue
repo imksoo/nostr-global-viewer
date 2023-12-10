@@ -489,7 +489,7 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
     return;
   }
 
-  if (eventsReceived.value.has(event.id) || event.kind === 3) {
+  if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
     return;
   }
 
