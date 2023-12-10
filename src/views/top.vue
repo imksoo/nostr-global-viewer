@@ -617,7 +617,7 @@ async function collectEvents() {
     console.log(`collectEvents(${timeout}) => Timeout`);
   }, 5 * 1000);
 }
-setInterval(collectEvents, 5 * 1000);
+setInterval(collectEvents, 2 * 1000);
 
 // ローカルストレージからプロフィール情報を読み出しておく
 const profiles = ref(
