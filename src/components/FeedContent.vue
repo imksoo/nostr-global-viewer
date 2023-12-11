@@ -134,7 +134,7 @@ function getTokens() {
     rest = `📬\n${note}`;
   } else if (props.event.kind === 7) {
     let note = "";
-    for (let i = 0; i < props.event.tags.length; ++i) {
+    for (let i = props.event.tags.length - 1; i >= 0; --i) {
       const t = props.event.tags[i];
       if (t[0] === 'e') {
         note = Nostr.nip19.noteEncode(t[1]);
