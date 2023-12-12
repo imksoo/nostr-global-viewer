@@ -79,17 +79,16 @@ let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.no
 const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
 let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
 function collectRyuusokuChan() {
-  const poolRiver = new RelayPool(normalizeUrls(feedRelays), {});
+  const poolRiver = new RelayPool();
   poolRiver.subscribe(
     [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
-    [...new Set(normalizeUrls(feedRelays))],
+    [...new Set(normalizeUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime()/1000))))],
     (ev, _isAfterEose, _relayURL) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
-
-
+      
       ryuusokuChanData.value.length = 0;
       ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
       ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
