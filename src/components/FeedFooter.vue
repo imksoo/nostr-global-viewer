@@ -118,7 +118,8 @@ function getLinkUrl(): string {
       </span>
     </p>
     <p class="c-feed-reply">
-      <span v-if="isLogined && (props.event.kind == 1  || props.event.kind == 42)" @click="(_$event) => { openReplyPost(props.event) }">
+      <span v-if="isLogined && (props.event.kind == 1 || props.event.kind == 42)"
+        @click="(_$event) => { openReplyPost(props.event) }">
         <mdicon name="reply" :height="14" title="Reply" />
       </span>
     </p>
@@ -149,6 +150,13 @@ function getLinkUrl(): string {
             year: "numeric", month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
           }) }}
+        </a>
+        <span>&nbsp;</span>
+        <a target="_blank"
+          :href="'https://nosaray.vercel.app/?dur=5m' + '&since='
+            + new Date(props.event.created_at * 1000).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
+            + 'T' + new Date(props.event.created_at * 1000 - 4 * 60 * 1000).toLocaleString('ja-JP', { hour: '2-digit', minute: '2-digit' })">
+          <mdicon name="timer-marker" :width="14" :height="14" title="Open timelines in Nosaray" />
         </a>
         <span>&nbsp;</span>
         <a target="_blank"
