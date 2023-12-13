@@ -30,6 +30,7 @@ function appVersion() {
 <style scoped lang="scss">
 .p-index-title {
   font-family: "Anton", sans-serif;
+  letter-spacing: normal;
   color: #ffffff;
   display: flex;
   flex-wrap: wrap;
