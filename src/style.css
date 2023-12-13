@@ -1,8 +1,8 @@
 :root {
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: YakuHanJP, 'Noto Sans JP', sans-serif;
   line-height: 1.5;
   font-weight: 500;
-  letter-spacing: -1px;
+  font-feature-settings: 'palt';
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
