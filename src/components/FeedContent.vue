@@ -196,6 +196,10 @@ function getTokens() {
               } else {
                 tokens.value.push({ type: 'nostr', content: text, href });
               }
+            } else if (t[0] === 'e') {
+              const href = '?' + Nostr.nip19.noteEncode(t[1]);
+              const id = t[1];
+              tokens.value.push({ type: 'nostr-note', content: text, href, id });
             } else {
               tokens.value.push({ type: "text", content: text });
             }
