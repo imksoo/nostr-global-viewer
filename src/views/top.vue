@@ -51,61 +51,6 @@ const totalNumberOfEventsToKeep = 5000;
 const initialNumberOfEventToGet = 500;
 let countOfDisplayEvents = 200;
 
-const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
-let japaneseUsers: string[] = [];
-function collectJapaneseUsers() {
-  const unsub = pool.subscribe(
-    [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
-    [...new Set(normalizeUrls(profileRelays))],
-    (ev, _isAfterEose, _relayURL) => {
-      if (!Nostr.verifySignature(ev)) {
-        console.log('Invalid nostr event, signature invalid', ev);
-        return;
-      }
-
-      if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
-        japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
-      }
-    },
-    undefined,
-    undefined,
-    { unsubscribeOnEose: true }
-  );
-  setTimeout(() => { unsub() }, 10 * 1000);
-}
-collectJapaneseUsers();
-
-let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.nostr.wirednet.jp"))));
-const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
-let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
-function collectRyuusokuChan() {
-  const poolRiver = new RelayPool();
-  poolRiver.subscribe(
-    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
-    [...new Set(normalizeUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime()/1000))))],
-    (ev, _isAfterEose, _relayURL) => {
-      if (!Nostr.verifySignature(ev)) {
-        console.log('Invalid nostr event, signature invalid', ev);
-        return;
-      }
-      
-      ryuusokuChanData.value.length = 0;
-      ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
-      ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
-    },
-    undefined,
-    undefined,
-    { unsubscribeOnEose: true }
-  );
-  setTimeout(() => { poolRiver.close(); }, 5 * 1000);
-}
-if (isKirinoRiver) {
-  collectRyuusokuChan();
-  setInterval(() => {
-    collectRyuusokuChan();
-  }, 30 * 1000);
-}
-
 let noteId = ref<string | undefined>();
 let npubId = ref<string | undefined>();
 let npubDate = ref<Date | undefined>();
@@ -482,6 +427,63 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
   }
 }
 
+const japaneseFollowBotPubkey = "087c51f1926f8d3cb4ff45f53a8ee2a8511cfe113527ab0e87f9c5821201a61e";
+let japaneseUsers: string[] = [];
+function collectJapaneseUsers() {
+  const unsub = pool.subscribe(
+    [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
+    [...new Set(normalizeUrls(profileRelays))],
+    (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
+      if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
+        japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+      }
+    },
+    undefined,
+    undefined,
+    { unsubscribeOnEose: true }
+  );
+  setTimeout(() => { unsub() }, 10 * 1000);
+}
+collectJapaneseUsers();
+
+let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.nostr.wirednet.jp"))));
+const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
+let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
+function collectRyuusokuChan() {
+  const poolRiver = new RelayPool();
+  const unsub = poolRiver.subscribe(
+    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
+    [...new Set(normalizeUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime() / 1000))))],
+    (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
+      ryuusokuChanData.value.length = 0;
+      ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
+      ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
+    },
+    undefined,
+    () => {
+      unsub();
+      poolRiver.close();
+    },
+    { unsubscribeOnEose: true }
+  );
+}
+if (isKirinoRiver) {
+  collectRyuusokuChan();
+  setInterval(() => {
+    collectRyuusokuChan();
+  }, 30 * 1000);
+}
+
 function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): void {
   if (!Nostr.verifySignature(event)) {
     console.log('Invalid nostr event, signature invalid', event);
@@ -607,31 +609,14 @@ async function collectEvents() {
       cacheMissHitCountByEventId.set(id, (cacheMissHitCountByEventId.get(id) ?? 0) + 1);
       const cacheMissHitCount = cacheMissHitCountByEventId.get(id) ?? 0;
       if (cacheMissHitCount === 3) {
-        pool.subscribe(
-          [{ "#e": [id] }],
-          [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
-          async (ev, _isAfterEose, _relayURL) => {
-            if (ev.kind === 5) {
-              console.log("Delete event:", ev.id, ev.kind, ev.content);
+        eventsReceived.value.forEach((ev) => {
+          ev.tags.forEach((t) => {
+            if (ev.kind === 6 && t[0] === "e" && t[1] === id) {
               addEvent(ev);
-            } else if (ev.kind === 6) {
-              try {
-                const srcEvent = JSON.parse(ev.content);
-                console.log("Reposted event:", ev.id, ev.kind, ev.content);
-                addEvent(srcEvent);
-                if (!eventsReceived.value.has(ev.id) && (ev.content.match(/[亜-熙ぁ-んァ-ヶ]/) || japaneseUsers.includes(ev.pubkey))) {
-                  pool.publish(ev, normalizeUrls(feedRelays));
-                }
-              } catch (err) {
-                console.log(err);
-              }
             }
-          },
-          undefined,
-          undefined,
-          { unsubscribeOnEose: true }
-        )
-      } else if (cacheMissHitCount > 16) {
+          })
+        });
+      } else if (cacheMissHitCount > 64) {
         cacheBlacklistEventIds.add(id);
         console.log("Blocked by cache miss:", id, cacheMissHitCount);
       }
