@@ -22,7 +22,7 @@ export function createFavEvent(reacted: NostrEvent) {
     ['e', reacted.id],
     ['p', reacted.pubkey],
   ]
-  reaction.content = "+";
+  reaction.content = "🪟";
   reaction.created_at = Math.floor(Date.now() / 1000);
 
   return reaction;
