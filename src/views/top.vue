@@ -456,8 +456,8 @@ const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db777
 let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
 function collectRyuusokuChan() {
   const poolRiver = new RelayPool();
-  const unsub = poolRiver.subscribe(
-    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], "#t": ["nostr-arrival-rate_kirino"], limit: 1 }],
+  poolRiver.subscribe(
+    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], limit: 1 }],
     [...new Set(normalizeUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime() / 1000))))],
     (ev, _isAfterEose, _relayURL) => {
       if (!Nostr.verifySignature(ev)) {
@@ -470,10 +470,7 @@ function collectRyuusokuChan() {
       ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
     },
     undefined,
-    () => {
-      unsub();
-      poolRiver.close();
-    },
+    undefined,
     { unsubscribeOnEose: true }
   );
 }
