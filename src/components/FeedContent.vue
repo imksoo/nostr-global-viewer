@@ -6,6 +6,7 @@ import parser from 'html-dom-parser';
 import Bottleneck from 'bottleneck';
 
 import { myBlockedEvents, myBlockList } from '../profile';
+import { eventsReceived } from '../store';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";
@@ -380,7 +381,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 }
 
 </script>
-<template v-if="props.getEvent(props.event.id)">
+<template>
   <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
     {{ reasonOfNIP36 }}
   </button>
@@ -429,7 +430,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
       </template>
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
-          <template v-if="props.getEvent(token.id)">
+          <template v-if="token.id && eventsReceived.has(token.id) && props.getEvent(token.id)">
             <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
             <FeedReplies v-bind:event="props.getEvent(token.id)" :get-profile="props.getProfile"
               :get-event="props.getEvent"></FeedReplies>
