@@ -380,7 +380,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 }
 
 </script>
-<template>
+<template v-if="props.getEvent(props.event.id)">
   <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
     {{ reasonOfNIP36 }}
   </button>
