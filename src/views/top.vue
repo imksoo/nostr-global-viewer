@@ -553,11 +553,10 @@ function getEvent(id: string): Nostr.Event | undefined {
       console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
       return undefined;
     }
-    return ev;
   } else {
     cacheMissHitEventIds.add(id);
-    return undefined;
   }
+  return ev;
 }
 
 async function collectEvents() {

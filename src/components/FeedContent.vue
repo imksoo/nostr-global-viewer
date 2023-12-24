@@ -430,7 +430,7 @@ async function getOgp(url: string, ogp: Ref<{}>) {
       </template>
       <template v-else-if="token?.type === 'nostr-note'">
         <div class="c-feed-content-repost">
-          <template v-if="token.id && eventsReceived.has(token.id) && props.getEvent(token.id)">
+          <template v-if="props.getEvent(token.id)">
             <FeedProfile v-bind:profile="props.getProfile(props.getEvent(token.id).pubkey)"></FeedProfile>
             <FeedReplies v-bind:event="props.getEvent(token.id)" :get-profile="props.getProfile"
               :get-event="props.getEvent"></FeedReplies>
