@@ -1506,7 +1506,7 @@ function gotoTop() {
         <HeaderProfile :profile="npubProfile" :kind3-follow="npubKind3Follow" :kind3-relay="npubKind3Relay"
           :kind10002="npubKind10002" :get-profile="getProfile"></HeaderProfile>
         <div class="p-index-profile-header">
-          <FeedProfile v-bind:profile="getProfile(npubId)"></FeedProfile>
+          <FeedProfile v-bind:profile="getProfile(npubId)" :avatar-link-as-image="true"></FeedProfile>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">

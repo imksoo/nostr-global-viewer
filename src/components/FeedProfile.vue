@@ -11,6 +11,10 @@ const props = defineProps({
     },
     required: true,
   },
+  avatarLinkAsImage: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 function getProfileLink(pubkey: string) {
@@ -38,7 +42,14 @@ async function copyToClipboard(text: string) {
 <template>
   <div class="c-feed-profile">
     <div class="c-feed-profile-parts c-feed-profile-avatar">
-      <a target="_blank" :href="getProfileLink(props.profile.pubkey)">
+      <a target="_blank" :href="props.profile.picture" v-if="avatarLinkAsImage">
+        <img class="c-feed-profile-picture" v-bind:src="props.profile.picture
+          ? props.profile.picture
+          : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'
+          " referrerpolicy="no-referrer"
+          @error="(e) => { (e.target as HTMLImageElement).src = 'https://placehold.jp/391e6c/d7c6c6/60x60.png?text=Image%0ANot%20Found' }" />
+      </a>
+      <a target="_blank" :href="getProfileLink(props.profile.pubkey)" v-else>
         <img class="c-feed-profile-picture" v-bind:src="props.profile.picture
           ? props.profile.picture
           : 'https://placehold.jp/623e70/d7c6c6/60x60.png?text=Unknown'
