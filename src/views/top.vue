@@ -169,6 +169,7 @@ watch(() => route.query, async (newQuery) => {
         [{
           ids: [noteId.value],
         }, {
+          kinds: [1, 6, 7, 40, 41, 42, 30315],
           '#e': [noteId.value],
         }],
         [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
