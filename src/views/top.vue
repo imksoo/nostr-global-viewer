@@ -169,7 +169,6 @@ watch(() => route.query, async (newQuery) => {
         [{
           ids: [noteId.value],
         }, {
-          kinds: [1, 6, 7, 40, 41, 42],
           '#e': [noteId.value],
         }],
         [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
@@ -188,7 +187,7 @@ watch(() => route.query, async (newQuery) => {
       // ユーザーの直近の投稿をプレビューするモード
       pool.subscribe(
         [{
-          kinds: [1, 6, 7, 40, 41, 42],
+          kinds: [1, 6, 7, 40, 41, 42, 30315],
           limit: countOfDisplayEvents / 2,
           authors: [npubId.value]
         }],
@@ -209,7 +208,7 @@ watch(() => route.query, async (newQuery) => {
       // 通常ののぞき窓グローバルモード
       pool.subscribe(
         [{
-          kinds: [1, 6, 40, 41, 42, 1984],
+          kinds: [1, 6, 40, 41, 42, 1984, 30315],
           limit: initialNumberOfEventToGet,
         }],
         [...new Set(normalizeUrls([...feedRelays]))],
@@ -266,7 +265,7 @@ watch(() => route.query, async (newQuery) => {
 
     const unsub1 = pool.subscribe(
       [{
-        kinds: [1, 6, 7],
+        kinds: [1, 6, 7, 40, 41, 42, 30315],
         authors: [npubId.value],
         since,
         until,

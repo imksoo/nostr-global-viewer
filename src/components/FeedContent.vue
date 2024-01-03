@@ -6,7 +6,6 @@ import parser from 'html-dom-parser';
 import Bottleneck from 'bottleneck';
 
 import { myBlockedEvents, myBlockList } from '../profile';
-import { eventsReceived } from '../store';
 
 import FeedProfile from "./FeedProfile.vue";
 import FeedFooter from "./FeedFooter.vue";

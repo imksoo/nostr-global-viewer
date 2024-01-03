@@ -113,7 +113,7 @@ function getLinkUrl(): string {
       </span>
     </p>
     <p :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
-      <span v-if="isLogined && props.event.kind == 1" @click="(_$event) => { favEvent() }">
+      <span v-if="isLogined && (props.event.kind == 1 || props.event.kind == 42)" @click="(_$event) => { favEvent() }">
         <mdicon name="star-shooting" :height="14" title="Favorite this post" />
       </span>
     </p>

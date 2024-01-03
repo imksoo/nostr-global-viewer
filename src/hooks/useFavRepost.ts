@@ -16,11 +16,12 @@ export function createFavEvent(reacted: NostrEvent) {
     (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
   )
 
-  const reaction = Nostr.getBlankEvent(Nostr.Kind.Reaction);
+  const reaction = Nostr.getBlankEvent(7);
   reaction.tags = [
     ...inheritedTags,
     ['e', reacted.id],
     ['p', reacted.pubkey],
+    ['k', reacted.kind.toString()],
   ]
   reaction.content = "🪟";
   reaction.created_at = Math.floor(Date.now() / 1000);
@@ -29,7 +30,7 @@ export function createFavEvent(reacted: NostrEvent) {
 }
 
 export function createRepostEvent(reposted: NostrEvent) {
-  const reaction = Nostr.getBlankEvent(Nostr.Kind.Repost);
+  const reaction = Nostr.getBlankEvent(6);
   reaction.tags = [
     ['e', reposted.id],
     ['p', reposted.pubkey],
