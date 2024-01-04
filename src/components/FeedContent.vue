@@ -122,7 +122,9 @@ function getTokens() {
   let rest = props.event.content;
   let tokens = ref<{ type: string; content?: any; src?: any; href?: any; id?: string; picture?: any; ogp?: any; }[]>([]);
 
-  if (props.event.kind === 6) {
+  if (props.event.kind === 5) {
+    rest = `This event has been deleted.(kind=5)\n${rest}`;
+  } else if (props.event.kind === 6) {
     let note = "";
     for (let i = 0; i < props.event.tags.length; ++i) {
       const t = props.event.tags[i];

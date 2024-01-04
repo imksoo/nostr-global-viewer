@@ -407,13 +407,7 @@ async function collectUserEventsRange(pubkey: string, relays: string[], since: n
       const usertext = profile.display_name + profile.name + ev.content;
       const japaneseRegex = /[亜-熙ぁ-んァ-ヶ]/;
       if (ev.kind === 5) {
-        for (let i = 0; i < ev.tags.length; ++i) {
-          const t = ev.tags[i];
-          if (t[0] === "e") {
-            cacheBlacklistEventIds.add(t[1]);
-          }
-        }
-        pool.publish(ev, [...new Set(normalizeUrls([...relays, ...feedRelays, ...myWriteRelays.value]))]);
+        addDeletedEvent(ev);
       } else if (!eventsReceived.value.has(ev.id) && (usertext.match(japaneseRegex) || japaneseUsers.includes(ev.pubkey))) {
         pool.publish(ev, normalizeUrls(feedRelays));
       }
@@ -487,7 +481,11 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
     return;
   }
 
-  if (eventsReceived.value.has(event.id) || event.kind === 3 || event.kind === 5) {
+  if (event.kind === 5) {
+    addDeletedEvent(event);
+    return;
+  }
+  if (eventsReceived.value.has(event.id) || event.kind === 3) {
     return;
   }
 
@@ -541,6 +539,19 @@ let cacheMissHitEventIds = new Set<string>();
 let cacheBlacklistEventIds = new Set<string>();
 let cacheMissHitCountByEventId = new Map<string, number>();
 
+function addDeletedEvent(ev: Nostr.Event) {
+  cacheBlacklistEventIds.add(ev.id);
+
+  for (let i = 0; i < ev.tags.length; ++i) {
+    const t = ev.tags[i];
+    if (t[0] === "e") {
+      eventsToSearch.value = eventsToSearch.value.filter((ee) => (ee.id !== t[1]));
+      eventsReceived.value.set(t[1], ev);
+    }
+  }
+  pool.publish(ev, [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))]);
+}
+
 function getEvent(id: string): Nostr.Event | undefined {
   if (myBlockedEvents.value.has(id)) {
     return undefined;
@@ -572,7 +583,7 @@ async function collectEvents() {
   const reqEventIds = new Set<string>(eventIds);
   console.log(`collectEvents(${eventIds})`);
   const unsub = pool.subscribe(
-    [{ ids: eventIds }],
+    [{ ids: eventIds }, { kinds: [5], '#e': eventIds }],
     [...new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev, _isAfterEose, _relayURL) => {
       if (!Nostr.verifySignature(ev)) {
@@ -582,7 +593,9 @@ async function collectEvents() {
       cacheMissHitEventIds.delete(ev.id);
       reqEventIds.delete(ev.id);
 
-      if (noteId.value) {
+      if (ev.kind === 5) {
+        addDeletedEvent(ev);
+      } else if (noteId.value) {
         addEvent(ev);
       } else {
         addEvent(ev, false);
@@ -934,13 +947,7 @@ async function collectFollowsAndSubscribe() {
             addEvent(ev);
             break;
           case 5:
-            for (let i = 0; i < ev.tags.length; ++i) {
-              const t = ev.tags[i];
-              if (t[0] === "e") {
-                cacheBlacklistEventIds.add(t[1]);
-              }
-            }
-            pool.publish(ev, normalizeUrls([...new Set([...feedRelays, ...myWriteRelays.value])]));
+            addDeletedEvent(ev);
             break;
         }
       },
