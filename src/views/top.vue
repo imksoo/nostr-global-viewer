@@ -1569,7 +1569,7 @@ function showMore() {
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
-        <div class="p-index-footer" v-if="!npubId"><button v-on:click="() => { showMore() }">もっと表示する ({{
+        <div class="p-index-footer" v-if="!npubId && !noteId"><button v-on:click="() => { showMore() }">もっと表示する ({{
           countOfDisplayEvents
         }}件表示中)</button></div>
       </div>
