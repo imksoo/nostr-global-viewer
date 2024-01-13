@@ -136,7 +136,7 @@ function getLinkUrl(): string {
     <p class="c-feed-event-search">
       <span>
         <a target="_blank"
-          :href="'https://koteitan.github.io/nostr-post-checker/?eid=' + event.id + '&kind=' + event.kind + '&relay=' + pool.getRelayStatuses().map((r) => (r[0])).join(';')">
+          :href="'https://koteitan.github.io/nostr-post-checker/?hideform&eid=' + event.id + '&kind=' + event.kind + '&relay=' + pool.getRelayStatuses().map((r) => (r[0])).join(';')">
           <mdicon name="table-search" :width="14" :height="14" title="Search event in relays" />
         </a>
       </span>
