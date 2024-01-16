@@ -497,9 +497,7 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
 
   const rootKind = noteId.value ? getEvent(noteId.value)?.kind || 0 : 0;
 
-  if (rootKind === 30023) {
-    return;
-  } else if (noteId.value && 40 <= rootKind && rootKind <= 42) {
+  if (noteId.value && 40 <= rootKind && rootKind <= 42) {
     eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
   } else if (noteId.value) {
     eventsToSearch.value = Nostr.utils.insertEventIntoAscendingList(eventsToSearch.value, ev) as NostrEvent[];

@@ -105,16 +105,23 @@ onBeforeUnmount(() => {
 })
 
 let isHidden = ref(false);
+let isNIP23 = ref(false);
 let isNIP36 = ref(false);
-let reasonOfNIP36 = ref('');
+let reasonOfHiddenButton = ref('');
+if (props.event.kind === 30023) {
+  isHidden.value = true;
+  isNIP23.value = true;
+  reasonOfHiddenButton.value = "Long-form content (NIP23)";
+}
 for (let i = 0; i < props.event.tags.length; ++i) {
   const tag = props.event.tags[i];
   if (tag[0] === 'content-warning') {
     isHidden.value = true;
     isNIP36.value = true;
-    reasonOfNIP36.value = tag[1] ? tag[1] : "Content Warning (NIP36)";
+    reasonOfHiddenButton.value = tag[1] ? tag[1] : "Content Warning (NIP36)";
   }
 }
+
 
 const regex = /(:\w+:|#\[\d+\]|#[^\s!@#$%^&*()=+./,\[{\]};:'"?><]+|https?:\/\/\S+|(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,})/;
 
@@ -383,8 +390,8 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 
 </script>
 <template>
-  <button class="c-feed-warning" v-if="isNIP36" @click="($_event) => { isHidden = !isHidden }">
-    {{ reasonOfNIP36 }}
+  <button class="c-feed-warning" v-if="isNIP36 || isNIP23" @click="($_event) => { isHidden = !isHidden }">
+    {{ reasonOfHiddenButton }}
   </button>
   <p class="c-feed-content" v-if="isHidden != true">
     <template v-for="(token, _index) in getTokens()" :key="_index">
@@ -566,6 +573,6 @@ async function getOgp(url: string, ogp: Ref<{}>) {
 
 .c-feed-warning {
   margin: 2em auto 1em auto;
-  background-color: #df3d81;
+  background-color: gray;
 }
 </style>
