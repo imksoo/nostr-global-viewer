@@ -12,7 +12,7 @@ import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
   myFollows,
-  myBlockCreatedAt, myBlockList, myBlockedEvents,
+  myBlockCreatedAtKind10000, myBlockCreatedAtKind30000, myBlockList, myBlockListKind10000, myBlockListKind30000, myBlockedEvents,
 } from "../profile";
 
 import { playActionSound, playETWSSound, playReactionSound } from '../hooks/usePlaySound';
@@ -884,8 +884,13 @@ function collectMyBlockList() {
     }],
     [... new Set(normalizeUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     async (ev, _isAfterEose, _relayURL) => {
-      if (myBlockCreatedAt.value < ev.created_at && ((ev.kind === 10000) || (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
-        myBlockCreatedAt.value = ev.created_at;
+      if ((myBlockCreatedAtKind10000.value < ev.created_at && ev.kind === 10000) ||
+        (myBlockCreatedAtKind30000.value < ev.created_at && (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
+        if (ev.kind === 10000) {
+          myBlockCreatedAtKind10000.value = ev.created_at;
+        } else if (ev.kind === 30000) {
+          myBlockCreatedAtKind30000.value = ev.created_at;
+        }
 
         let blockListJSON = "[]";
         if (windowNostr && windowNostr.nip04) {
@@ -903,7 +908,13 @@ function collectMyBlockList() {
             blocks.push(ev.tags[i][1]);
           }
         }
-        myBlockList.value = [... new Set(blocks)];
+
+        if (ev.kind === 10000) {
+          myBlockListKind10000.value = [...new Set([...blocks])];
+        } else if (ev.kind === 30000) {
+          myBlockListKind30000.value = [...new Set([...blocks])];
+        }
+        myBlockList.value = [... new Set([...myBlockListKind10000.value, ...myBlockListKind30000.value])];
 
         eventsReceived.value.forEach((val, key) => {
           if (myBlockList.value.includes(val.pubkey)) {
