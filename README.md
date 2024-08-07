@@ -10,6 +10,9 @@ Users can also view each event's content and a direct link to the event on nostx
 
 [yabu.me](https://yabu.me/)
 
+[srtrelay.c-stellar.net/](https://srtrelay.c-stellar.net/)
+
+[view-relay.mymt.casa/](https://view-relay.mymt.casa/)
 
 ## Contributors
 
