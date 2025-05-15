@@ -1148,7 +1148,7 @@ function extractTags() {
   const hashTags = draftEvent.value.content.match(regexHashTag);
   if (hashTags?.length) {
     for (let i = 0; i < hashTags?.length; ++i) {
-      const t = hashTags[i].replace('#', '');
+      const t = hashTags[i].replace('#', '').toLowerCase();
       editingTags.value.tags.push(['t', t]);
     }
   }
