@@ -1,4 +1,4 @@
-// router.js
+// router.ts
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 
