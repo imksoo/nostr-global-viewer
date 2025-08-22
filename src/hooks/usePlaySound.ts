@@ -28,5 +28,5 @@ export function playETWSSound() {
 export default {
   playActionSound : playActionSound,
   playReactionSound : playReactionSound,
-  playETWSSound : playReactionSound,
+  playETWSSound : playETWSSound,
 }
