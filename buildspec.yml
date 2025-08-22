@@ -5,6 +5,7 @@ phases:
       - npm i
   build:
     commands:
+      - npm test
       - npm run build
 artifacts:
   files:
