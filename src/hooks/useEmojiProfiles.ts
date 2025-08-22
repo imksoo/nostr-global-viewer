@@ -25,11 +25,11 @@ export function getRandomProfile(pubkey: string, sushiMode: Boolean = false, mah
   if (sushiMode && mahjongMode) {
     randomNumber = pubkeyNumber % (sushiDataLength + mahjongDataLength);
   } else if (sushiMode) {
-    randomNumber = pubkeyNumber % (sushiDataLength);
-    const c = characters[randomNumber];
+    randomNumber = pubkeyNumber % sushiDataLength;
   } else if (mahjongMode) {
-    randomNumber = sushiDataLength + pubkeyNumber % (mahjongDataLength);
-    const c = characters[randomNumber];
+    randomNumber = sushiDataLength + (pubkeyNumber % mahjongDataLength);
+  } else {
+    randomNumber = pubkeyNumber % characters.length;
   }
   const c = characters[randomNumber];
   const p: Profile = {
