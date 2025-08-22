@@ -1635,7 +1635,7 @@ function showMore() {
         <span
           class="p-index-post__help">メンションしたいときは<code>nostr:</code>の後に<code>npub文字列</code>を貼り付けてください。<br />引用リポストするときは<code>nostr:note文字列</code>で投稿IDを貼り付けてください。</span>
       </div>
-      <div class="p-index-post__editer">
+      <div class="p-index-post__editor">
         <div class="p-index-post__textarea">
           <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
