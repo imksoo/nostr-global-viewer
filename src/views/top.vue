@@ -1018,6 +1018,14 @@ function subscribeReactions() {
 type BlankEvent = ReturnType<typeof Nostr.getBlankEvent>;
 let draftEvent = ref<BlankEvent>(Nostr.getBlankEvent(Nostr.Kind.Text));
 let editingTags = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
+
+function newDraftEvent() {
+  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  // @ts-ignore
+  draftEvent.value.tags = [["client", "Nozokimado", "31990:ad73ce27d83ccc6bf6184549e529119d8b5963c5e6f681f6690a33f91c8b615a:1757113040", feedRelays[0] || ""]];
+}
+newDraftEvent();
+
 async function post() {
   if (!draftEvent.value.content) {
     return;
@@ -1031,7 +1039,7 @@ async function post() {
   await postEvent(ev);
 
   isPostOpen.value = false;
-  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  newDraftEvent();
 }
 
 async function postEvent(event: Nostr.Event) {
