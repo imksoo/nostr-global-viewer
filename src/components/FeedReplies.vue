@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import * as Nostr from "nostr-tools";
+import { ref } from "vue";
+
+const displayCount = ref(20);
 
 function getUserLink(pubkey: string): string {
   if (pubkey) {
@@ -81,7 +84,7 @@ function truncateContent(content: string | undefined): string | undefined {
   <!-- p class="c-feed-reply">
     kind : {{ event.kind }}
   </p -->
-  <p class="c-feed-reply" v-for="(tag, index) in event.tags" :key="index">
+  <p class="c-feed-reply" v-for="(tag, index) in event.tags.slice(0, displayCount)" :key="index">
     <template v-if="tag[0] === 'p'">
       ユーザー
       <a target="_blank" :href="getUserLink(tag[1])" :title="getProfile(tag[1]).display_name || getProfile(tag[1]).name">
@@ -155,6 +158,12 @@ function truncateContent(content: string | undefined): string | undefined {
     </template>
     <template v-else> その他タグ {{ JSON.stringify(tag) }} </template>
   </p>
+  <!-- 残りのタグがある場合、折りたたみ表示 -->
+  <p v-if="displayCount < event.tags.length" class="c-feed-reply-more">
+    <button @click="displayCount += 50" class="c-feed-reply-more-btn">
+      あと {{ event.tags.length - displayCount }} 個をもっと見る
+    </button>
+  </p>
 </template>
 <style lang="scss" scoped>
 .c-feed-reply {
@@ -180,5 +189,32 @@ function truncateContent(content: string | undefined): string | undefined {
 
 .c-feed-reply-profile__display-name {
   display: inline-block;
+}
+
+.c-feed-reply-more {
+  font-size: 0.8em;
+  padding: 0.4rem 0 0 0;
+  margin: 0;
+  color: #213547;
+}
+
+.c-feed-reply-more-btn {
+  background-color: #e8f0fe;
+  border: 1px solid #d0e8f2;
+  border-radius: 4px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.95em;
+  color: #1976d2;
+  transition: all 0.2s ease;
+}
+
+.c-feed-reply-more-btn:hover {
+  background-color: #d0e8f2;
+  border-color: #1976d2;
+}
+
+.c-feed-reply-more-btn:active {
+  transform: scale(0.98);
 }
 </style>
