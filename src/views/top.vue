@@ -445,11 +445,59 @@ collectJapaneseUsers();
 
 let isKirinoRiver = ref<boolean>(feedRelays.some((e) => (e.includes("relay-jp.nostr.wirednet.jp"))));
 const ryuusokuChanBotPubkey = "a3c13ef4c9eccfde01bd9326a2ab08b2ad7dc57f3b77db77723f8e2ad7ba24d6";
-let ryuusokuChanData = ref<[string, string][]>([["", ""]]);
+type RyuusokuChanContent = {
+  axis?: number[];
+  datas?: Record<string, number[]>;
+};
+
+let ryuusokuChanData = ref<[string, string][]>([]);
+
+function formatRiverObservedAt(unixTime: number): string {
+  const date = new Date(unixTime * 1000);
+  const pad = (value: number) => (value.toString().padStart(2, "0"));
+
+  return [
+    date.getFullYear().toString(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+  ].join("");
+}
+
+function parseRyuusokuChanData(ev: Nostr.Event): [string, string][] {
+  if (!ev.content) {
+    return [];
+  }
+
+  try {
+    const payload = JSON.parse(ev.content) as RyuusokuChanContent;
+    const axis = payload.axis?.filter((value) => Number.isFinite(value)) || [];
+    const datas = payload.datas || {};
+    const riverValues = Array.isArray(datas.kirino)
+      ? datas.kirino
+      : Object.values(datas).find((value): value is number[] => Array.isArray(value));
+
+    if (!axis.length || !riverValues?.length) {
+      return [];
+    }
+
+    return axis
+      .map((unixTime, index) => ([unixTime, riverValues[index]] as const))
+      .filter((entry): entry is readonly [number, number] => Number.isFinite(entry[0]) && Number.isFinite(entry[1]))
+      .sort((a, b) => a[0] - b[0])
+      .slice(-10)
+      .map(([unixTime, riverValue]) => ([formatRiverObservedAt(unixTime), riverValue.toString()]));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
 function collectRyuusokuChan() {
   const poolRiver = new RelayPool();
   poolRiver.subscribe(
-    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr-arrival-rate_kirino"], limit: 1 }],
+    [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr_river_flowmeter"], limit: 1 }],
     [...new Set(normalizeUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime() / 1000))))],
     (ev, _isAfterEose, _relayURL) => {
       if (!Nostr.verifySignature(ev)) {
@@ -457,9 +505,7 @@ function collectRyuusokuChan() {
         return;
       }
 
-      ryuusokuChanData.value.length = 0;
-      ryuusokuChanData.value = ev.tags.slice(-10) as [string, string][];
-      ryuusokuChanData.value.splice(ryuusokuChanData.value.length);
+      ryuusokuChanData.value = parseRyuusokuChanData(ev);
     },
     undefined,
     undefined,
