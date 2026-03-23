@@ -31,7 +31,7 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  isLoggedIn: {
+  loggedIn: {
     type: Boolean,
     required: true,
   },
@@ -103,22 +103,22 @@ function getLinkUrl(): string {
       </span>
     </p>
     <p :class="{ 'c-feed-repost': true, 'c-feed-repost-actioned': isReposted }">
-      <span v-if="isLoggedIn && props.event.kind == 1" @click="(_$event) => { repostEvent() }">
+      <span v-if="loggedIn && props.event.kind == 1" @click="(_$event) => { repostEvent() }">
         <mdicon name="repeat-variant" :height="14" title="Repost" />
       </span>
     </p>
     <p class="c-feed-quote">
-      <span v-if="isLoggedIn && props.event.kind == 1" @click="(_$event) => { quoteEvent() }">
+      <span v-if="loggedIn && props.event.kind == 1" @click="(_$event) => { quoteEvent() }">
         <mdicon name="comment-quote-outline" :height="14" title="Post with quoted event" />
       </span>
     </p>
     <p :class="{ 'c-feed-fav': true, 'c-feed-fav-actioned': isFavorited }">
-      <span v-if="isLoggedIn && (props.event.kind == 1 || props.event.kind == 42)" @click="(_$event) => { favEvent() }">
+      <span v-if="loggedIn && (props.event.kind == 1 || props.event.kind == 42)" @click="(_$event) => { favEvent() }">
         <mdicon name="star-shooting" :height="14" title="Favorite this post" />
       </span>
     </p>
     <p class="c-feed-reply">
-      <span v-if="isLoggedIn && (props.event.kind == 1 || props.event.kind == 42)"
+      <span v-if="loggedIn && (props.event.kind == 1 || props.event.kind == 42)"
         @click="(_$event) => { openReplyPost(props.event) }">
         <mdicon name="reply" :height="14" title="Reply" />
       </span>

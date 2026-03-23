@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 const props = defineProps({
-  isLoggedIn: {
+  loggedIn: {
     type: Boolean,
     required: true,
   },
@@ -15,13 +15,13 @@ const props = defineProps({
 const nip07exists = true;
 </script>
 <template>
-  <div class="p-index-signin" v-if="!props.isLoggedIn" :style="(!nip07exists) ? { display: 'none' } : {}">
+  <div class="p-index-signin" v-if="!props.loggedIn" :style="(!nip07exists) ? { display: 'none' } : {}">
     <h2 class="p-index-signin__head">この画面からつぶやく</h2>
     <div class="p-index-signin__body">
       <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="(_$event) => props.login()" />
     </div>
   </div>
-  <div class="p-index-intro" v-if="!props.isLoggedIn">
+  <div class="p-index-intro" v-if="!props.loggedIn">
     <h2 class="p-index-intro__head"><span>はじめに</span></h2>
     <p class="p-index-intro__text">Nostr を始めてみたくなった方は</p>
     <p class="p-index-intro__text">

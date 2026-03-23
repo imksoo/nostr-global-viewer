@@ -7,7 +7,7 @@ import { useRoute } from "vue-router";
 
 import type { Nip07 } from "nostr-typedef";
 
-import { feedRelays, profileRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived, isLoggedIn } from "../store";
+import { feedRelays, profileRelays, pool, normalizeUrls, NostrEvent, events, eventsToSearch, eventsReceived, loggedIn } from "../store";
 import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
@@ -813,7 +813,7 @@ async function login() {
   myPubkey.value = (await windowNostr?.getPublicKey()) ?? "";
 
   if (myPubkey.value) {
-    isLoggedIn.value = true;
+    loggedIn.value = true;
 
     if (windowNostr?.getRelays) {
       const firstRelays = await windowNostr.getRelays();
@@ -1369,15 +1369,15 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     konamiIndex.value = 0;
   }
 
-  if (e.key === 'n' && isLoggedIn.value && !isPostOpen.value) {
+  if (e.key === 'n' && loggedIn.value && !isPostOpen.value) {
     isPostOpen.value = true;
     e.preventDefault();
     e.stopPropagation();
-  } else if (e.key === 'l' && !isLoggedIn.value) {
+  } else if (e.key === 'l' && !loggedIn.value) {
     login();
     e.preventDefault();
     e.stopPropagation();
-  } else if (e.key === 'l' && isLoggedIn.value) {
+  } else if (e.key === 'l' && loggedIn.value) {
     moveToItemById(focusedItemId.value);
     e.preventDefault();
     e.stopPropagation();
@@ -1401,28 +1401,28 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     showMore();
   } else if (e.key === 'g') {
     gotoBottom();
-  } else if (e.key === 'r' && isLoggedIn.value && !isPostOpen.value) {
+  } else if (e.key === 'r' && loggedIn.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1) {
       e.preventDefault();
       e.stopPropagation();
       openReplyPost(targetEvent);
     }
-  } else if (e.key === 'q' && isLoggedIn.value && !isPostOpen.value) {
+  } else if (e.key === 'q' && loggedIn.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1) {
       e.preventDefault();
       e.stopPropagation();
       openQuotePost(targetEvent);
     }
-  } else if (e.key === "f" && isLoggedIn.value && !isPostOpen.value) {
+  } else if (e.key === "f" && loggedIn.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1 && !targetEvent.isFavorited) {
       e.preventDefault();
       e.stopPropagation();
       addFavEvent(targetEvent);
     }
-  } else if (e.key === "e" && isLoggedIn.value && !isPostOpen.value) {
+  } else if (e.key === "e" && loggedIn.value && !isPostOpen.value) {
     const targetEvent = events.value.find((e) => (e.id === focusedItemId.value));
     if (targetEvent && targetEvent.kind === 1 && !targetEvent.isReposted) {
       e.preventDefault();
@@ -1571,7 +1571,7 @@ function showMore() {
     <div class="p-index-heading">
       <div class="p-index-heading__inner">
         <IndexTitleControl :feed-relays="feedRelays"></IndexTitleControl>
-        <IndexIntroControl :is-logged-in="isLoggedIn" :login="login"></IndexIntroControl>
+        <IndexIntroControl :logged-in="loggedIn" :login="login"></IndexIntroControl>
         <AutoLoginControl v-model:autoLogin="autoLogin"></AutoLoginControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
@@ -1622,12 +1622,12 @@ function showMore() {
           <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
             v-if="e.kind !== 6"></FeedReplies>
           <FeedContent :key="'content' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
-            :speak-note="speakNote" :volume="volume" :is-logged-in="isLoggedIn" :post-event="postEvent"
+            :speak-note="speakNote" :volume="volume" :logged-in="loggedIn" :post-event="postEvent"
             :open-reply-post="openReplyPost" :open-quote-post="openQuotePost" :add-fav-event="addFavEvent"
             :add-repost-event="addRepostEvent">
           </FeedContent>
           <FeedFooter :key="'footer' + e.id" v-bind:event="e" :speak-note="speakNote" :volume="volume"
-            :is-logged-in="isLoggedIn" :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
+            :logged-in="loggedIn" :post-event="postEvent" :get-profile="getProfile" :open-reply-post="openReplyPost"
             :open-quote-post="openQuotePost" :add-fav-event="addFavEvent" :add-repost-event="addRepostEvent"
             :ref="(el) => { if (el) { itemFooters?.set(e.id, el) } }"></FeedFooter>
         </div>
@@ -1667,7 +1667,7 @@ function showMore() {
       <span class="p-index-top-btn__icon">^</span>
     </button>
   </div>
-  <div class="p-index-post-btn" v-if="isLoggedIn">
+  <div class="p-index-post-btn" v-if="loggedIn">
     <button @click="isPostOpen = !isPostOpen" class="p-index-post-btn__btn">
       <span class="p-index-post-btn__icon">+</span>
     </button>

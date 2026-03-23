@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue"
-import { isLoggedIn } from "../store";
+import { loggedIn } from "../store";
 
 const props = withDefaults(
   defineProps<{
@@ -51,11 +51,11 @@ const eventType = computed({
         <input class="" type="radio" name="eventType" id="eventTypeAll" value="all" v-model="eventType" checked />
         <label for="eventTypeAll">全て</label>
       </div>
-      <div v-if="isLoggedIn">
+      <div v-if="loggedIn">
         <input class="" type="radio" name="eventType" id="eventTypeReply" value="reply" v-model="eventType" />
         <label for="eventTypeReply">自分宛の返信</label>
       </div>
-      <div v-if="isLoggedIn">
+      <div v-if="loggedIn">
         <input class="" type="radio" name="eventType" id="eventTypeReaction" value="reaction" v-model="eventType" />
         <label for="eventTypeReaction">自分宛のリアクション</label>
       </div>
