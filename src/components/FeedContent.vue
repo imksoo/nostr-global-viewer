@@ -39,7 +39,7 @@ const props = defineProps({
     type: String,
     required: true,
   },
-  isLogined: {
+  isLoggedIn: {
     type: Boolean,
     required: true,
   },
@@ -439,13 +439,13 @@ async function getOgp(url: string, ogp: Ref<{}>) {
             <FeedReplies v-bind:event="props.getEvent(token.id)" :get-profile="props.getProfile"
               :get-event="props.getEvent"></FeedReplies>
             <FeedContent :event="props.getEvent(token.id)" :get-event="props.getEvent" :speak-note="props.speakNote"
-              :volume="props.volume" :is-logined="props.isLogined" :post-event="props.postEvent"
+              :volume="props.volume" :is-logged-in="props.isLoggedIn" :post-event="props.postEvent"
               :get-profile="props.getProfile" :open-reply-post="props.openReplyPost"
               :open-quote-post="props.openQuotePost" :add-fav-event="props.addFavEvent"
               :add-repost-event="props.addRepostEvent">
             </FeedContent>
             <FeedFooter v-bind:event="props.getEvent(token.id)" :speak-note="props.speakNote" :volume="volume"
-              :is-logined="props.isLogined" :post-event="props.postEvent" :get-profile="props.getProfile"
+              :is-logged-in="props.isLoggedIn" :post-event="props.postEvent" :get-profile="props.getProfile"
               :open-reply-post="props.openReplyPost" :open-quote-post="props.openQuotePost"
               :add-fav-event="props.addFavEvent" :add-repost-event="props.addRepostEvent"></FeedFooter>
           </template>

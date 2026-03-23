@@ -72,3 +72,4 @@ export interface NostrEvent {
 export const events = ref(new Array<NostrEvent>());
 export const eventsToSearch = ref(new Array<NostrEvent>());
 export const eventsReceived = ref(new Map<string, Nostr.Event>());
+export const isLoggedIn = ref(false);
