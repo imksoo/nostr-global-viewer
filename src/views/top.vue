@@ -572,7 +572,12 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
     if (autoSpeech.value) {
       speakNote(event, getProfile(event.pubkey), volume.value.toString());
     }
-    if (soundEffect.value && now - 60 < ev.created_at && event.pubkey === "9f77d173dcd94cc4243d36883b157f8c3283051dc6bd237b1c5ac400fb90cecb") {
+    // なまずくんやサーモンくんなどの地震速報の投稿で、かつ投稿から60秒以内のものはETWSの音を鳴らす
+    const eewPubkeys = [
+      "9f77d173dcd94cc4243d36883b157f8c3283051dc6bd237b1c5ac400fb90cecb", // なまずくん
+      "0955d4241024ed1fb0fb5f0607741a3b82ceae940413e566322f9d61cc842def", // サーモンくん
+    ];
+    if (soundEffect.value && now - 60 < ev.created_at && eewPubkeys.includes(event.pubkey)) {
       playETWSSound();
     }
   }
