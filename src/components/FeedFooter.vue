@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import * as Nostr from "nostr-tools";
 import { pool } from "../store";
 
@@ -60,6 +60,29 @@ const props = defineProps({
 const isFavorited = computed(() => (props.event.isFavorited));
 const isReposted = computed(() => (props.event.isReposted));
 let isShowJSONData = ref(false);
+const nowUnix = ref(Math.floor(Date.now() / 1000));
+let relativeTimer: number | undefined;
+
+function scheduleRelativeTimeUpdate() {
+  const eventAgeSeconds = nowUnix.value - props.event.created_at;
+  const waitMs = eventAgeSeconds < 60 ? 1000 : 60 * 1000;
+
+  relativeTimer = window.setTimeout(() => {
+    nowUnix.value = Math.floor(Date.now() / 1000);
+    scheduleRelativeTimeUpdate();
+  }, waitMs);
+}
+
+onMounted(() => {
+  nowUnix.value = Math.floor(Date.now() / 1000);
+  scheduleRelativeTimeUpdate();
+});
+
+onUnmounted(() => {
+  if (relativeTimer !== undefined) {
+    clearTimeout(relativeTimer);
+  }
+});
 
 const favEvent = (reacted = props.event) => {
   props.addFavEvent(reacted);
@@ -88,6 +111,29 @@ async function copyToClipboard(text: string) {
 
 function getLinkUrl(): string {
   return 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id);
+}
+
+function getRelativeTimeText(createdAt: number): string {
+  const diffSeconds = Math.max(nowUnix.value - createdAt, 0);
+  const yearSeconds = 60 * 60 * 24 * 365;
+
+  if (diffSeconds < 60) {
+    return `${diffSeconds}秒前`;
+  }
+
+  if (diffSeconds < 60 * 60) {
+    return `${Math.floor(diffSeconds / 60)}分前`;
+  }
+
+  if (diffSeconds < 60 * 60 * 24) {
+    return `${Math.floor(diffSeconds / (60 * 60))}時間前`;
+  }
+
+  if (diffSeconds < yearSeconds) {
+    return `${Math.floor(diffSeconds / (60 * 60 * 24))}日前`;
+  }
+
+  return `${Math.floor(diffSeconds / yearSeconds)}年前`;
 }
 
 </script>
@@ -150,8 +196,8 @@ function getLinkUrl(): string {
             year: "numeric", month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
           }) }}
+          &nbsp;({{ getRelativeTimeText(props.event.created_at) }})
         </a>
-        <span>&nbsp;</span>
         <a target="_blank"
           :href="'https://nosaray.vercel.app/?dur=5m' + '&since='
             + new Date(props.event.created_at * 1000).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
