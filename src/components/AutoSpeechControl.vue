@@ -157,4 +157,8 @@ const autoSpeech = computed({
   text-align: center;
 }
 
+.p-index-speech-volume input[type="range"] {
+  accent-color: #df3d81;
+}
+
 </style>
