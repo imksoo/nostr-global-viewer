@@ -516,7 +516,7 @@ if (isKirinoRiver) {
   collectRyuusokuChan();
   setInterval(() => {
     collectRyuusokuChan();
-  }, 30 * 1000);
+  }, 60 * 1000);
 }
 
 function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): void {
