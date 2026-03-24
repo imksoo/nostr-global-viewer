@@ -520,13 +520,14 @@ if (isKirinoRiver) {
 }
 
 function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): void {
-  if (!Nostr.verifySignature(event)) {
+  const rawEvent = ("rawEvent" in event && event.rawEvent) ? event.rawEvent : event;
+  if (!Nostr.verifySignature(rawEvent)) {
     console.log('Invalid nostr event, signature invalid', event);
     return;
   }
 
-  if (event.kind === 5) {
-    addDeletedEvent(event);
+  if (rawEvent.kind === 5) {
+    addDeletedEvent(rawEvent);
     return;
   }
   if (eventsReceived.value.has(event.id) || event.kind === 3) {
@@ -845,6 +846,8 @@ async function login() {
       setTimeout(() => {
         collectFollowsAndSubscribe();
         subscribeReactions();
+        subscribeDirectMessages();
+        subscribeNip17DirectMessages();
       }, 1000);
     }
   }
@@ -1065,6 +1068,133 @@ function subscribeReactions() {
   );
 }
 
+function subscribeDirectMessages() {
+  const nip04 = windowNostr?.nip04;
+  if (!nip04) {
+    console.log("NIP-04 decrypt is not available in this NIP-07 provider.");
+    return;
+  }
+
+  pool.subscribe(
+    [{ kinds: [4], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
+    [...new Set(normalizeUrls(myReadRelays.value))],
+    async (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+      if (ev.pubkey === myPubkey.value) {
+        return;
+      }
+
+      const recipientPubkeys = ev.tags.filter((tag) => tag[0] === "p").map((tag) => tag[1]);
+      if (!recipientPubkeys.includes(myPubkey.value)) {
+        return;
+      }
+
+      try {
+        const decryptedContent = await nip04.decrypt(ev.pubkey, ev.content);
+        if (!decryptedContent) {
+          return;
+        }
+
+        addEvent({
+          ...ev,
+          content: decryptedContent,
+          rawEvent: ev,
+        });
+      } catch (err) {
+        console.log("Failed to decrypt NIP-04 direct message", ev.id, err);
+      }
+    },
+    undefined,
+    undefined
+  );
+}
+
+async function unwrapNip17DirectMessage(giftWrap: Nostr.Event): Promise<NostrEvent | null> {
+  const nip44 = (windowNostr as any)?.nip44;
+  if (!nip44) {
+    return null;
+  }
+
+  try {
+    const sealJson = await nip44.decrypt(giftWrap.pubkey, giftWrap.content);
+    const seal = JSON.parse(sealJson) as Nostr.Event;
+    if (seal.kind !== 13 || !Nostr.verifySignature(seal)) {
+      return null;
+    }
+
+    const rumorJson = await nip44.decrypt(seal.pubkey, seal.content);
+    const rumor = JSON.parse(rumorJson) as Partial<NostrEvent>;
+    if (rumor.kind !== 14 || rumor.pubkey !== seal.pubkey || !rumor.id || !rumor.pubkey || !rumor.created_at || !rumor.tags || rumor.content === undefined) {
+      return null;
+    }
+
+    const rumorHash = Nostr.getEventHash({
+      id: rumor.id,
+      pubkey: rumor.pubkey,
+      created_at: rumor.created_at,
+      kind: rumor.kind,
+      tags: rumor.tags,
+      content: rumor.content,
+    } as Nostr.Event);
+    if (rumorHash !== rumor.id) {
+      return null;
+    }
+
+    return {
+      id: rumor.id,
+      sig: "",
+      pubkey: rumor.pubkey,
+      kind: 14,
+      content: rumor.content,
+      tags: rumor.tags,
+      created_at: rumor.created_at,
+      isReposted: undefined,
+      isFavorited: undefined,
+      rawEvent: giftWrap,
+    };
+  } catch (err) {
+    console.log("Failed to unwrap NIP-17 direct message", giftWrap.id, err);
+    return null;
+  }
+}
+
+function subscribeNip17DirectMessages() {
+  const nip44 = (windowNostr as any)?.nip44;
+  if (!nip44) {
+    console.log("NIP-44 decrypt is not available in this NIP-07 provider.");
+    return;
+  }
+
+  pool.subscribe(
+    [{ kinds: [1059], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
+    [...new Set(normalizeUrls(myReadRelays.value))],
+    async (ev, _isAfterEose, _relayURL) => {
+      if (!Nostr.verifySignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+      if (ev.pubkey === myPubkey.value) {
+        return;
+      }
+
+      const recipientPubkeys = ev.tags.filter((tag) => tag[0] === "p").map((tag) => tag[1]);
+      if (!recipientPubkeys.includes(myPubkey.value)) {
+        return;
+      }
+
+      const rumor = await unwrapNip17DirectMessage(ev);
+      if (rumor) {
+        addEvent(rumor);
+      }
+    },
+    undefined,
+    undefined
+  );
+}
+
 type BlankEvent = ReturnType<typeof Nostr.getBlankEvent>;
 let draftEvent = ref<BlankEvent>(Nostr.getBlankEvent(Nostr.Kind.Text));
 let editingTags = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
@@ -1263,6 +1393,17 @@ function searchAndBlockFilter() {
       }
       case "reply": {
         if (e.pubkey !== myPubkey.value && (e.kind === 1 || e.kind === 42)) {
+          for (let i = 0; i < e.tags.length; ++i) {
+            const t = e.tags[i];
+            if (t[0] === "p" && t[1] === myPubkey.value) {
+              return searchSubstring(e.content, searchWords.value);
+            }
+          }
+        }
+        return false;
+      }
+      case "dm": {
+        if ((e.kind === 4 || e.kind === 14) && e.pubkey !== myPubkey.value) {
           for (let i = 0; i < e.tags.length; ++i) {
             const t = e.tags[i];
             if (t[0] === "p" && t[1] === myPubkey.value) {

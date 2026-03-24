@@ -131,6 +131,8 @@ function getTokens() {
 
   if (props.event.kind === 5) {
     rest = `This event has been deleted.(kind=5)\n${rest}`;
+  } else if (props.event.kind === 4 || props.event.kind === 14) {
+    rest = `🔐 ${rest}`;
   } else if (props.event.kind === 6) {
     let note = "";
     for (let i = 0; i < props.event.tags.length; ++i) {

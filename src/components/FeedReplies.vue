@@ -35,7 +35,7 @@ function getEventLink(id: string): string {
 const props = defineProps({
   event: {
     type: Object as () => {
-      kind: Nostr.Kind,
+      kind: number,
       content: string,
       tags: string[][],
       created_at: number
@@ -81,6 +81,7 @@ function truncateContent(content: string | undefined): string | undefined {
 
 </script>
 <template>
+  <p class="c-feed-reply" v-if="event.kind === 4 || event.kind === 14">🔐 ダイレクトメッセージ</p>
   <!-- p class="c-feed-reply">
     kind : {{ event.kind }}
   </p -->

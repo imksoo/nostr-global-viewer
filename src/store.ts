@@ -63,6 +63,7 @@ export interface NostrEvent {
   pubkey: string;
   kind: Nostr.Kind | number;
   content: string;
+  rawEvent?: Nostr.Event;
   tags: string[][];
   created_at: number;
   isReposted: Boolean | undefined;
@@ -71,5 +72,5 @@ export interface NostrEvent {
 
 export const events = ref(new Array<NostrEvent>());
 export const eventsToSearch = ref(new Array<NostrEvent>());
-export const eventsReceived = ref(new Map<string, Nostr.Event>());
+export const eventsReceived = ref(new Map<string, NostrEvent | Nostr.Event>());
 export const loggedIn = ref(false);

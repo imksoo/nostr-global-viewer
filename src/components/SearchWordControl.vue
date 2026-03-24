@@ -43,7 +43,7 @@ const eventType = computed({
       <div>
         <label for="search">検索キーワード: </label>
         <input class="p-index-search__input" type="search" id="search" v-model="searchWords"
-          :disabled="eventType !== 'all' && eventType !== 'reply' && eventType !== 'chat'" />
+          :disabled="eventType !== 'all' && eventType !== 'reply' && eventType !== 'chat' && eventType !== 'dm'" />
       </div>
       <br>
       <div>
@@ -58,6 +58,10 @@ const eventType = computed({
       <div v-if="loggedIn">
         <input class="" type="radio" name="eventType" id="eventTypeReaction" value="reaction" v-model="eventType" />
         <label for="eventTypeReaction">自分宛のリアクション</label>
+      </div>
+      <div v-if="loggedIn">
+        <input class="" type="radio" name="eventType" id="eventTypeDm" value="dm" v-model="eventType" />
+        <label for="eventTypeDm">自分宛のダイレクトメッセージ</label>
       </div>
       <!-- div>
         <input class="" type="radio" name="eventType" id="eventTypeFav" value="fav" v-model="eventType" />

@@ -9,8 +9,9 @@ export function broadcastEventById(id: string): void {
   const event = eventsReceived.value.get(id);
   if (event) {
     const relays = [...new Set(normalizeUrls([...feedRelays, ...myWriteRelays.value]))];
-    console.log("broadcastEventById", id, event, relays);
-    pool.publish(event, relays);
+    const publishedEvent = ("rawEvent" in event && event.rawEvent) ? event.rawEvent : event;
+    console.log("broadcastEventById", id, publishedEvent, relays);
+    pool.publish(publishedEvent, relays);
   }
   return;
 }
