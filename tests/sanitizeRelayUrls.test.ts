@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('nostr-relaypool', () => ({
   RelayPool: vi.fn().mockImplementation(() => ({
@@ -9,7 +9,16 @@ vi.mock('nostr-relaypool', () => ({
   })),
 }));
 
-import { sanitizeRelayUrls } from '../src/store';
+import { sanitizeRelayUrls, warmupRelayHostnameSafety, __resetRelayHostnameSafetyCacheForTests } from '../src/store';
+
+beforeEach(() => {
+  __resetRelayHostnameSafetyCacheForTests();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe('sanitizeRelayUrls', () => {
   it('converts http to ws', () => {
@@ -50,6 +59,32 @@ describe('sanitizeRelayUrls', () => {
 
   it('filters cidr-like private relay entries', () => {
     const result = sanitizeRelayUrls(['10.0.0.0/8', '192.168.0.0/16', 'relay.example.com']);
+    expect(result).toEqual(['wss://relay.example.com/']);
+  });
+
+  it('filters NXDOMAIN relays after DoH warmup', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ Status: 3 }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await warmupRelayHostnameSafety(['wss://not-exists.invalid']);
+
+    const result = sanitizeRelayUrls(['wss://not-exists.invalid', 'wss://example.com']);
+    expect(result).toEqual(['wss://example.com/']);
+  });
+
+  it('filters relays resolved to private ip via DoH', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ Status: 0, Answer: [{ data: '192.168.1.10' }] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await warmupRelayHostnameSafety(['wss://relay.private.example']);
+
+    const result = sanitizeRelayUrls(['wss://relay.private.example', 'wss://relay.example.com']);
     expect(result).toEqual(['wss://relay.example.com/']);
   });
 });
