@@ -28,7 +28,7 @@ export const profileRelays = [
   "wss://yabu.me/",
 ];
 
-export const pool = new RelayPool(normalizeUrls(feedRelays), {
+export const pool = new RelayPool(sanitizeRelayUrls(feedRelays), {
   autoReconnect: true,
   logErrorsAndNotices: true,
   subscriptionCache: true,
@@ -45,16 +45,59 @@ pool.ondisconnect((url, msg) => {
   console.log("pool.ondisconnect", url, msg);
 });
 
-export function normalizeUrls(urls: string[]): string[] {
-  return urls.map((url) => {
-    let u = url;
-    
-    if (u.startsWith("http://")) { u = u.replace("http://", "ws://"); }
-    else if (u.startsWith("https://")) { u = u.replace("https://", "wss://"); }
-    else if (!(u.startsWith("ws://") || u.startsWith("wss://"))) { u = "wss://" + u; }
+function isPrivateIpv4Address(hostname: string): boolean {
+  const parts = hostname.split(".");
+  if (parts.length !== 4 || parts.some((p) => p === "")) {
+    return false;
+  }
 
-    return Nostr.utils.normalizeURL(u);
-  });
+  const nums = parts.map((p) => Number(p));
+  if (nums.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
+    return false;
+  }
+
+  const [a, b] = nums;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
+function isPrivateRelay(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+
+    if (hostname === "localhost" || hostname.endsWith(".localhost")) {
+      return true;
+    }
+
+    if (isPrivateIpv4Address(hostname)) {
+      return true;
+    }
+
+    // IPv6 loopback (::1), unique local (fc00::/7), and link-local (fe80::/10)
+    return hostname === "::1" || hostname.startsWith("fc") || hostname.startsWith("fd") || hostname.startsWith("fe8") || hostname.startsWith("fe9") || hostname.startsWith("fea") || hostname.startsWith("feb");
+  } catch {
+    return false;
+  }
+}
+
+export function sanitizeRelayUrls(urls: string[]): string[] {
+  return urls
+    .map((url) => {
+      let u = url;
+
+      if (u.startsWith("http://")) { u = u.replace("http://", "ws://"); }
+      else if (u.startsWith("https://")) { u = u.replace("https://", "wss://"); }
+      else if (!(u.startsWith("ws://") || u.startsWith("wss://"))) { u = "wss://" + u; }
+
+      return Nostr.utils.normalizeURL(u);
+    })
+    .filter((url) => !isPrivateRelay(url));
 }
 
 export interface NostrEvent {
