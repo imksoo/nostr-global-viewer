@@ -5,15 +5,24 @@ const props = defineProps({
     required: true
   }
 })
+
+function getRelayStatusLabel(status: number): string {
+  switch (status) {
+    case 0: return "📡 TUNING";
+    case 1: return "🎙 ON AIR";
+    case 2: return "📻 SIGNING OFF";
+    case 3: return "⏹ NO SIGNAL";
+    default: return "N/A";
+  }
+}
 </script>
 
 <template>
   <div class="p-index-relay">
     <h2 class="p-index-relay__head">リレーの接続状態 (プロフ取得＆イベント投稿用)</h2>
-    <p class="p-index-relay-notice">wss://eu.rbr.bio と wss://us.rbr.bio は本サイトの内部で利用している nostr-relaypool
-      がプロフ取得に既定で利用するリレーです。</p>
     <div class="p-index-relay-status-list">
       <p v-for="[url, status] in props.relays" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
+        <span class="p-index-relay-status-label">{{ getRelayStatusLabel(status) }}</span>
         <span>{{ url }}</span>
       </p>
     </div>
@@ -41,44 +50,37 @@ const props = defineProps({
     font-size: 10px;
   }
 
-  &-status-0 ::before {
-    content: "❌ "
+  &-status-label {
+    display: inline-block;
+    width: 122px;
+    font-weight: bold;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-align: center;
+    border-radius: 999px;
+    padding: 1px 6px;
+    margin-right: 6px;
+    border: 1px solid currentColor;
   }
 
   &-status-0 {
-    // Connecting
     font-size: 10px;
-    color: red;
-  }
-
-  &-status-1 ::before {
-    content: "🟢 ";
+    color: #ffd166;
   }
 
   &-status-1 {
-    // OPEN
     font-size: 10px;
-    color: rgba(255, 255, 255, 1);
-  }
-
-  &-status-2 ::before {
-    content: "🟡 "
+    color: #8ce99a;
   }
 
   &-status-2 {
-    // Closing
     font-size: 10px;
-    color: yellow;
-  }
-
-  &-status-3 ::before {
-    content: "❌ "
+    color: #ffe066;
   }
 
   &-status-3 {
-    // Closed
     font-size: 10px;
-    color: red;
+    color: #ff6b6b;
   }
 }
 </style>
