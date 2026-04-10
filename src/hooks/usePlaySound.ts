@@ -1,6 +1,10 @@
-let actionSound: HTMLAudioElement | null = null;
-let reactionSound: HTMLAudioElement | null = null;
-let etwsSound: HTMLAudioElement | null = null;
+import actionMP3 from '../assets/action.mp3';
+import reactionMP3 from '../assets/reaction.mp3';
+import etwsMP3 from '../assets/etws.mp3';
+
+const actionSound = new Audio(actionMP3);
+const reactionSound = new Audio(reactionMP3);
+const etwsSound = new Audio(etwsMP3);
 
 function playSound(target: HTMLAudioElement): void {
   if (target.paused) {
@@ -9,27 +13,15 @@ function playSound(target: HTMLAudioElement): void {
   }
 }
 
-export async function playActionSound() {
-  if (!actionSound) {
-    const { default: url } = await import('../assets/action.mp3');
-    actionSound = new Audio(url);
-  }
+export function playActionSound() {
   playSound(actionSound);
 }
 
-export async function playReactionSound() {
-  if (!reactionSound) {
-    const { default: url } = await import('../assets/reaction.mp3');
-    reactionSound = new Audio(url);
-  }
+export function playReactionSound() {
   playSound(reactionSound);
 }
 
-export async function playETWSSound() {
-  if (!etwsSound) {
-    const { default: url } = await import('../assets/etws.mp3');
-    etwsSound = new Audio(url);
-  }
+export function playETWSSound() {
   playSound(etwsSound);
 }
 
