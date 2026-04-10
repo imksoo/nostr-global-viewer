@@ -1850,8 +1850,8 @@ function showMore() {
 </template>
 
 <style lang="scss" scoped>
-@import "../assets/scss/project/index.scss";
-@import "../assets/scss/component/post.scss";
+@use "../assets/scss/project/index.scss" as *;
+@use "../assets/scss/component/post.scss" as *;
 
 .c-feed-item {
   margin-top: 5px;

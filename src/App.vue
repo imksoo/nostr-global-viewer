@@ -6,5 +6,5 @@ import top from './views/top.vue';
 </template>
 
 <style lang="scss">
-@import "assets/scss/component/tabs.scss";
+@use "assets/scss/component/tabs.scss" as *;
 </style>
