@@ -1,13 +1,15 @@
 version: 0.2
 phases:
+  install:
+    runtime-versions:
+      nodejs: 24
   pre_build:
     commands:
-      - npm i
+      - npm ci
   build:
     commands:
       - npm test
       - npm run build
 artifacts:
   files:
-    - dist/*
-    - dist/**/*
+    - dist/index.html
