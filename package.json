@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "check": "vue-tsc",
     "bump": "npm version patch -m 'Bump version %s'",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@mdi/js": "^7.4.47",
@@ -26,6 +28,7 @@
     "vue3-tabs-component": "^1.3.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^24.12.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "sass": "^1.99.0",
