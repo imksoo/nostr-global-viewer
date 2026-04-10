@@ -3,7 +3,7 @@ import { Ref, onBeforeUnmount, onMounted, ref } from 'vue';
 import * as Nostr from "nostr-tools";
 import axios, { AxiosResponse } from 'axios';
 import parser from 'html-dom-parser';
-import Bottleneck from 'bottleneck';
+import pLimit from 'p-limit';
 
 import { myBlockedEvents, myBlockList } from '../profile';
 
@@ -322,18 +322,24 @@ function getTokens() {
   return tokens.value;
 }
 
-const limiter = new Bottleneck({
-  maxConcurrent: 1,
-  minTime: 3000,
-});
+const limit = pLimit(1);
+let lastRequestEnd = 0;
+const MIN_INTERVAL_MS = 3000;
 
 async function fetchWithLimiter(url: string): Promise<AxiosResponse | undefined> {
-  try {
-    return await limiter.schedule(() => axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`));
-  } catch (error) {
-    console.error('Request failed:', error);
-    return undefined;
-  }
+  return limit(async () => {
+    const wait = Math.max(0, lastRequestEnd + MIN_INTERVAL_MS - Date.now());
+    if (wait > 0) await new Promise(resolve => setTimeout(resolve, wait));
+    try {
+      const result = await axios.get(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+      lastRequestEnd = Date.now();
+      return result;
+    } catch (error) {
+      console.error('Request failed:', error);
+      lastRequestEnd = Date.now();
+      return undefined;
+    }
+  });
 }
 
 const ogpCache = new Map<string, AxiosResponse>();
