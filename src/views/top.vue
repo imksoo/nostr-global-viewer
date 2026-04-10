@@ -128,7 +128,7 @@ watch(() => route.query, async (newQuery) => {
         authors: [npubId.value]
       }],
       [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays]))],
-      async (ev, _isAfterEose, _relayURL) => {
+      async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
         if (!Nostr.verifySignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
@@ -171,7 +171,7 @@ watch(() => route.query, async (newQuery) => {
           '#e': [noteId.value],
         }],
         [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
-        async (ev, _isAfterEose, _relayURL) => {
+        async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
           addEvent(ev);
         },
         undefined,
@@ -191,7 +191,7 @@ watch(() => route.query, async (newQuery) => {
           authors: [npubId.value]
         }],
         [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
-        async (ev, _isAfterEose, _relayURL) => {
+        async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
           addEvent(ev);
           npubModeText.value = `接続中のリレーから直近の ${events.value.length} 件の投稿を表示しています。(今日へ)`;
         },
@@ -211,7 +211,7 @@ watch(() => route.query, async (newQuery) => {
           limit: countOfDisplayEvents.value * 25,
         }],
         [...new Set(sanitizeRelayUrls([...feedRelays]))],
-        async (ev, _isAfterEose, _relayURL) => {
+        async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
           addEvent(ev);
         },
         undefined,
@@ -270,7 +270,7 @@ watch(() => route.query, async (newQuery) => {
         until,
       }],
       searchRelays,
-      async (ev, _isAfterEose, _relayURL) => {
+      async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
         if (since <= ev.created_at && ev.created_at <= until) {
           addEvent(ev);
           if (npubDateOrMonth.value === "date") {
@@ -288,7 +288,7 @@ watch(() => route.query, async (newQuery) => {
     const unsub2 = pool.subscribe(
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
       [...new Set(sanitizeRelayUrls(searchRelays))],
-      (ev, _isAfterEose, _relayURL) => {
+      (ev: any, _isAfterEose: boolean, _relayURL: string) => {
         if (!Nostr.verifySignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
@@ -425,14 +425,14 @@ function collectJapaneseUsers() {
   const unsub = pool.subscribe(
     [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
     [...new Set(sanitizeRelayUrls(profileRelays))],
-    (ev, _isAfterEose, _relayURL) => {
+    (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
 
       if (ev.kind === 3 && ev.tags && npubRelaysCreatedAt < ev.created_at) {
-        japaneseUsers = ev.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+        japaneseUsers = ev.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
       }
     },
     undefined,
@@ -499,7 +499,7 @@ function collectRyuusokuChan() {
   poolRiver.subscribe(
     [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr_river_flowmeter"], limit: 1 }],
     [...new Set(sanitizeRelayUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime() / 1000))))],
-    (ev, _isAfterEose, _relayURL) => {
+    (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
@@ -634,7 +634,7 @@ async function collectEvents() {
   const unsub = pool.subscribe(
     [{ ids: eventIds }, { kinds: [5], '#e': eventIds }],
     [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
@@ -738,7 +738,7 @@ async function collectProfiles(force = false) {
       authors: pubkeys,
     }],
     [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
@@ -884,7 +884,7 @@ function collectMyRelay() {
       },
     ],
     [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
-    (ev, _isAfterEose, _relayURL) => {
+    (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
@@ -936,7 +936,7 @@ function collectMyBlockList() {
       authors: [myPubkey.value],
     }],
     [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if ((myBlockCreatedAtKind10000.value < ev.created_at && ev.kind === 10000) ||
         (myBlockCreatedAtKind30000.value < ev.created_at && (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
         if (ev.kind === 10000) {
@@ -987,7 +987,7 @@ function collectMyBlockList() {
 
 async function collectFollowsAndSubscribe() {
   const contactList = await pool.fetchAndCacheContactList(myPubkey.value);
-  myFollows.value = contactList.tags.filter((t) => (t[0] === 'p')).map((t) => (t[1]));
+  myFollows.value = contactList.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
 
   const subscribeMaxCount = 1000;
   for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
@@ -996,7 +996,7 @@ async function collectFollowsAndSubscribe() {
     pool.subscribe(
       [{ kinds: [1, 5], authors: followList, limit: 20 }],
       [...new Set(sanitizeRelayUrls(myReadRelays.value))],
-      async (ev, _isAfterEose, _relayURL) => {
+      async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
         if (!Nostr.verifySignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
@@ -1024,7 +1024,7 @@ function subscribeReactions() {
     { kinds: [6, 7], authors: [myPubkey.value], limit: countOfDisplayEvents.value * 5 },
   ],
     [...new Set(sanitizeRelayUrls(myReadRelays.value))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       addEvent(ev);
 
       // 自分宛のリアクションが来ていたら音を鳴らす
@@ -1078,7 +1078,7 @@ function subscribeDirectMessages() {
   pool.subscribe(
     [{ kinds: [4], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
     [...new Set(sanitizeRelayUrls(myReadRelays.value))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
@@ -1171,7 +1171,7 @@ function subscribeNip17DirectMessages() {
   pool.subscribe(
     [{ kinds: [1059], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
     [...new Set(sanitizeRelayUrls(myReadRelays.value))],
-    async (ev, _isAfterEose, _relayURL) => {
+    async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!Nostr.verifySignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;

@@ -302,13 +302,13 @@ export const pool = new RelayPool(sanitizeRelayUrls(feedRelays), {
   useEventCache: true,
   skipVerification: false,
 });
-pool.onerror((url, msg) => {
+pool.onerror((url: string, msg: string) => {
   console.log("pool.error", url, msg);
 });
-pool.onnotice((url, msg) => {
+pool.onnotice((url: string, msg: string) => {
   console.log("pool.onnotice", url, msg);
 });
-pool.ondisconnect((url, msg) => {
+pool.ondisconnect((url: string, msg: string) => {
   console.log("pool.ondisconnect", url, msg);
 });
 
