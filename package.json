@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test --grep-invert @live",
     "test:e2e:live": "playwright test --grep @live",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "sh -c 'if [ -n \"$DISPLAY\" ]; then playwright test --headed --grep-invert @live; elif command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a playwright test --headed --grep-invert @live; else playwright test --grep-invert @live; fi'",
+    "test:e2e:headed:live": "sh -c 'if [ -n \"$DISPLAY\" ]; then playwright test --headed --grep @live; elif command -v xvfb-run >/dev/null 2>&1; then xvfb-run -a playwright test --headed --grep @live; else playwright test --grep @live; fi'"
   },
   "dependencies": {
     "@mdi/js": "^7.4.47",
