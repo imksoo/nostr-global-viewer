@@ -1,8 +1,3 @@
-declare module 'html-dom-parser' {
-  const parser: (html: string) => any[]
-  export default parser
-}
-
 declare module 'nostr-relaypool' {
   export const RelayPool: any
 }

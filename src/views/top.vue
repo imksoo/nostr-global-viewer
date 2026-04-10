@@ -1642,7 +1642,7 @@ const focusedItemId = ref("");
 const showFocusBorder = ref(false);
 const itemsTop = ref<HTMLElement>();
 const itemsBottom = ref<HTMLElement>();
-let showFocusBorderTimeoutId: NodeJS.Timeout | undefined = undefined;
+let showFocusBorderTimeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
 
 const itemFooters = ref<Map<string, any>>(new Map());
 
