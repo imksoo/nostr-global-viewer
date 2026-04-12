@@ -141,6 +141,17 @@ test('SPA smoke: relay connect, latest content render, no blank screen/errors', 
   await expect(page.locator('.c-feed-item').first()).toBeVisible();
   await expect(page.getByText('E2E relay smoke event')).toBeVisible();
 
+  const renderedItems = page.locator('.c-feed-item');
+  const showMoreButton = page.getByRole('button', { name: /もっと表示する/ });
+
+  await expect(renderedItems).toHaveCount(1);
+  await expect(showMoreButton).toContainText('1件表示中');
+
+  await showMoreButton.click();
+
+  await expect(renderedItems).toHaveCount(1);
+  await expect(showMoreButton).toContainText('1件表示中');
+
   const bodyTextLength = await page.evaluate(() => document.body.innerText.trim().length);
   expect(bodyTextLength).toBeGreaterThan(0);
 
