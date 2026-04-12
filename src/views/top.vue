@@ -1780,7 +1780,7 @@ function showMore() {
         <div class="p-index-footer" v-if="!npubId && !noteId"><button v-on:click="(e) => {
           showMore();
           (e.target as HTMLElement).blur()
-        }">もっと表示する ({{ countOfDisplayEvents }}件表示中)</button></div>
+        }">もっと表示する ({{ events.length }}件表示中)</button></div>
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
