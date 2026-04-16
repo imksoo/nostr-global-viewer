@@ -8,9 +8,8 @@ import {
   type MessagePacket,
   type RxNostr,
 } from "rx-nostr";
-import * as Nostr from "nostr-tools";
-
-import { verifyEventSignature } from "./event";
+import type { Filter } from "nostr-typedef";
+import { type Event, verifyEventSignature } from "./event";
 
 export type RelayStatusDetail = "timeout";
 export type RelayStatusTuple = [string, number, RelayStatusDetail?];
@@ -28,7 +27,7 @@ export interface SubscribeOptions {
 }
 
 export type SubscribeCallback = (
-  event: Nostr.Event,
+  event: Event,
   isAfterEose: boolean,
   relayURL: string,
 ) => void | Promise<void>;
@@ -38,7 +37,7 @@ type RelayErrorCallback = (url: string, msg: string) => void;
 type RelayNoticeCallback = (url: string, msg: string) => void;
 type RelayDisconnectCallback = (url: string, msg: string) => void;
 
-const RESPONSE_TIMEOUT_MS = 15000;
+const RESPONSE_TIMEOUT_MS = 60000;
 
 export function relayStateToLegacyStatus(state: ConnectionState): number {
   switch (state) {
@@ -95,7 +94,7 @@ export class RelayPool {
     this.options = options;
     this.rxNostr = createRxNostr({
       verifier: async (event) =>
-        verifyEventSignature(event as unknown as Nostr.Event),
+        verifyEventSignature(event as unknown as Event),
       connectionStrategy: "lazy-keep",
       retry:
         this.options.autoReconnect === false
@@ -196,7 +195,7 @@ export class RelayPool {
     });
   }
 
-  publish(event: Nostr.Event, relays: string[]): void {
+  publish(event: Event, relays: string[]): void {
     const targets = unique(relays);
     if (targets.length === 0) {
       return;
@@ -223,7 +222,7 @@ export class RelayPool {
   }
 
   subscribe(
-    filters: Nostr.Filter[],
+    filters: Filter[],
     relays: string[],
     onEvent: SubscribeCallback,
     _unused?: unknown,
@@ -317,7 +316,7 @@ export class RelayPool {
         next: ({ event, from }: EventPacket) => {
           markRelayResponsive(from);
           void onEvent(
-            event as unknown as Nostr.Event,
+            event as unknown as Event,
             eoseRelays.has(from),
             from,
           );
@@ -372,15 +371,15 @@ export class RelayPool {
     return cleanup;
   }
 
-  async fetchAndCacheContactList(pubkey: string): Promise<Nostr.Event> {
+  async fetchAndCacheContactList(pubkey: string): Promise<Event> {
     const relays = unique(
       Object.values(this.rxNostr.getDefaultRelays({ filter: "read-all" })).map(
         (relay) => relay.url,
       ),
     );
 
-    return await new Promise<Nostr.Event>((resolve, reject) => {
-      let latestEvent: Nostr.Event | null = null;
+    return await new Promise<Event>((resolve, reject) => {
+      let latestEvent: Event | null = null;
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
