@@ -13,6 +13,10 @@ function getRelayStatusLabel(status: number, detail?: string): string {
     return "⏱ TIMEOUT";
   }
 
+  if (detail === "transport-error") {
+    return "⚠ SOCKET DOWN";
+  }
+
   switch (status) {
     case 0: return "📡 TUNING";
     case 1: return "🎙 ON AIR";

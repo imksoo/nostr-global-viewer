@@ -11,7 +11,7 @@ import {
 import type { Filter } from "nostr-typedef";
 import { type Event, verifyEventSignature } from "./event";
 
-export type RelayStatusDetail = "timeout";
+export type RelayStatusDetail = "timeout" | "transport-error";
 export type RelayStatusTuple = [string, number, RelayStatusDetail?];
 
 export interface RelayPoolOptions {
@@ -58,7 +58,7 @@ export function resolveRelayStatus(
   state: ConnectionState,
   detail?: RelayStatusDetail,
 ): number {
-  if (detail === "timeout" && state !== "error" && state !== "rejected" && state !== "terminated") {
+  if ((detail === "timeout" || detail === "transport-error") && state !== "error" && state !== "rejected" && state !== "terminated") {
     return 3;
   }
 
@@ -89,6 +89,7 @@ export class RelayPool {
   private errorHandlers = new Set<RelayErrorCallback>();
   private disconnectHandlers = new Set<RelayDisconnectCallback>();
   private relayResponseIssues = new Map<string, Set<string>>();
+  private relayTransportIssues = new Set<string>();
 
   constructor(relays: string[] = [], options: RelayPoolOptions = {}) {
     this.options = options;
@@ -113,6 +114,7 @@ export class RelayPool {
 
     this.rxNostr.createAllErrorObservable().subscribe(({ from, reason }) => {
       const message = reason instanceof Error ? reason.message : String(reason);
+      this.markRelayTransportError(from);
       if (this.options.logErrorsAndNotices) {
         console.log("RelayPool.error", from, message);
       }
@@ -120,6 +122,7 @@ export class RelayPool {
     });
 
     this.rxNostr.createAllMessageObservable().subscribe((packet) => {
+      this.clearRelayTransportIssue(packet.from);
       if (packet.type === "NOTICE") {
         if (this.options.logErrorsAndNotices) {
           console.log("RelayPool.notice", packet.from, packet.notice);
@@ -172,13 +175,25 @@ export class RelayPool {
     this.relayResponseIssues.set(url, issues);
   }
 
+  private markRelayTransportError(url: string): void {
+    this.relayTransportIssues.add(url);
+  }
+
+  private clearRelayTransportIssue(url: string): void {
+    this.relayTransportIssues.delete(url);
+  }
+
   private getRelayResponseDetail(url: string): RelayStatusDetail | undefined {
     const issues = this.relayResponseIssues.get(url);
-    if (!issues || issues.size === 0) {
-      return undefined;
+    if (issues && issues.size > 0) {
+      return "timeout";
     }
 
-    return "timeout";
+    if (this.relayTransportIssues.has(url)) {
+      return "transport-error";
+    }
+
+    return undefined;
   }
 
   getRelayStatuses(): RelayStatusTuple[] {
@@ -186,6 +201,7 @@ export class RelayPool {
     const relayUrls = unique([
       ...Object.keys(statuses),
       ...Array.from(this.relayResponseIssues.keys()),
+      ...Array.from(this.relayTransportIssues),
     ]);
 
     return relayUrls.map((url) => {
@@ -314,6 +330,7 @@ export class RelayPool {
       .use(rxReq, { on: { relays: targets } })
       .subscribe({
         next: ({ event, from }: EventPacket) => {
+          this.clearRelayTransportIssue(from);
           markRelayResponsive(from);
           void onEvent(
             event as unknown as Event,
@@ -350,6 +367,7 @@ export class RelayPool {
         }
 
         if (packet.state === "connected") {
+          this.clearRelayTransportIssue(packet.from);
           startResponseTimer(packet.from);
           return;
         }

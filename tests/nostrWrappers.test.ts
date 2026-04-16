@@ -108,10 +108,13 @@ describe('nostr wrappers', () => {
     expect(relayStateToLegacyStatusFromPool('terminated')).toBe(3);
   });
 
-  it('treats response timeouts as no signal even when the socket stays open', () => {
+  it('treats response timeouts and transport failures as no signal', () => {
     expect(resolveRelayStatusFromPool('connected', 'timeout')).toBe(3);
     expect(resolveRelayStatusFromPool('dormant', 'timeout')).toBe(3);
     expect(resolveRelayStatusFromPool('error', 'timeout')).toBe(3);
+    expect(resolveRelayStatusFromPool('connected', 'transport-error')).toBe(3);
+    expect(resolveRelayStatusFromPool('dormant', 'transport-error')).toBe(3);
+    expect(resolveRelayStatusFromPool('error', 'transport-error')).toBe(3);
     expect(resolveRelayStatusFromPool('connected')).toBe(1);
   });
 
