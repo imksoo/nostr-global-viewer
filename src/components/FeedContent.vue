@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Ref, onBeforeUnmount, onMounted, ref } from 'vue';
-import * as Nostr from "nostr-tools";
+import { decodeNip19, encodeNote, encodeNpub } from "../lib/nostr/encode";
 import axios, { AxiosResponse } from 'axios';
 import parser from 'html-dom-parser';
 import pLimit from 'p-limit';
@@ -138,7 +138,7 @@ function getTokens() {
     for (let i = 0; i < props.event.tags.length; ++i) {
       const t = props.event.tags[i];
       if (t[0] === 'e') {
-        note = Nostr.nip19.noteEncode(t[1]);
+        note = encodeNote(t[1]);
         break;
       }
     }
@@ -148,7 +148,7 @@ function getTokens() {
     for (let i = props.event.tags.length - 1; i >= 0; --i) {
       const t = props.event.tags[i];
       if (t[0] === 'e') {
-        note = Nostr.nip19.noteEncode(t[1]);
+        note = encodeNote(t[1]);
         break;
       }
     }
@@ -196,7 +196,7 @@ function getTokens() {
           if (0 <= num && num < props.event.tags.length) {
             const t = props.event.tags[num];
             if (t[0] === 'p') {
-              const href = '?' + Nostr.nip19.npubEncode(t[1]);
+              const href = '?' + encodeNpub(t[1]);
               if (props.getProfile) {
                 const profile = props.getProfile(t[1]);
                 let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
@@ -208,7 +208,7 @@ function getTokens() {
                 tokens.value.push({ type: 'nostr', content: text, href });
               }
             } else if (t[0] === 'e') {
-              const href = '?' + Nostr.nip19.noteEncode(t[1]);
+              const href = '?' + encodeNote(t[1]);
               const id = t[1];
               tokens.value.push({ type: 'nostr-note', content: text, href, id });
             } else {
@@ -263,20 +263,20 @@ function getTokens() {
           }
         } else {
           try {
-            const data = Nostr.nip19.decode(text.replace('nostr:', '').replace('@', ''));
+            const data = decodeNip19(text.replace('nostr:', '').replace('@', ''));
             switch (data.type) {
               case "nevent": {
-                const href = '?' + Nostr.nip19.noteEncode(data.data.id);
+                const href = '?' + encodeNote(data.data.id);
                 const id = data.data.id;
                 tokens.value.push({ type: 'nostr-note', content: text, href, id });
               } break;
               case "note": {
-                const href = '?' + Nostr.nip19.noteEncode(data.data);
+                const href = '?' + encodeNote(data.data);
                 const id = data.data;
                 tokens.value.push({ type: 'nostr-note', content: text, href, id });
               } break;
               case "nprofile": {
-                const href = '?' + Nostr.nip19.npubEncode(data.data.pubkey);
+                const href = '?' + encodeNpub(data.data.pubkey);
                 if (props.getProfile) {
                   const profile = props.getProfile(data.data.pubkey);
                   let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);
@@ -289,7 +289,7 @@ function getTokens() {
                 }
               } break;
               case "npub": {
-                const href = '?' + Nostr.nip19.npubEncode(data.data);
+                const href = '?' + encodeNpub(data.data);
                 if (props.getProfile) {
                   const profile = props.getProfile(data.data);
                   let name = profile.display_name || profile.name || profile.pubkey.substring(profile.pubkey.length - 8);

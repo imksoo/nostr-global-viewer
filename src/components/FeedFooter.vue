@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
-import * as Nostr from "nostr-tools";
+import { encodeNote, encodeNpub } from "../lib/nostr/encode";
 import { pool } from "../store";
 
 import { broadcastEventById } from '../actions/EventBroadcast';
@@ -10,7 +10,7 @@ const props = defineProps({
     type: Object as () => {
       id: string,
       pubkey: string,
-      kind: Nostr.Kind,
+      kind: number,
       content: string,
       tags: string[][],
       created_at: number,
@@ -97,7 +97,7 @@ const quoteEvent = (quote = props.event) => {
 }
 
 function copyNoteId(): void {
-  const text = Nostr.nip19.noteEncode(props.event.id);
+  const text = encodeNote(props.event.id);
   copyToClipboard('nostr:' + text);
 }
 
@@ -110,7 +110,7 @@ async function copyToClipboard(text: string) {
 }
 
 function getLinkUrl(): string {
-  return 'https://nostx.shino3.net/' + Nostr.nip19.noteEncode(props.event.id);
+  return 'https://nostx.shino3.net/' + encodeNote(props.event.id);
 }
 
 function getRelativeTimeText(createdAt: number): string {
@@ -191,7 +191,7 @@ function getRelativeTimeText(createdAt: number): string {
   <div class="c-feed-footer2">
     <p class="c-feed-date">
       <span>
-        <a target="_blank" :href="'?' + Nostr.nip19.noteEncode(props.event.id)">
+        <a target="_blank" :href="'?' + encodeNote(props.event.id)">
           {{ new Date(props.event.created_at * 1000).toLocaleString("ja-JP", {
             year: "numeric", month: "numeric", day: "numeric", hour:
               "numeric", minute: "numeric"
@@ -206,7 +206,7 @@ function getRelativeTimeText(createdAt: number): string {
         </a>
         <span>&nbsp;</span>
         <a target="_blank"
-          :href="'?' + Nostr.nip19.npubEncode(props.event.pubkey) + '&date=' + new Date(props.event.created_at * 1000).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">
+          :href="'?' + encodeNpub(props.event.pubkey) + '&date=' + new Date(props.event.created_at * 1000).toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">
           <mdicon name="calendar-today" :width="14" :height="14" title="Open posts of the day" />
         </a>
         <span>&nbsp;</span>

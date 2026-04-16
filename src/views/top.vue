@@ -1,13 +1,23 @@
 <script setup lang="ts">
 import { ref, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
-import * as Nostr from "nostr-tools";
-import { RelayPool } from "nostr-relaypool";
+import { RelayPool } from "../lib/nostr/relayPool";
 import { NostrFetcher } from "nostr-fetch";
 import { useRoute } from "vue-router";
 
-import type { Nip07 } from "nostr-typedef";
-
 import { feedRelays, profileRelays, pool, sanitizeRelayUrls, NostrEvent, events, eventsToSearch, eventsReceived, loggedIn } from "../store";
+import { decodeNip19, encodeNote, encodeNpub } from "../lib/nostr/encode";
+import {
+  BlankEvent,
+  Event as NostrEventType,
+  Kind,
+  createBlankEvent,
+  getEventHash,
+  insertEventIntoAscendingList,
+  insertEventIntoDescendingList,
+  parseNip10,
+  verifyEventSignature,
+} from "../lib/nostr/event";
+import { decryptNip04, decryptNip44, getNip07, getPublicKey, getRelays, hasNip04, hasNip44, signEvent as signViaNip07 } from "../lib/nostr/nip07";
 import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
@@ -79,7 +89,7 @@ watch(() => route.query, async (newQuery) => {
   for (let key in newQuery) {
     if (key.match(nostrRegex)) {
       try {
-        const data = Nostr.nip19.decode(key.replace('nostr:', '').replace('@', ''));
+        const data = decodeNip19(key.replace('nostr:', '').replace('@', ''));
         switch (data.type) {
           case "nevent": {
             noteId.value = data.data.id;
@@ -129,7 +139,7 @@ watch(() => route.query, async (newQuery) => {
       }],
       [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays]))],
       async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-        if (!Nostr.verifySignature(ev)) {
+        if (!verifyEventSignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
         }
@@ -289,7 +299,7 @@ watch(() => route.query, async (newQuery) => {
       [{ kinds: [3, 10002], authors: [npubId.value], limit: 1 }],
       [...new Set(sanitizeRelayUrls(searchRelays))],
       (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-        if (!Nostr.verifySignature(ev)) {
+        if (!verifyEventSignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
         }
@@ -426,7 +436,7 @@ function collectJapaneseUsers() {
     [{ kinds: [3], authors: [japaneseFollowBotPubkey], limit: 1 }],
     [...new Set(sanitizeRelayUrls(profileRelays))],
     (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -465,7 +475,7 @@ function formatRiverObservedAt(unixTime: number): string {
   ].join("");
 }
 
-function parseRyuusokuChanData(ev: Nostr.Event): [string, string][] {
+function parseRyuusokuChanData(ev: NostrEventType): [string, string][] {
   if (!ev.content) {
     return [];
   }
@@ -500,7 +510,7 @@ function collectRyuusokuChan() {
     [{ kinds: [30078], authors: [ryuusokuChanBotPubkey], "#d": ["nostr_river_flowmeter"], limit: 1 }],
     [...new Set(sanitizeRelayUrls(feedRelays).map((e) => (e + "?river=" + Math.floor((new Date()).getTime() / 1000))))],
     (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -519,9 +529,9 @@ if (isKirinoRiver) {
   }, 60 * 1000);
 }
 
-function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): void {
+function addEvent(event: NostrEvent | NostrEventType, addFeeds: boolean = true): void {
   const rawEvent = ("rawEvent" in event && event.rawEvent) ? event.rawEvent : event;
-  if (!Nostr.verifySignature(rawEvent)) {
+  if (!verifyEventSignature(rawEvent)) {
     console.log('Invalid nostr event, signature invalid', event);
     return;
   }
@@ -545,16 +555,16 @@ function addEvent(event: NostrEvent | Nostr.Event, addFeeds: boolean = true): vo
   const rootKind = noteId.value ? getEvent(noteId.value)?.kind || 0 : 0;
 
   if (noteId.value && 40 <= rootKind && rootKind <= 42) {
-    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+    eventsToSearch.value = insertEventIntoDescendingList(eventsToSearch.value, ev);
   } else if (noteId.value) {
-    eventsToSearch.value = Nostr.utils.insertEventIntoAscendingList(eventsToSearch.value, ev) as NostrEvent[];
+    eventsToSearch.value = insertEventIntoAscendingList(eventsToSearch.value, ev);
   } else if (npubId.value) {
-    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+    eventsToSearch.value = insertEventIntoDescendingList(eventsToSearch.value, ev);
   } else if (firstFetching) {
-    eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+    eventsToSearch.value = insertEventIntoDescendingList(eventsToSearch.value, ev);
   } else {
     if (ev.created_at < now - 600) {
-      eventsToSearch.value = Nostr.utils.insertEventIntoDescendingList(eventsToSearch.value, ev) as NostrEvent[];
+      eventsToSearch.value = insertEventIntoDescendingList(eventsToSearch.value, ev);
     } else {
       eventsToSearch.value.unshift(ev);
     }
@@ -588,7 +598,7 @@ let cacheMissHitEventIds = new Set<string>();
 let cacheBlacklistEventIds = new Set<string>();
 let cacheMissHitCountByEventId = new Map<string, number>();
 
-function addDeletedEvent(ev: Nostr.Event) {
+function addDeletedEvent(ev: NostrEventType) {
   cacheBlacklistEventIds.add(ev.id);
 
   for (let i = 0; i < ev.tags.length; ++i) {
@@ -601,7 +611,7 @@ function addDeletedEvent(ev: Nostr.Event) {
   pool.publish(ev, [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))]);
 }
 
-function getEvent(id: string): Nostr.Event | undefined {
+function getEvent(id: string): NostrEventType | undefined {
   if (myBlockedEvents.value.has(id)) {
     return undefined;
   }
@@ -635,7 +645,7 @@ async function collectEvents() {
     [{ ids: eventIds }, { kinds: [5], '#e': eventIds }],
     [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value, ...npubReadRelays, ...npubWriteRelays]))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -720,7 +730,7 @@ function getProfile(pubkey: string): Profile {
   }
 
   if (robohashMode.value) {
-    prof.picture = `https://robohash.org/${Nostr.nip19.npubEncode(pubkey)}.png?set=${robohashMode.value}`
+    prof.picture = `https://robohash.org/${encodeNpub(pubkey)}.png?set=${robohashMode.value}`
     prof.created_at = 0;
   }
   return prof;
@@ -739,7 +749,7 @@ async function collectProfiles(force = false) {
     }],
     [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myWriteRelays.value, ...myReadRelays.value]))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -807,22 +817,18 @@ setInterval(() => {
   );
 }, 8 * 1000);
 
-let windowNostr: Nip07.Nostr | null = null;
 let isPostOpen = ref(false);
 
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
 async function login() {
-  // @ts-ignore
-  windowNostr = window.nostr;
-
-  myPubkey.value = (await windowNostr?.getPublicKey()) ?? "";
+  myPubkey.value = await getPublicKey();
 
   if (myPubkey.value) {
     loggedIn.value = true;
 
-    if (windowNostr?.getRelays) {
-      const firstRelays = await windowNostr.getRelays();
+    const firstRelays = await getRelays();
+    if (Object.keys(firstRelays).length > 0) {
       console.log("NIP-07 First relay = ", JSON.stringify(firstRelays));
 
       if (false && Object.keys(firstRelays).length === 0) {
@@ -857,9 +863,7 @@ const autoLogin = ref(localStorage.getItem("autoLogin") === "true");
 function tryAutoLogin() {
   let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
-    // @ts-ignore
-    windowNostr = window.nostr;
-    if (windowNostr) {
+    if (getNip07()) {
       login();
       clearInterval(checkNIP07Extention);
     }
@@ -885,7 +889,7 @@ function collectMyRelay() {
     ],
     [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -946,8 +950,8 @@ function collectMyBlockList() {
         }
 
         let blockListJSON = "[]";
-        if (windowNostr && windowNostr.nip04) {
-          blockListJSON = (await windowNostr?.nip04.decrypt(myPubkey.value, ev.content))
+        if (hasNip04()) {
+          blockListJSON = (await decryptNip04(myPubkey.value, ev.content)) ?? "[]";
         }
         const blockList = JSON.parse(blockListJSON);
         let blocks: string[] = [];
@@ -997,7 +1001,7 @@ async function collectFollowsAndSubscribe() {
       [{ kinds: [1, 5], authors: followList, limit: 20 }],
       [...new Set(sanitizeRelayUrls(myReadRelays.value))],
       async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-        if (!Nostr.verifySignature(ev)) {
+        if (!verifyEventSignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
           return;
         }
@@ -1069,8 +1073,7 @@ function subscribeReactions() {
 }
 
 function subscribeDirectMessages() {
-  const nip04 = windowNostr?.nip04;
-  if (!nip04) {
+  if (!hasNip04()) {
     console.log("NIP-04 decrypt is not available in this NIP-07 provider.");
     return;
   }
@@ -1079,7 +1082,7 @@ function subscribeDirectMessages() {
     [{ kinds: [4], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
     [...new Set(sanitizeRelayUrls(myReadRelays.value))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -1087,13 +1090,13 @@ function subscribeDirectMessages() {
         return;
       }
 
-      const recipientPubkeys = ev.tags.filter((tag) => tag[0] === "p").map((tag) => tag[1]);
+      const recipientPubkeys = ev.tags.filter((tag: string[]) => tag[0] === "p").map((tag: string[]) => tag[1]);
       if (!recipientPubkeys.includes(myPubkey.value)) {
         return;
       }
 
       try {
-        const decryptedContent = await nip04.decrypt(ev.pubkey, ev.content);
+        const decryptedContent = await decryptNip04(ev.pubkey, ev.content);
         if (!decryptedContent) {
           return;
         }
@@ -1112,33 +1115,38 @@ function subscribeDirectMessages() {
   );
 }
 
-async function unwrapNip17DirectMessage(giftWrap: Nostr.Event): Promise<NostrEvent | null> {
-  const nip44 = (windowNostr as any)?.nip44;
-  if (!nip44) {
+async function unwrapNip17DirectMessage(giftWrap: NostrEventType): Promise<NostrEvent | null> {
+  if (!hasNip44()) {
     return null;
   }
 
   try {
-    const sealJson = await nip44.decrypt(giftWrap.pubkey, giftWrap.content);
-    const seal = JSON.parse(sealJson) as Nostr.Event;
-    if (seal.kind !== 13 || !Nostr.verifySignature(seal)) {
+    const sealJson = await decryptNip44(giftWrap.pubkey, giftWrap.content);
+    if (!sealJson) {
+      return null;
+    }
+    const seal = JSON.parse(sealJson) as NostrEventType;
+    if (seal.kind !== 13 || !verifyEventSignature(seal)) {
       return null;
     }
 
-    const rumorJson = await nip44.decrypt(seal.pubkey, seal.content);
+    const rumorJson = await decryptNip44(seal.pubkey, seal.content);
+    if (!rumorJson) {
+      return null;
+    }
     const rumor = JSON.parse(rumorJson) as Partial<NostrEvent>;
     if (rumor.kind !== 14 || rumor.pubkey !== seal.pubkey || !rumor.id || !rumor.pubkey || !rumor.created_at || !rumor.tags || rumor.content === undefined) {
       return null;
     }
 
-    const rumorHash = Nostr.getEventHash({
+    const rumorHash = getEventHash({
       id: rumor.id,
       pubkey: rumor.pubkey,
       created_at: rumor.created_at,
       kind: rumor.kind,
       tags: rumor.tags,
       content: rumor.content,
-    } as Nostr.Event);
+    } as NostrEventType);
     if (rumorHash !== rumor.id) {
       return null;
     }
@@ -1162,8 +1170,7 @@ async function unwrapNip17DirectMessage(giftWrap: Nostr.Event): Promise<NostrEve
 }
 
 function subscribeNip17DirectMessages() {
-  const nip44 = (windowNostr as any)?.nip44;
-  if (!nip44) {
+  if (!hasNip44()) {
     console.log("NIP-44 decrypt is not available in this NIP-07 provider.");
     return;
   }
@@ -1172,7 +1179,7 @@ function subscribeNip17DirectMessages() {
     [{ kinds: [1059], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
     [...new Set(sanitizeRelayUrls(myReadRelays.value))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-      if (!Nostr.verifySignature(ev)) {
+      if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
         return;
       }
@@ -1180,7 +1187,7 @@ function subscribeNip17DirectMessages() {
         return;
       }
 
-      const recipientPubkeys = ev.tags.filter((tag) => tag[0] === "p").map((tag) => tag[1]);
+      const recipientPubkeys = ev.tags.filter((tag: string[]) => tag[0] === "p").map((tag: string[]) => tag[1]);
       if (!recipientPubkeys.includes(myPubkey.value)) {
         return;
       }
@@ -1195,12 +1202,12 @@ function subscribeNip17DirectMessages() {
   );
 }
 
-type BlankEvent = ReturnType<typeof Nostr.getBlankEvent>;
-let draftEvent = ref<BlankEvent>(Nostr.getBlankEvent(Nostr.Kind.Text));
-let editingTags = ref(Nostr.getBlankEvent(Nostr.Kind.Text));
+
+let draftEvent = ref<BlankEvent>(createBlankEvent(Kind.Text));
+let editingTags = ref(createBlankEvent(Kind.Text));
 
 function newDraftEvent() {
-  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  draftEvent.value = createBlankEvent(Kind.Text);
   // @ts-ignore
   draftEvent.value.tags = [["client", "Nozokimado", "31990:ad73ce27d83ccc6bf6184549e529119d8b5963c5e6f681f6690a33f91c8b615a:1757113040", feedRelays[0] || ""]];
 }
@@ -1222,9 +1229,9 @@ async function post() {
   newDraftEvent();
 }
 
-async function postEvent(event: Nostr.Event) {
-  if (windowNostr) {
-    event = await windowNostr.signEvent(JSON.parse(JSON.stringify(event)));
+async function postEvent(event: NostrEventType) {
+  if (getNip07()) {
+    event = await signViaNip07(JSON.parse(JSON.stringify(event)));
 
     pool.publish(event, sanitizeRelayUrls(myWriteRelays.value));
 
@@ -1236,13 +1243,13 @@ async function postEvent(event: Nostr.Event) {
   }
 }
 
-function openReplyPost(reply: Nostr.Event): void {
+function openReplyPost(reply: NostrEventType): void {
   // 投稿欄をすべて空っぽにする
-  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  draftEvent.value = createBlankEvent(Kind.Text);
   if (reply.kind === 42) {
-    draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.ChannelMessage);
+    draftEvent.value = createBlankEvent(Kind.ChannelMessage);
   }
-  const parsedTags = Nostr.nip10.parse(reply);
+  const parsedTags = parseNip10(reply);
   if (parsedTags.root) {
     draftEvent.value.tags.push(['e', parsedTags.root.id, "", "root"]);
   }
@@ -1278,11 +1285,11 @@ function openReplyPost(reply: Nostr.Event): void {
   isPostOpen.value = true;
 }
 
-function openQuotePost(repost: Nostr.Event): void {
+function openQuotePost(repost: NostrEventType): void {
   // 投稿欄をすべて空っぽにする
-  draftEvent.value = Nostr.getBlankEvent(Nostr.Kind.Text);
+  draftEvent.value = createBlankEvent(Kind.Text);
   // 投稿欄にnoteidを追加する
-  draftEvent.value.content = "\nnostr:" + Nostr.nip19.noteEncode(repost.id);
+  draftEvent.value.content = "\nnostr:" + encodeNote(repost.id);
 
   isPostOpen.value = true;
 }
@@ -1312,7 +1319,7 @@ function extractTags() {
     for (let i = 0; i < nostrStr.length; ++i) {
       const ns = nostrStr[i];
       try {
-        const d = Nostr.nip19.decode(ns.replace('nostr:', '').replace('@', ''));
+        const d = decodeNip19(ns.replace('nostr:', '').replace('@', ''));
         switch (d.type) {
           case "nevent": {
             editingTags.value.tags.push(['e', d.data.id])
@@ -1592,7 +1599,7 @@ function addRepostEvent(targetEvent: NostrEvent) {
   if (!targetEvent.isReposted) {
     const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
-      const repost = createRepostEvent(targetEvent) as Nostr.Event;
+      const repost = createRepostEvent(targetEvent) as NostrEventType;
       pool.publish(targetEvent, sanitizeRelayUrls(myWriteRelays.value));
       postEvent(repost);
       targetEvent.isReposted = true;
@@ -1604,7 +1611,7 @@ function addFavEvent(targetEvent: NostrEvent) {
   if (!targetEvent.isFavorited) {
     const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
-      const reaction = createFavEvent(targetEvent) as Nostr.Event;
+      const reaction = createFavEvent(targetEvent) as NostrEventType;
       pool.publish(targetEvent, sanitizeRelayUrls(myWriteRelays.value));
       postEvent(reaction);
       targetEvent.isFavorited = true;
@@ -1737,25 +1744,25 @@ function showMore() {
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
         </div>
         <div class="p-index-npub-next"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
               npubModeText
             }}</span></a></div>
         <div class="p-index-npub-next"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
       <div class="p-index-feeds" :ref="(el) => { itemsTop = el as HTMLElement }">
@@ -1784,25 +1791,25 @@ function showMore() {
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDateYesterday?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">前の日へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDate?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')"><span>{{
               npubModeText
             }}</span></a></div>
         <div class="p-index-npub-next"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubDateTomorrow?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '')">次の日へ</a>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
         <div class="p-index-npub-prev"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubPrevMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">前の月へ</a>
         </div>
         <div class="p-index-npub-now"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')"><span>月全体へ</span></a>
         </div>
         <div class="p-index-npub-next"><a
-            :href="'?' + Nostr.nip19.npubEncode(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
+            :href="'?' + encodeNpub(npubId) + '&date=' + npubNextMonth?.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit' }).replace(/\//g, '')">次の月へ</a>
         </div>
       </div>
       <div :ref="(el) => { itemsBottom = el as HTMLElement }"></div>
@@ -1822,7 +1829,7 @@ function showMore() {
     <label class="c-post-wrap__bg" @click="isPostOpen = !isPostOpen"></label>
     <div class="c-post-body">
       <div class="c-post-cancel">
-        <button @click="isPostOpen = !isPostOpen; draftEvent = Nostr.getBlankEvent(Nostr.Kind.Text);"
+        <button @click="isPostOpen = !isPostOpen; draftEvent = createBlankEvent(Kind.Text);"
           class="c-post-cancel__btn">
           <span class="c-post-cancel__icon">☓</span>
         </button>

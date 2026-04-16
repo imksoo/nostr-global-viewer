@@ -1,10 +1,10 @@
-import * as Nostr from 'nostr-tools';
+import { EventKind, createBlankEvent } from "../lib/nostr/event";
 import { feedRelays } from "../store";
 
 type NostrEvent = {
   id: string,
   pubkey: string,
-  kind: Nostr.Kind | number,
+  kind: EventKind,
   content: string,
   tags: string[][],
   created_at: number,
@@ -17,8 +17,7 @@ export function createFavEvent(reacted: NostrEvent) {
     (tag) => tag.length >= 2 && (tag[0] === 'e' || tag[0] === 'p'),
   )
 
-
-  const reaction = Nostr.getBlankEvent(7);
+  const reaction = createBlankEvent(7);
   reaction.tags = [
     ...inheritedTags,
     ['e', reacted.id],
@@ -33,7 +32,7 @@ export function createFavEvent(reacted: NostrEvent) {
 }
 
 export function createRepostEvent(reposted: NostrEvent) {
-  const reaction = Nostr.getBlankEvent(6);
+  const reaction = createBlankEvent(6);
   reaction.tags = [
     ['e', reposted.id],
     ['p', reposted.pubkey],

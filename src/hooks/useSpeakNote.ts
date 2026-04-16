@@ -1,4 +1,4 @@
-import * as nostr from 'nostr-tools';
+import type { Event } from '../lib/nostr/event';
 
 type Profile = {
   pubkey: string,
@@ -9,7 +9,7 @@ type Profile = {
 };
 
 const synth = window.speechSynthesis;
-export async function speakNote(event: nostr.Event, profile: Profile, vol: string, waitTime: number = 1500) {
+export async function speakNote(event: Event, profile: Profile, vol: string, waitTime: number = 1500) {
   const volume = parseFloat(vol) || 0.5;
 
   if (event.kind !== 1) {

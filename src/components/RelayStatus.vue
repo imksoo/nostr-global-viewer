@@ -1,12 +1,18 @@
 <script setup lang="ts">
+import type { RelayStatusTuple } from "../lib/nostr/relayPool";
+
 const props = defineProps({
   relays: {
-    type: Array as () => [string, number][],
+    type: Array as () => RelayStatusTuple[],
     required: true
   }
 })
 
-function getRelayStatusLabel(status: number): string {
+function getRelayStatusLabel(status: number, detail?: string): string {
+  if (detail === "timeout") {
+    return "⏱ TIMEOUT";
+  }
+
   switch (status) {
     case 0: return "📡 TUNING";
     case 1: return "🎙 ON AIR";
@@ -21,8 +27,8 @@ function getRelayStatusLabel(status: number): string {
   <div class="p-index-relay">
     <h2 class="p-index-relay__head">リレーの接続状態 (プロフ取得＆イベント投稿用)</h2>
     <div class="p-index-relay-status-list">
-      <p v-for="[url, status] in props.relays" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
-        <span class="p-index-relay-status-label">{{ getRelayStatusLabel(status) }}</span>
+      <p v-for="[url, status, detail] in props.relays" v-bind:key="url" v-bind:class="'p-index-relay-status-' + status">
+        <span class="p-index-relay-status-label">{{ getRelayStatusLabel(status, detail) }}</span>
         <span>{{ url }}</span>
       </p>
     </div>

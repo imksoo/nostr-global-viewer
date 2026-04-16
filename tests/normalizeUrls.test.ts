@@ -1,14 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('nostr-relaypool', () => ({
-  RelayPool: vi.fn().mockImplementation(function () {
-    this.onerror = vi.fn();
-    this.onnotice = vi.fn();
-    this.ondisconnect = vi.fn();
-    this.publish = vi.fn();
-  }),
-}));
-
 import { sanitizeRelayUrls } from '../src/store';
 
 describe('normalizeUrls', () => {

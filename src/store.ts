@@ -1,7 +1,7 @@
 import { ref } from "vue";
 
-import * as Nostr from "nostr-tools";
-import { RelayPool } from "nostr-relaypool";
+import { Event as NostrEventType, EventKind, normalizeRelayUrl } from "./lib/nostr/event";
+import { RelayPool } from "./lib/nostr/relayPool";
 
 export const feedRelays = ["wss://relay-jp.nostr.wirednet.jp/"];
 
@@ -235,7 +235,7 @@ export async function warmupRelayHostnameSafety(urls: string[]): Promise<void> {
       else if (u.startsWith("https://")) { u = u.replace("https://", "wss://"); }
       else if (!(u.startsWith("ws://") || u.startsWith("wss://"))) { u = "wss://" + u; }
 
-      return Nostr.utils.normalizeURL(u);
+      return normalizeRelayUrl(u);
     })
     .filter((url) => !isPrivateRelay(url));
 
@@ -263,7 +263,7 @@ export function sanitizeRelayUrls(urls: string[]): string[] {
       else if (u.startsWith("https://")) { u = u.replace("https://", "wss://"); }
       else if (!(u.startsWith("ws://") || u.startsWith("wss://"))) { u = "wss://" + u; }
 
-      return Nostr.utils.normalizeURL(u);
+      return normalizeRelayUrl(u);
     })
     .filter((url) => {
       const reason = getPrivateRelayReason(url);
@@ -316,9 +316,9 @@ export interface NostrEvent {
   id: string;
   sig: string;
   pubkey: string;
-  kind: Nostr.Kind | number;
+  kind: EventKind;
   content: string;
-  rawEvent?: Nostr.Event;
+  rawEvent?: NostrEventType;
   tags: string[][];
   created_at: number;
   isReposted: Boolean | undefined;
@@ -327,5 +327,5 @@ export interface NostrEvent {
 
 export const events = ref(new Array<NostrEvent>());
 export const eventsToSearch = ref(new Array<NostrEvent>());
-export const eventsReceived = ref(new Map<string, NostrEvent | Nostr.Event>());
+export const eventsReceived = ref(new Map<string, NostrEvent | NostrEventType>());
 export const loggedIn = ref(false);

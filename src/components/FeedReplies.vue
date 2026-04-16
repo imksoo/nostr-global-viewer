@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import * as Nostr from "nostr-tools";
+import { encodeNote, encodeNpub } from "../lib/nostr/encode";
 import { ref } from "vue";
 
 const displayCount = ref(20);
@@ -7,7 +7,7 @@ const displayCount = ref(20);
 function getUserLink(pubkey: string): string {
   if (pubkey) {
     try {
-      const href = "?" + Nostr.nip19.npubEncode(pubkey);
+      const href = "?" + encodeNpub(pubkey);
       return href;
     } catch (err) {
       console.error(err);
@@ -21,7 +21,7 @@ function getUserLink(pubkey: string): string {
 function getEventLink(id: string): string {
   if (id) {
     try {
-      const href = "?" + Nostr.nip19.noteEncode(id);
+      const href = "?" + encodeNote(id);
       return href;
     } catch (err) {
       console.error(err);
