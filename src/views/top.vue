@@ -27,8 +27,18 @@ import {
   hasNip04,
   hasNip44,
   isNip07Available,
+  parseSecretKeyInput,
   signEvent,
 } from "../lib/nostr/signer";
+import {
+  clearStoredNip49Secret,
+  hasStoredNip49Secret,
+  readAutoLoginPreference,
+  setStoredNip49Secret,
+  writeAutoLoginPreference,
+  getStoredNip49Secret,
+} from "../lib/nostr/loginStorage";
+import { decryptSecretKeyWithNip49, encryptSecretKeyWithNip49 } from "../lib/nostr/nip49";
 import { uploadImageToNostpic } from "../lib/nostr/nostpic";
 import {
   myPubkey,
@@ -897,15 +907,56 @@ async function loginWithNip07(): Promise<void> {
   }
 
   await activateNip07Signer();
+  loginMethod.value = "nip07";
+  directNsecSecretHex.value = null;
   await finalizeLogin();
 }
 
 async function loginWithNsec(secretKey: string): Promise<void> {
-  await activateNsecSigner(secretKey);
+  const normalizedSecret = parseSecretKeyInput(secretKey);
+  await activateNsecSigner(normalizedSecret);
+  loginMethod.value = "nsec";
+  directNsecSecretHex.value = normalizedSecret;
   await finalizeLogin();
 }
 
-const autoLogin = ref(localStorage.getItem("autoLogin") === "true");
+async function loginWithNip49Password(password: string): Promise<void> {
+  const encryptedSecret = getStoredNip49Secret();
+  if (!encryptedSecret) {
+    throw new Error("保存済みの NIP-49 秘密鍵が見つかりません");
+  }
+
+  const secretHex = await decryptSecretKeyWithNip49(encryptedSecret, password);
+  await activateNsecSigner(secretHex);
+  loginMethod.value = "nip49";
+  directNsecSecretHex.value = null;
+  await finalizeLogin();
+}
+
+async function enableNip49Storage(password: string): Promise<void> {
+  if (!directNsecSecretHex.value) {
+    throw new Error("現在の秘密鍵ログイン情報が見つかりません");
+  }
+
+  const encryptedSecret = await encryptSecretKeyWithNip49(directNsecSecretHex.value, password);
+  setStoredNip49Secret(encryptedSecret);
+  nip49Stored.value = true;
+}
+
+function disableNip49Storage(): void {
+  clearStoredNip49Secret();
+  nip49Stored.value = false;
+}
+
+const autoLogin = ref(readAutoLoginPreference());
+const loginMethod = ref<"nip07" | "nsec" | "nip49" | null>(null);
+const directNsecSecretHex = ref<string | null>(null);
+const nip49Stored = ref(hasStoredNip49Secret());
+
+watch(autoLogin, (value) => {
+  writeAutoLoginPreference(value);
+});
+
 function tryAutoLogin() {
   let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
@@ -1861,10 +1912,20 @@ function showMore() {
         <IndexIntroControl
           :logged-in="loggedIn"
           :nip07-available="nip07Available"
+          :nip49-available="nip49Stored"
           :login-with-nip07="loginWithNip07"
           :login-with-nsec="loginWithNsec"
+          :login-with-nip49-password="loginWithNip49Password"
         ></IndexIntroControl>
-        <AutoLoginControl v-model:autoLogin="autoLogin" :nip07-available="nip07Available"></AutoLoginControl>
+        <AutoLoginControl
+          v-model:autoLogin="autoLogin"
+          :logged-in="loggedIn"
+          :login-method="loginMethod"
+          :nip07-available="nip07Available"
+          :nip49-stored="nip49Stored"
+          :enable-nip49-storage="enableNip49Storage"
+          :disable-nip49-storage="disableNip49Storage"
+        ></AutoLoginControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
         <SearchWordControl v-model:search-words="searchWords" v-model:event-type="searchEventType"

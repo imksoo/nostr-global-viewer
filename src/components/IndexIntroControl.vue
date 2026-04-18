@@ -4,14 +4,20 @@ import { ref } from "vue";
 const props = defineProps<{
   loggedIn: boolean;
   nip07Available: boolean;
+  nip49Available: boolean;
   loginWithNip07: () => Promise<void> | void;
   loginWithNsec: (secretKey: string) => Promise<void> | void;
+  loginWithNip49Password: (password: string) => Promise<void> | void;
 }>();
 
 const nsecInput = ref("");
 const nsecError = ref("");
 const nsecSubmitting = ref(false);
 const nsecModalOpen = ref(false);
+const nip49PasswordInput = ref("");
+const nip49Error = ref("");
+const nip49Submitting = ref(false);
+const nip49ModalOpen = ref(false);
 
 async function submitNsecLogin(): Promise<void> {
   nsecError.value = "";
@@ -40,6 +46,34 @@ function closeNsecModal(): void {
   nsecError.value = "";
   nsecModalOpen.value = false;
 }
+
+async function submitNip49Login(): Promise<void> {
+  nip49Error.value = "";
+  nip49Submitting.value = true;
+
+  try {
+    await props.loginWithNip49Password(nip49PasswordInput.value);
+    nip49PasswordInput.value = "";
+    nip49ModalOpen.value = false;
+  } catch (error) {
+    nip49Error.value = error instanceof Error ? error.message : "NIP-49 ログインに失敗しました";
+  } finally {
+    nip49Submitting.value = false;
+  }
+}
+
+function openNip49Modal(): void {
+  nip49Error.value = "";
+  nip49ModalOpen.value = true;
+}
+
+function closeNip49Modal(): void {
+  if (nip49Submitting.value) {
+    return;
+  }
+  nip49Error.value = "";
+  nip49ModalOpen.value = false;
+}
 </script>
 
 <template>
@@ -59,6 +93,13 @@ function closeNsecModal(): void {
           type="button"
           value="nsec (秘密鍵)でログイン"
           v-on:click="openNsecModal()"
+        />
+        <input
+          class="p-index-signin__btn"
+          type="button"
+          value="NIP-49のパスワードログイン"
+          :disabled="!props.nip49Available"
+          v-on:click="openNip49Modal()"
         />
       </div>
     </div>
@@ -96,6 +137,43 @@ function closeNsecModal(): void {
           type="submit"
           :value="nsecSubmitting ? 'ログイン中...' : 'ログイン'"
           :disabled="nsecSubmitting"
+        />
+      </div>
+    </form>
+  </div>
+  <div
+    class="p-index-signin-modal"
+    v-if="!props.loggedIn && nip49ModalOpen"
+    v-on:click.self="closeNip49Modal()"
+  >
+    <form class="p-index-signin-modal__dialog" v-on:submit.prevent="submitNip49Login()">
+      <h3 class="p-index-signin-modal__head">NIP-49 のパスワードでログイン</h3>
+      <input
+        class="p-index-signin-modal__input"
+        type="password"
+        autocomplete="current-password"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="NIP-49 の復号パスワード"
+        v-model="nip49PasswordInput"
+      />
+      <p class="p-index-signin-modal__note">
+        この端末に保存済みの NIP-49 暗号化秘密鍵を、ブラウザー上で復号してログインします。
+      </p>
+      <p class="p-index-signin-modal__error" v-if="nip49Error">{{ nip49Error }}</p>
+      <div class="p-index-signin-modal__actions">
+        <input
+          class="p-index-signin-modal__btn p-index-signin-modal__btn--ghost"
+          type="button"
+          value="キャンセル"
+          :disabled="nip49Submitting"
+          v-on:click="closeNip49Modal()"
+        />
+        <input
+          class="p-index-signin-modal__btn"
+          type="submit"
+          :value="nip49Submitting ? 'ログイン中...' : 'ログイン'"
+          :disabled="nip49Submitting"
         />
       </div>
     </form>
