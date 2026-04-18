@@ -17,7 +17,18 @@ import {
   parseNip10,
   verifyEventSignature,
 } from "../lib/nostr/event";
-import { decryptNip04, decryptNip44, getNip07, getPublicKey, getRelays, hasNip04, hasNip44, signEvent as signViaNip07 } from "../lib/nostr/nip07";
+import {
+  activateNip07Signer,
+  activateNsecSigner,
+  decryptNip04,
+  decryptNip44,
+  getPublicKey,
+  getRelays,
+  hasNip04,
+  hasNip44,
+  isNip07Available,
+  signEvent,
+} from "../lib/nostr/signer";
 import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
@@ -818,53 +829,90 @@ setInterval(() => {
 }, 8 * 1000);
 
 let isPostOpen = ref(false);
+const nip07Available = ref(isNip07Available());
 
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
-async function login() {
-  myPubkey.value = await getPublicKey();
+function resetMySessionState(): void {
+  myRelaysCreatedAt.value = 0;
+  myReadRelays.value = [];
+  myWriteRelays.value = [];
+  myFollows.value = [];
+  myBlockCreatedAtKind10000.value = 0;
+  myBlockCreatedAtKind30000.value = 0;
+  myBlockListKind10000.value = [];
+  myBlockListKind30000.value = [];
+  myBlockList.value = [];
+  myBlockedEvents.value.clear();
+}
 
-  if (myPubkey.value) {
-    loggedIn.value = true;
-
-    const firstRelays = await getRelays();
-    if (Object.keys(firstRelays).length > 0) {
-      console.log("NIP-07 First relay = ", JSON.stringify(firstRelays));
-
-      if (false && Object.keys(firstRelays).length === 0) {
-        window.alert("NIP-07拡張機能にリレーリストを設定するのをおすすめしています。");
-      }
-      for (const r in firstRelays) {
-        if (firstRelays[r].read) {
-          myReadRelays.value.push(r);
-        }
-        if (firstRelays[r].write) {
-          myWriteRelays.value.push(r);
-        }
-      }
-
-      console.log("NIP-07 First read relay: ", JSON.stringify(myReadRelays.value));
-      console.log("NIP-07 First write relay: ", JSON.stringify(myWriteRelays.value));
+function applyRelayPolicies(relays: Awaited<ReturnType<typeof getRelays>>): void {
+  for (const relayUrl in relays) {
+    if (relays[relayUrl].read) {
+      myReadRelays.value.push(relayUrl);
     }
-    collectMyRelay();
-    collectMyBlockList();
-    if (!noteId.value && !npubId.value) {
-      setTimeout(() => {
-        collectFollowsAndSubscribe();
-        subscribeReactions();
-        subscribeDirectMessages();
-        subscribeNip17DirectMessages();
-      }, 1000);
+    if (relays[relayUrl].write) {
+      myWriteRelays.value.push(relayUrl);
     }
   }
+
+  myReadRelays.value = [...new Set(sanitizeRelayUrls(myReadRelays.value))];
+  myWriteRelays.value = [...new Set(sanitizeRelayUrls(myWriteRelays.value))];
+}
+
+async function finalizeLogin(): Promise<void> {
+  const pubkey = await getPublicKey();
+  if (!pubkey) {
+    throw new Error("公開鍵を取得できませんでした");
+  }
+
+  resetMySessionState();
+  myPubkey.value = pubkey;
+  loggedIn.value = true;
+
+  const firstRelays = await getRelays();
+  if (Object.keys(firstRelays).length > 0) {
+    console.log("Initial relay list = ", JSON.stringify(firstRelays));
+    applyRelayPolicies(firstRelays);
+    console.log("Initial read relay: ", JSON.stringify(myReadRelays.value));
+    console.log("Initial write relay: ", JSON.stringify(myWriteRelays.value));
+  }
+
+  collectMyRelay();
+  collectMyBlockList();
+  if (!noteId.value && !npubId.value) {
+    setTimeout(() => {
+      collectFollowsAndSubscribe();
+      subscribeReactions();
+      subscribeDirectMessages();
+      subscribeNip17DirectMessages();
+    }, 1000);
+  }
+}
+
+async function loginWithNip07(): Promise<void> {
+  if (!isNip07Available()) {
+    throw new Error("NIP-07 拡張機能が見つかりません");
+  }
+
+  await activateNip07Signer();
+  await finalizeLogin();
+}
+
+async function loginWithNsec(secretKey: string): Promise<void> {
+  await activateNsecSigner(secretKey);
+  await finalizeLogin();
 }
 
 const autoLogin = ref(localStorage.getItem("autoLogin") === "true");
 function tryAutoLogin() {
   let retryCount = 0;
   const checkNIP07Extention = setInterval(() => {
-    if (getNip07()) {
-      login();
+    nip07Available.value = isNip07Available();
+    if (nip07Available.value) {
+      loginWithNip07().catch((error) => {
+        console.log("Auto login failed", error);
+      });
       clearInterval(checkNIP07Extention);
     }
     ++retryCount;
@@ -895,8 +943,8 @@ function collectMyRelay() {
       }
 
       if (ev.kind === 3 && ev.content && myRelaysCreatedAt.value < ev.created_at) {
-        myReadRelays.value.slice(0);
-        myWriteRelays.value.slice(0);
+        myReadRelays.value = [];
+        myWriteRelays.value = [];
         myRelaysCreatedAt.value = ev.created_at;
         const content = JSON.parse(ev.content);
         for (const r in content) {
@@ -906,8 +954,8 @@ function collectMyRelay() {
           }
         }
       } else if (ev.kind === 10002 && myRelaysCreatedAt.value < ev.created_at) {
-        myReadRelays.value.slice(0);
-        myWriteRelays.value.slice(0);
+        myReadRelays.value = [];
+        myWriteRelays.value = [];
         myRelaysCreatedAt.value = ev.created_at;
         for (let i = 0; i < ev.tags.length; ++i) {
           const t = ev.tags[i];
@@ -1074,7 +1122,7 @@ function subscribeReactions() {
 
 function subscribeDirectMessages() {
   if (!hasNip04()) {
-    console.log("NIP-04 decrypt is not available in this NIP-07 provider.");
+    console.log("NIP-04 decrypt is not available in the active signer.");
     return;
   }
 
@@ -1171,7 +1219,7 @@ async function unwrapNip17DirectMessage(giftWrap: NostrEventType): Promise<Nostr
 
 function subscribeNip17DirectMessages() {
   if (!hasNip44()) {
-    console.log("NIP-44 decrypt is not available in this NIP-07 provider.");
+    console.log("NIP-44 decrypt is not available in the active signer.");
     return;
   }
 
@@ -1229,18 +1277,28 @@ async function post() {
   newDraftEvent();
 }
 
-async function postEvent(event: NostrEventType) {
-  if (getNip07()) {
-    event = await signViaNip07(JSON.parse(JSON.stringify(event)));
-
-    pool.publish(event, sanitizeRelayUrls(myWriteRelays.value));
-
-    if (soundEffect.value) {
-      playActionSound();
-    }
-
-    addEvent(event);
+function getPublishRelays(): string[] {
+  if (myWriteRelays.value.length > 0) {
+    return sanitizeRelayUrls(myWriteRelays.value);
   }
+
+  return [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays]))];
+}
+
+async function postEvent(event: NostrEventType) {
+  if (!loggedIn.value) {
+    throw new Error("ログインが必要です");
+  }
+
+  event = await signEvent(JSON.parse(JSON.stringify(event)));
+
+  pool.publish(event, getPublishRelays());
+
+  if (soundEffect.value) {
+    playActionSound();
+  }
+
+  addEvent(event);
 }
 
 function openReplyPost(reply: NostrEventType): void {
@@ -1527,7 +1585,11 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
     e.preventDefault();
     e.stopPropagation();
   } else if (e.key === 'l' && !loggedIn.value) {
-    login();
+    if (nip07Available.value) {
+      loginWithNip07().catch((error) => {
+        console.log("Shortcut login failed", error);
+      });
+    }
     e.preventDefault();
     e.stopPropagation();
   } else if (e.key === 'l' && loggedIn.value) {
@@ -1588,11 +1650,25 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
 onMounted(() => {
   window.addEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.observe(i as Element) });
+
+  if (!nip07Available.value) {
+    let retryCount = 0;
+    nip07AvailabilityIntervalId = setInterval(() => {
+      nip07Available.value = isNip07Available();
+      retryCount += 1;
+      if (nip07Available.value || retryCount > 60) {
+        clearInterval(nip07AvailabilityIntervalId);
+      }
+    }, 500);
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
+  if (nip07AvailabilityIntervalId) {
+    clearInterval(nip07AvailabilityIntervalId);
+  }
 })
 
 function addRepostEvent(targetEvent: NostrEvent) {
@@ -1600,7 +1676,7 @@ function addRepostEvent(targetEvent: NostrEvent) {
     const confirmed = window.confirm(`リポストしますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
       const repost = createRepostEvent(targetEvent) as NostrEventType;
-      pool.publish(targetEvent, sanitizeRelayUrls(myWriteRelays.value));
+      pool.publish(targetEvent, getPublishRelays());
       postEvent(repost);
       targetEvent.isReposted = true;
     }
@@ -1612,7 +1688,7 @@ function addFavEvent(targetEvent: NostrEvent) {
     const confirmed = window.confirm(`ふぁぼりますか？\n\n"${targetEvent.content}"`);
     if (confirmed) {
       const reaction = createFavEvent(targetEvent) as NostrEventType;
-      pool.publish(targetEvent, sanitizeRelayUrls(myWriteRelays.value));
+      pool.publish(targetEvent, getPublishRelays());
       postEvent(reaction);
       targetEvent.isFavorited = true;
     }
@@ -1650,6 +1726,7 @@ const showFocusBorder = ref(false);
 const itemsTop = ref<HTMLElement>();
 const itemsBottom = ref<HTMLElement>();
 let showFocusBorderTimeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
+let nip07AvailabilityIntervalId: ReturnType<typeof setInterval> | undefined = undefined;
 
 const itemFooters = ref<Map<string, any>>(new Map());
 
@@ -1724,8 +1801,13 @@ function showMore() {
     <div class="p-index-heading">
       <div class="p-index-heading__inner">
         <IndexTitleControl :feed-relays="feedRelays"></IndexTitleControl>
-        <IndexIntroControl :logged-in="loggedIn" :login="login"></IndexIntroControl>
-        <AutoLoginControl v-model:autoLogin="autoLogin"></AutoLoginControl>
+        <IndexIntroControl
+          :logged-in="loggedIn"
+          :nip07-available="nip07Available"
+          :login-with-nip07="loginWithNip07"
+          :login-with-nsec="loginWithNsec"
+        ></IndexIntroControl>
+        <AutoLoginControl v-model:autoLogin="autoLogin" :nip07-available="nip07Available"></AutoLoginControl>
         <AutoSpeechControl v-model:auto-speech="autoSpeech" v-model:volume="volume"></AutoSpeechControl>
         <SoundEffectControl v-model:soundEffect="soundEffect"></SoundEffectControl>
         <SearchWordControl v-model:search-words="searchWords" v-model:event-type="searchEventType"

@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@mdi/js": "^7.4.47",
+    "@noble/ciphers": "^2.2.0",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@scure/base": "^2.0.0",

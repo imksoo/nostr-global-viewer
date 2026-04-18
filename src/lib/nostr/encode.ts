@@ -5,6 +5,7 @@ const utf8Decoder = new TextDecoder("utf-8");
 
 type Nip19DecodeResult =
   | { type: "npub"; data: string }
+  | { type: "nsec"; data: string }
   | { type: "note"; data: string }
   | { type: "nprofile"; data: { pubkey: string; relays: string[] } }
   | { type: "nevent"; data: { id: string; relays: string[]; author?: string; kind?: number } };
@@ -78,6 +79,7 @@ export function decodeNip19(value: string): Nip19DecodeResult {
   const data = new Uint8Array(bech32.fromWords(words));
 
   switch (prefix) {
+    case "nsec":
     case "npub":
     case "note":
       return { type: prefix, data: bytesToHex(data) };

@@ -1,25 +1,104 @@
 <script setup lang="ts">
 import { ref } from "vue";
-const props = defineProps({
-  loggedIn: {
-    type: Boolean,
-    required: true,
-  },
-  login: {
-    type: Function,
-    required: true,
-  },
-});
 
-// const nip07exists = ref('nostr' in window);
-const nip07exists = true;
+const props = defineProps<{
+  loggedIn: boolean;
+  nip07Available: boolean;
+  loginWithNip07: () => Promise<void> | void;
+  loginWithNsec: (secretKey: string) => Promise<void> | void;
+}>();
+
+const nsecInput = ref("");
+const nsecError = ref("");
+const nsecSubmitting = ref(false);
+const nsecModalOpen = ref(false);
+
+async function submitNsecLogin(): Promise<void> {
+  nsecError.value = "";
+  nsecSubmitting.value = true;
+
+  try {
+    await props.loginWithNsec(nsecInput.value);
+    nsecInput.value = "";
+    nsecModalOpen.value = false;
+  } catch (error) {
+    nsecError.value = error instanceof Error ? error.message : "秘密鍵ログインに失敗しました";
+  } finally {
+    nsecSubmitting.value = false;
+  }
+}
+
+function openNsecModal(): void {
+  nsecError.value = "";
+  nsecModalOpen.value = true;
+}
+
+function closeNsecModal(): void {
+  if (nsecSubmitting.value) {
+    return;
+  }
+  nsecError.value = "";
+  nsecModalOpen.value = false;
+}
 </script>
+
 <template>
-  <div class="p-index-signin" v-if="!props.loggedIn" :style="(!nip07exists) ? { display: 'none' } : {}">
+  <div class="p-index-signin" v-if="!props.loggedIn">
     <h2 class="p-index-signin__head">この画面からつぶやく</h2>
     <div class="p-index-signin__body">
-      <input class="p-index-signin__btn" type="button" value="NIP-07でログイン" v-on:click="(_$event) => props.login()" />
+      <div class="p-index-signin__row">
+        <input
+          class="p-index-signin__btn"
+          type="button"
+          value="NIP-07でログイン"
+          :disabled="!props.nip07Available"
+          v-on:click="(_$event) => props.loginWithNip07()"
+        />
+        <input
+          class="p-index-signin__btn"
+          type="button"
+          value="nsec (秘密鍵)でログイン"
+          v-on:click="openNsecModal()"
+        />
+      </div>
     </div>
+  </div>
+  <div
+    class="p-index-signin-modal"
+    v-if="!props.loggedIn && nsecModalOpen"
+    v-on:click.self="closeNsecModal()"
+  >
+    <form class="p-index-signin-modal__dialog" v-on:submit.prevent="submitNsecLogin()">
+      <h3 class="p-index-signin-modal__head">nsec (秘密鍵)でログイン</h3>
+      <input
+        class="p-index-signin-modal__input"
+        type="password"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="nsec1... または 64桁の16進秘密鍵"
+        v-model="nsecInput"
+      />
+      <p class="p-index-signin-modal__note">
+        入力された秘密鍵はブラウザー上のメモリでのみ保持して、リレーサーバーや外部には送信しません。
+      </p>
+      <p class="p-index-signin-modal__error" v-if="nsecError">{{ nsecError }}</p>
+      <div class="p-index-signin-modal__actions">
+        <input
+          class="p-index-signin-modal__btn p-index-signin-modal__btn--ghost"
+          type="button"
+          value="キャンセル"
+          :disabled="nsecSubmitting"
+          v-on:click="closeNsecModal()"
+        />
+        <input
+          class="p-index-signin-modal__btn"
+          type="submit"
+          :value="nsecSubmitting ? 'ログイン中...' : 'ログイン'"
+          :disabled="nsecSubmitting"
+        />
+      </div>
+    </form>
   </div>
   <div class="p-index-intro" v-if="!props.loggedIn">
     <h2 class="p-index-intro__head"><span>はじめに</span></h2>
@@ -55,6 +134,7 @@ const nip07exists = true;
     </p>
   </div>
 </template>
+
 <style scoped lang="scss">
 .p-index-signin {
   background: rgba(0, 0, 0, 0.6);
@@ -76,6 +156,12 @@ const nip07exists = true;
     padding-left: 10px;
   }
 
+  &__row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
   &__btn {
     background-color: #fc5fa1;
     color: #ffffff;
@@ -91,6 +177,98 @@ const nip07exists = true;
 
     &:hover {
       background-color: #df3d81;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+    cursor: not-allowed;
+    }
+  }
+}
+
+.p-index-signin-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+
+  &__dialog {
+    width: min(32rem, 100%);
+    background: #1f1f1f;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 1rem;
+    box-sizing: border-box;
+    padding: 1.25rem;
+  }
+
+  &__head {
+    color: #ffffff;
+    font-size: 1rem;
+    margin: 0 0 1rem;
+  }
+
+  &__input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.95);
+    color: #222222;
+    font-size: 14px;
+  }
+
+  &__note {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 0.75rem 0 0;
+  }
+
+  &__error {
+    color: #ffb6cf;
+    font-size: 13px;
+    margin: 0.75rem 0 0;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  &__btn {
+    background-color: #fc5fa1;
+    color: #ffffff;
+    display: block;
+    box-sizing: border-box;
+    padding: 0.5rem 1.4rem;
+    border-radius: 2rem;
+    transition: all 0.4s;
+    border: none;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover {
+      background-color: #df3d81;
+    }
+
+    &:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+  }
+
+  &__btn--ghost {
+    background: rgba(255, 255, 255, 0.14);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
     }
   }
 }
@@ -167,6 +345,26 @@ const nip07exists = true;
 @media screen and (max-width: 880px) {
   .p-index-post--signin {
     padding: 12px 0;
+  }
+
+  .p-index-signin {
+    flex-direction: column;
+    align-items: stretch;
+
+    &__body {
+      border-left: none;
+      border-top: 1px solid #fff;
+      padding-left: 0;
+      padding-top: 10px;
+    }
+  }
+
+  .p-index-signin-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .p-index-signin-modal__btn {
+    width: 100%;
   }
 }
 </style>

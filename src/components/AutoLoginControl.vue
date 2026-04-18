@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 
 const props = withDefaults(
   defineProps<{
     autoLogin: boolean;
+    nip07Available: boolean;
   }>(),
   {
     autoLogin: false,
+    nip07Available: false,
   }
 );
 
@@ -23,12 +25,10 @@ const autoLogin = computed({
   },
 });
 
-// const nip07exists = ref('nostr' in window);
-const nip07exists = true;
 </script>
 
 <template>
-  <div class="p-index-auto-login" :style="(!nip07exists) ? { display: 'none' } : {}">
+  <div class="p-index-auto-login" v-if="props.nip07Available">
     <h2 class="p-index-auto-login__head">自動ログイン</h2>
     <div class="p-index-auto-login__body">
       <label class="p-index-auto-login-cb" for="auto-login">

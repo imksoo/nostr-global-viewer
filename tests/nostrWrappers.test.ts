@@ -9,6 +9,8 @@ import { relayStateToLegacyStatus as relayStateToLegacyStatusFromPool, resolveRe
 import {
   decryptNip04,
   decryptNip44,
+  encryptNip04,
+  encryptNip44,
   getPublicKey,
   getRelays,
   hasNip04,
@@ -57,6 +59,13 @@ describe('nostr wrappers', () => {
 
     expect(decodeNip19(npub)).toEqual({ type: 'npub', data: pubkey });
     expect(decodeNip19(note)).toEqual({ type: 'note', data: noteId });
+  });
+
+  it('decodes nsec via wrapper', () => {
+    const secret = '1'.repeat(64);
+    const nsec = bech32.encode('nsec', bech32.toWords(hexToBytes(secret)), 5000);
+
+    expect(decodeNip19(nsec)).toEqual({ type: 'nsec', data: secret });
   });
 
   it('decodes nprofile and nevent via wrapper', () => {
@@ -156,7 +165,9 @@ describe('nostr wrappers', () => {
     expect(await getRelays()).toEqual({});
     expect(hasNip04()).toBe(false);
     expect(hasNip44()).toBe(false);
+    expect(await encryptNip04('pubkey', 'plain')).toBeNull();
     expect(await decryptNip04('pubkey', 'cipher')).toBeNull();
+    expect(await encryptNip44('pubkey', 'plain')).toBeNull();
     expect(await decryptNip44('pubkey', 'cipher')).toBeNull();
     await expect(signEvent({ foo: 'bar' })).rejects.toThrow('NIP-07 is not available');
   });
@@ -165,7 +176,9 @@ describe('nostr wrappers', () => {
     const signEventMock = vi.fn(async (event) => ({ ...event, id: 'signed' }));
     const getPublicKeyMock = vi.fn(async () => 'pubkey');
     const getRelaysMock = vi.fn(async () => ({ 'wss://relay.example.com': { read: true, write: true } }));
+    const nip04EncryptMock = vi.fn(async () => 'cipher4');
     const nip04DecryptMock = vi.fn(async () => 'plain4');
+    const nip44EncryptMock = vi.fn(async () => 'cipher44');
     const nip44DecryptMock = vi.fn(async () => 'plain44');
 
     vi.stubGlobal('window', {
@@ -173,8 +186,8 @@ describe('nostr wrappers', () => {
         getPublicKey: getPublicKeyMock,
         signEvent: signEventMock,
         getRelays: getRelaysMock,
-        nip04: { decrypt: nip04DecryptMock },
-        nip44: { decrypt: nip44DecryptMock },
+        nip04: { encrypt: nip04EncryptMock, decrypt: nip04DecryptMock },
+        nip44: { encrypt: nip44EncryptMock, decrypt: nip44DecryptMock },
       },
     });
 
@@ -182,7 +195,9 @@ describe('nostr wrappers', () => {
     expect(await getRelays()).toEqual({ 'wss://relay.example.com': { read: true, write: true } });
     expect(hasNip04()).toBe(true);
     expect(hasNip44()).toBe(true);
+    expect(await encryptNip04('pubkey', 'plain')).toBe('cipher4');
     expect(await decryptNip04('pubkey', 'cipher')).toBe('plain4');
+    expect(await encryptNip44('pubkey', 'plain')).toBe('cipher44');
     expect(await decryptNip44('pubkey', 'cipher')).toBe('plain44');
     expect(await signEvent({ kind: 1 })).toEqual({ kind: 1, id: 'signed' });
   });

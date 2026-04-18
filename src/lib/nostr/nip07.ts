@@ -31,6 +31,14 @@ export function hasNip04(): boolean {
   return !!getNostr()?.nip04;
 }
 
+export async function encryptNip04(pubkey: string, plaintext: string): Promise<string | null> {
+  const nip04 = getNostr()?.nip04;
+  if (!nip04?.encrypt) {
+    return null;
+  }
+  return await nip04.encrypt(pubkey, plaintext);
+}
+
 export async function decryptNip04(pubkey: string, ciphertext: string): Promise<string | null> {
   const nip04 = getNostr()?.nip04;
   if (!nip04) {
@@ -41,6 +49,14 @@ export async function decryptNip04(pubkey: string, ciphertext: string): Promise<
 
 export function hasNip44(): boolean {
   return !!(getNostr() as any)?.nip44;
+}
+
+export async function encryptNip44(pubkey: string, plaintext: string): Promise<string | null> {
+  const nip44 = (getNostr() as any)?.nip44;
+  if (!nip44?.encrypt) {
+    return null;
+  }
+  return await nip44.encrypt(pubkey, plaintext);
 }
 
 export async function decryptNip44(pubkey: string, ciphertext: string): Promise<string | null> {
