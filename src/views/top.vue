@@ -901,8 +901,30 @@ async function finalizeLogin(): Promise<void> {
   }
 }
 
+async function waitForNip07Availability(timeoutMs: number = 5000, intervalMs: number = 100): Promise<boolean> {
+  if (refreshNip07Availability()) {
+    return true;
+  }
+
+  const startedAt = Date.now();
+  return await new Promise((resolve) => {
+    const intervalId = setInterval(() => {
+      if (refreshNip07Availability()) {
+        clearInterval(intervalId);
+        resolve(true);
+        return;
+      }
+
+      if (Date.now() - startedAt >= timeoutMs) {
+        clearInterval(intervalId);
+        resolve(false);
+      }
+    }, intervalMs);
+  });
+}
+
 async function loginWithNip07(): Promise<void> {
-  if (!isNip07Available()) {
+  if (!(await waitForNip07Availability())) {
     throw new Error("NIP-07 拡張機能が見つかりません");
   }
 
@@ -952,30 +974,57 @@ const autoLogin = ref(readAutoLoginPreference());
 const loginMethod = ref<"nip07" | "nsec" | "nip49" | null>(null);
 const directNsecSecretHex = ref<string | null>(null);
 const nip49Stored = ref(hasStoredNip49Secret());
+let autoLoginAttempted = false;
 
 watch(autoLogin, (value) => {
   writeAutoLoginPreference(value);
 });
 
-function tryAutoLogin() {
-  let retryCount = 0;
-  const checkNIP07Extention = setInterval(() => {
-    nip07Available.value = isNip07Available();
-    if (nip07Available.value) {
-      loginWithNip07().catch((error) => {
-        console.log("Auto login failed", error);
-      });
-      clearInterval(checkNIP07Extention);
-    }
-    ++retryCount;
+function refreshNip07Availability(): boolean {
+  nip07Available.value = isNip07Available();
+  return nip07Available.value;
+}
 
+function stopNip07AvailabilityPolling(): void {
+  if (nip07AvailabilityIntervalId) {
+    clearInterval(nip07AvailabilityIntervalId);
+    nip07AvailabilityIntervalId = undefined;
+  }
+}
+
+function tryAutoLogin(): void {
+  if (!autoLogin.value || autoLoginAttempted || loggedIn.value || !nip07Available.value) {
+    return;
+  }
+
+  autoLoginAttempted = true;
+  loginWithNip07().catch((error) => {
+    console.log("Auto login failed", error);
+  });
+}
+
+function startNip07AvailabilityPolling(): void {
+  if (refreshNip07Availability()) {
+    stopNip07AvailabilityPolling();
+    tryAutoLogin();
+    return;
+  }
+  if (nip07AvailabilityIntervalId) {
+    return;
+  }
+
+  let retryCount = 0;
+  nip07AvailabilityIntervalId = setInterval(() => {
+    retryCount += 1;
+    if (refreshNip07Availability()) {
+      stopNip07AvailabilityPolling();
+      tryAutoLogin();
+      return;
+    }
     if (retryCount > 60) {
-      clearInterval(checkNIP07Extention);
+      stopNip07AvailabilityPolling();
     }
   }, 500);
-}
-if (autoLogin.value) {
-  tryAutoLogin();
 }
 
 function collectMyRelay() {
@@ -1755,28 +1804,35 @@ function handleKeydownShortcuts(e: KeyboardEvent): void {
   }
 }
 
+function handleWindowFocus(): void {
+  if (!refreshNip07Availability()) {
+    startNip07AvailabilityPolling();
+    return;
+  }
+
+  tryAutoLogin();
+}
+
+function handleVisibilityChange(): void {
+  if (document.visibilityState === "visible") {
+    handleWindowFocus();
+  }
+}
+
 onMounted(() => {
   window.addEventListener('keydown', handleKeydownShortcuts);
+  window.addEventListener('focus', handleWindowFocus);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
   Object.values(items.value).forEach((i) => { observer.observe(i as Element) });
-
-  if (!nip07Available.value) {
-    let retryCount = 0;
-    nip07AvailabilityIntervalId = setInterval(() => {
-      nip07Available.value = isNip07Available();
-      retryCount += 1;
-      if (nip07Available.value || retryCount > 60) {
-        clearInterval(nip07AvailabilityIntervalId);
-      }
-    }, 500);
-  }
+  startNip07AvailabilityPolling();
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleKeydownShortcuts);
+  window.removeEventListener('focus', handleWindowFocus);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
-  if (nip07AvailabilityIntervalId) {
-    clearInterval(nip07AvailabilityIntervalId);
-  }
+  stopNip07AvailabilityPolling();
 })
 
 function addRepostEvent(targetEvent: NostrEvent) {

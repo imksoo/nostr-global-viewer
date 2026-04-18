@@ -85,7 +85,6 @@ function closeNip49Modal(): void {
           class="p-index-signin__btn"
           type="button"
           value="NIP-07でログイン"
-          :disabled="!props.nip07Available"
           v-on:click="(_$event) => props.loginWithNip07()"
         />
         <input

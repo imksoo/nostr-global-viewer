@@ -93,7 +93,15 @@ async function submitNip49Storage(): Promise<void> {
 </script>
 
 <template>
-  <div class="p-index-auto-login" v-if="props.loginMethod === 'nsec' || props.nip07Available">
+  <div class="p-index-login-method" v-if="props.loggedIn && props.loginMethod">
+    <h2 class="p-index-login-method__head">ログイン方式</h2>
+    <div class="p-index-login-method__body">
+      <span class="p-index-login-method__value" v-if="props.loginMethod === 'nip07'">NIP-07 拡張機能</span>
+      <span class="p-index-login-method__value" v-else-if="props.loginMethod === 'nsec'">nsec (秘密鍵)</span>
+      <span class="p-index-login-method__value" v-else-if="props.loginMethod === 'nip49'">NIP-49 パスワード</span>
+    </div>
+  </div>
+  <div class="p-index-auto-login" v-if="props.loginMethod === 'nsec' || props.loginMethod === 'nip07'">
     <h2 class="p-index-auto-login__head">{{ props.loginMethod === "nsec" ? "秘密鍵の保管" : "自動ログイン" }}</h2>
     <div class="p-index-auto-login__body">
       <label class="p-index-auto-login-cb" for="nip49-storage" v-if="props.loginMethod === 'nsec'">
@@ -101,7 +109,7 @@ async function submitNip49Storage(): Promise<void> {
         <span class="p-index-auto-login-cb__dummy"></span>
         <span class="p-index-auto-login-cb__text-label">NIP-49で秘密鍵を暗号化して保管</span>
       </label>
-      <label class="p-index-auto-login-cb" for="auto-login" v-else>
+      <label class="p-index-auto-login-cb" for="auto-login" v-else-if="props.loginMethod === 'nip07'">
         <input class="p-index-auto-login-cb__input" type="checkbox" id="auto-login" v-model="autoLogin" />
         <span class="p-index-auto-login-cb__dummy"></span>
         <span class="p-index-auto-login-cb__text-label">次回から自動ログインする</span>
@@ -153,6 +161,34 @@ async function submitNip49Storage(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
+.p-index-login-method {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.p-index-login-method__head {
+  color: #ffffff;
+  font-size: 13px;
+  width: 6em;
+}
+
+.p-index-login-method__body {
+  flex-grow: 1;
+  border-left: 1px solid #fff;
+  padding-left: 10px;
+}
+
+.p-index-login-method__value {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .p-index-auto-login {
   background: rgba(0, 0, 0, 0.6);
   border-radius: 6px;
