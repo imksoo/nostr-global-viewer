@@ -29,6 +29,7 @@ import {
   isNip07Available,
   signEvent,
 } from "../lib/nostr/signer";
+import { uploadImageToNostpic } from "../lib/nostr/nostpic";
 import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
@@ -1251,6 +1252,11 @@ function subscribeNip17DirectMessages() {
 }
 
 
+const noteTextarea = ref<HTMLTextAreaElement | null>(null);
+const postImageInput = ref<HTMLInputElement | null>(null);
+const postImageUploading = ref(false);
+const postImageError = ref("");
+
 let draftEvent = ref<BlankEvent>(createBlankEvent(Kind.Text));
 let editingTags = ref(createBlankEvent(Kind.Text));
 
@@ -1258,11 +1264,12 @@ function newDraftEvent() {
   draftEvent.value = createBlankEvent(Kind.Text);
   // @ts-ignore
   draftEvent.value.tags = [["client", "Nozokimado", "31990:ad73ce27d83ccc6bf6184549e529119d8b5963c5e6f681f6690a33f91c8b615a:1757113040", feedRelays[0] || ""]];
+  postImageError.value = "";
 }
 newDraftEvent();
 
 async function post() {
-  if (!draftEvent.value.content) {
+  if (postImageUploading.value || !draftEvent.value.content) {
     return;
   }
 
@@ -1352,7 +1359,6 @@ function openQuotePost(repost: NostrEventType): void {
   isPostOpen.value = true;
 }
 
-const noteTextarea = ref<HTMLTextAreaElement | null>(null);
 watch(isPostOpen, async (isPostOpened) => {
   if (isPostOpened) {
     await nextTick();
@@ -1368,6 +1374,57 @@ watch(isPostOpen, async (isPostOpened) => {
     extractTags();
   }
 });
+
+function openPostImagePicker() {
+  postImageInput.value?.click();
+}
+
+function insertPostTextAtCursor(text: string) {
+  const textarea = noteTextarea.value;
+  if (!textarea) {
+    draftEvent.value.content = `${draftEvent.value.content}${text}`;
+    extractTags();
+    return;
+  }
+
+  const value = draftEvent.value.content;
+  const start = textarea.selectionStart ?? value.length;
+  const end = textarea.selectionEnd ?? value.length;
+
+  draftEvent.value.content = `${value.slice(0, start)}${text}${value.slice(end)}`;
+  extractTags();
+
+  nextTick(() => {
+    const cursor = start + text.length;
+    textarea.focus();
+    textarea.selectionStart = cursor;
+    textarea.selectionEnd = cursor;
+  });
+}
+
+async function handlePostImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement | null;
+  const file = input?.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  postImageError.value = "";
+  postImageUploading.value = true;
+
+  try {
+    const imageUrl = await uploadImageToNostpic(file);
+    const prefix = draftEvent.value.content && !draftEvent.value.content.endsWith("\n") ? "\n" : "";
+    insertPostTextAtCursor(`${prefix}${imageUrl}\n`);
+  } catch (error) {
+    postImageError.value = error instanceof Error ? error.message : "画像のアップロードに失敗しました";
+  } finally {
+    postImageUploading.value = false;
+    if (input) {
+      input.value = "";
+    }
+  }
+}
 
 function extractTags() {
   editingTags.value.tags.length = 0;
@@ -1925,12 +1982,20 @@ function showMore() {
       </div>
       <div class="p-index-post__editor">
         <div class="p-index-post__textarea">
+          <input ref="postImageInput" class="p-index-post__file" type="file" accept="image/*"
+            @change="handlePostImageSelected" />
           <textarea class="i-note" id="note" rows="8" v-model="draftEvent.content" ref="noteTextarea"
             @keydown.enter="($event) => checkSend($event)" @keydown.esc="(_$event) => {
               isPostOpen = false;
             }" v-on:input="extractTags"></textarea>
+          <div class="p-index-post__upload-status" v-if="postImageUploading || postImageError">
+            <span v-if="postImageUploading">画像を nostpic.com にアップロードしています...</span>
+            <span v-else>{{ postImageError }}</span>
+          </div>
         </div>
         <div class="p-index-post__post-btn">
+          <input class="b-post b-post-sub" type="button" :value="postImageUploading ? 'アップロード中' : '画像を添付'"
+            :disabled="postImageUploading" @click="openPostImagePicker()" />
           <input class="b-post" type="button" value="投稿" v-on:click="post()" />
         </div>
       </div>
@@ -1957,6 +2022,27 @@ function showMore() {
 
 .p-index-post__help {
   color: #050a30;
+}
+
+.p-index-post__file {
+  display: none;
+}
+
+.p-index-post__upload-status {
+  margin-top: 8px;
+  color: #c0265f;
+  font-size: 14px;
+}
+
+.p-index-post__post-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.b-post-sub:disabled {
+  cursor: default;
+  opacity: 0.7;
 }
 
 .p-index-profile {
