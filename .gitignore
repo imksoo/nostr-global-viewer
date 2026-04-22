@@ -27,3 +27,6 @@ dist-ssr
 test-results/
 playwright-report/
 blob-report/
+
+# Codex
+.codex
