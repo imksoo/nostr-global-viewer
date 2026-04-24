@@ -1353,8 +1353,37 @@ async function unwrapNip17DirectMessage(giftWrap: NostrEventType): Promise<Nostr
     return null;
   }
 
+  const isUnknownNip44VersionError = (err: unknown): boolean => {
+    const msg = err instanceof Error ? err.message : String(err ?? "");
+    return msg.includes("unknown encryption version");
+  };
+
+  const isIgnorableNip17DecryptError = (err: unknown): boolean => {
+    const msg = err instanceof Error ? err.message : String(err ?? "");
+    return (
+      msg.includes("unknown encryption version") ||
+      msg.includes("invalid MAC")
+    );
+  };
+
+  const decryptNip17Payload = async (peerPubkey: string, payload: string): Promise<string | null> => {
+    // Backward compatibility: some legacy payloads may still use NIP-04 formatting.
+    if (payload.includes("?iv=") && hasNip04()) {
+      return await decryptNip04(peerPubkey, payload);
+    }
+
+    try {
+      return await decryptNip44(peerPubkey, payload);
+    } catch (err) {
+      if (isIgnorableNip17DecryptError(err)) {
+        return null;
+      }
+      throw err;
+    }
+  };
+
   try {
-    const sealJson = await decryptNip44(giftWrap.pubkey, giftWrap.content);
+    const sealJson = await decryptNip17Payload(giftWrap.pubkey, giftWrap.content);
     if (!sealJson) {
       return null;
     }
@@ -1363,7 +1392,7 @@ async function unwrapNip17DirectMessage(giftWrap: NostrEventType): Promise<Nostr
       return null;
     }
 
-    const rumorJson = await decryptNip44(seal.pubkey, seal.content);
+    const rumorJson = await decryptNip17Payload(seal.pubkey, seal.content);
     if (!rumorJson) {
       return null;
     }
@@ -1397,6 +1426,9 @@ async function unwrapNip17DirectMessage(giftWrap: NostrEventType): Promise<Nostr
       rawEvent: giftWrap,
     };
   } catch (err) {
+    if (isIgnorableNip17DecryptError(err)) {
+      return null;
+    }
     console.log("Failed to unwrap NIP-17 direct message", giftWrap.id, err);
     return null;
   }

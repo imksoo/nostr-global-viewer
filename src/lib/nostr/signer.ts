@@ -287,7 +287,9 @@ function decodeNip44Payload(payload: string): { nonce: Uint8Array; ciphertext: U
   if (data.length < 99 || data.length > 65603) {
     throw new Error("invalid data size");
   }
-  if (data[0] !== 2) {
+  // Legacy compatibility: some historical payloads were emitted with version=1
+  // while keeping the same frame layout; process them through the same checks.
+  if (data[0] !== 2 && data[0] !== 1) {
     throw new Error(`unknown encryption version ${data[0]}`);
   }
 
