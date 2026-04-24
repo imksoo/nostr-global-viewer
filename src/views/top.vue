@@ -44,7 +44,7 @@ import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
   myFollows,
-  myBlockCreatedAtKind10000, myBlockCreatedAtKind30000, myBlockList, myBlockListKind10000, myBlockListKind30000, myBlockedEvents,
+  myBlockCreatedAtKind10000, myBlockCreatedAtKind30000, myBlockList, myBlockListKind10000, myBlockListKind30000, myBlockListKind30007, myBlockedEvents,
 } from "../profile";
 
 import { playActionSound, playETWSSound, playReactionSound } from '../hooks/usePlaySound';
@@ -853,8 +853,75 @@ function resetMySessionState(): void {
   myBlockCreatedAtKind30000.value = 0;
   myBlockListKind10000.value = [];
   myBlockListKind30000.value = [];
+  myBlockListKind30007.value = [];
+  kindMuteByDTag.clear();
   myBlockList.value = [];
   myBlockedEvents.value.clear();
+}
+
+const kindMuteByDTag = new Map<string, { createdAt: number; pubkeys: string[] }>();
+
+function getFirstTagValue(tags: string[][], name: string): string {
+  for (let i = 0; i < tags.length; ++i) {
+    const t = tags[i];
+    if (t[0] === name && t[1]) {
+      return t[1];
+    }
+  }
+  return "";
+}
+
+function extractPubkeysFromTags(tags: string[][]): string[] {
+  const blocks: string[] = [];
+  for (let i = 0; i < tags.length; ++i) {
+    if (tags[i][0] === "p" && tags[i][1]) {
+      blocks.push(tags[i][1]);
+    }
+  }
+  return [...new Set(blocks)];
+}
+
+function rebuildMyBlockList(): void {
+  myBlockList.value = [...new Set([
+    ...myBlockListKind10000.value,
+    ...myBlockListKind30000.value,
+    ...myBlockListKind30007.value,
+  ])];
+}
+
+function rebuildKind30007BlockList(): void {
+  const blocks: string[] = [];
+  kindMuteByDTag.forEach((entry) => {
+    blocks.push(...entry.pubkeys);
+  });
+  myBlockListKind30007.value = [...new Set(blocks)];
+}
+
+async function decryptListContentAsTags(ev: any): Promise<string[][]> {
+  if (!ev.content) {
+    return [];
+  }
+
+  let blockListJSON = "[]";
+  try {
+    const seemsNip04 = ev.content.includes("?iv=");
+    if (seemsNip04 && hasNip04()) {
+      blockListJSON = (await decryptNip04(myPubkey.value, ev.content)) ?? "[]";
+    } else if (hasNip44()) {
+      blockListJSON = (await decryptNip44(myPubkey.value, ev.content)) ?? "[]";
+    } else if (hasNip04()) {
+      blockListJSON = (await decryptNip04(myPubkey.value, ev.content)) ?? "[]";
+    }
+
+    const parsed = JSON.parse(blockListJSON);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch (err) {
+    console.warn("Failed to decrypt/parse mute list content", err);
+  }
+
+  return [];
 }
 
 function applyRelayPolicies(relays: Awaited<ReturnType<typeof getRelays>>): void {
@@ -1085,42 +1152,55 @@ function collectMyRelay() {
 function collectMyBlockList() {
   const unsub = pool.subscribe(
     [{
-      kinds: [10000, 30000],
+      kinds: [10000, 30000, 30007],
       authors: [myPubkey.value],
     }],
     [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if ((myBlockCreatedAtKind10000.value < ev.created_at && ev.kind === 10000) ||
-        (myBlockCreatedAtKind30000.value < ev.created_at && (ev.kind === 30000 && ev.tags[0][0] === "d" && ev.tags[0][1] === "mute"))) {
+        (myBlockCreatedAtKind30000.value < ev.created_at && (ev.kind === 30000 && getFirstTagValue(ev.tags, "d") === "mute"))) {
         if (ev.kind === 10000) {
           myBlockCreatedAtKind10000.value = ev.created_at;
         } else if (ev.kind === 30000) {
           myBlockCreatedAtKind30000.value = ev.created_at;
         }
 
-        let blockListJSON = "[]";
-        if (hasNip04()) {
-          blockListJSON = (await decryptNip04(myPubkey.value, ev.content)) ?? "[]";
-        }
-        const blockList = JSON.parse(blockListJSON);
-        let blocks: string[] = [];
-        for (let i = 0; i < blockList.length; ++i) {
-          if (blockList[i][0] === 'p') {
-            blocks.push(blockList[i][1]);
-          }
-        }
-        for (let i = 0; i < ev.tags.length; ++i) {
-          if (ev.tags[i][0] === 'p') {
-            blocks.push(ev.tags[i][1]);
-          }
-        }
+        const privateTags = await decryptListContentAsTags(ev);
+        const blocks = extractPubkeysFromTags([...ev.tags, ...privateTags]);
 
         if (ev.kind === 10000) {
           myBlockListKind10000.value = [...new Set([...blocks])];
         } else if (ev.kind === 30000) {
           myBlockListKind30000.value = [...new Set([...blocks])];
         }
-        myBlockList.value = [... new Set([...myBlockListKind10000.value, ...myBlockListKind30000.value])];
+        rebuildMyBlockList();
+
+        eventsReceived.value.forEach((val, key) => {
+          if (myBlockList.value.includes(val.pubkey)) {
+            console.log("Removed event by blocked pubkey", val.pubkey, getProfile(val.pubkey).display_name, `kind=${val.kind}`, val.content);
+            eventsReceived.value.delete(key);
+          }
+        });
+        eventsToSearch.value = eventsToSearch.value.filter((e) => (!myBlockList.value.includes(e.pubkey)));
+      } else if (ev.kind === 30007) {
+        const dTag = getFirstTagValue(ev.tags, "d");
+        if (!/^\d+$/.test(dTag)) {
+          return;
+        }
+
+        const prev = kindMuteByDTag.get(dTag);
+        if (prev && prev.createdAt >= ev.created_at) {
+          return;
+        }
+
+        const privateTags = await decryptListContentAsTags(ev);
+        const blocks = extractPubkeysFromTags([...ev.tags, ...privateTags]);
+        kindMuteByDTag.set(dTag, {
+          createdAt: ev.created_at,
+          pubkeys: blocks,
+        });
+        rebuildKind30007BlockList();
+        rebuildMyBlockList();
 
         eventsReceived.value.forEach((val, key) => {
           if (myBlockList.value.includes(val.pubkey)) {
