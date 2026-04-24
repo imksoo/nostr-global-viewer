@@ -44,8 +44,21 @@ import {
   myPubkey,
   myRelaysCreatedAt, myReadRelays, myWriteRelays,
   myFollows,
-  myBlockCreatedAtKind10000, myBlockCreatedAtKind30000, myBlockList, myBlockListKind10000, myBlockListKind30000, myBlockListKind30007, myBlockedEvents,
+  myBlockCreatedAtKind10000, myBlockCreatedAtKind30000, myBlockList, myBlockListKind10000, myBlockListKind30000, myBlockListKind30007,
+  myMutedEventIds, myMutedHashtags, myMutedWords, myBlockedEvents,
 } from "../profile";
+import {
+  createEmptyMuteTargets,
+  extractMuteTargetsFromTags,
+  extractPubkeysFromTags,
+  getFirstTagValue,
+  isMutedEvent,
+  rebuildExtendedMuteFilters,
+  rebuildKind30007Pubkeys,
+  rebuildPubkeyMuteList,
+  type KindMuteEntry,
+  type MuteTargets,
+} from "../lib/nostr/muteFilter";
 
 import { playActionSound, playETWSSound, playReactionSound } from '../hooks/usePlaySound';
 import { getRandomProfile } from '../hooks/useEmojiProfiles';
@@ -640,9 +653,9 @@ function getEvent(id: string): NostrEventType | undefined {
 
   const ev = eventsReceived.value.get(id);
   if (ev) {
-    if (myBlockList.value.includes(ev.pubkey)) {
+    if (isMutedByCurrentLists(ev)) {
       myBlockedEvents.value.add(ev.id);
-      console.log("Blocked by pubkey:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
+      console.log("Blocked by mute list:", ev.pubkey, getProfile(ev.pubkey).display_name, `kind=${ev.kind}`, ev.content);
       return undefined;
     }
   } else {
@@ -854,47 +867,50 @@ function resetMySessionState(): void {
   myBlockListKind10000.value = [];
   myBlockListKind30000.value = [];
   myBlockListKind30007.value = [];
+  myMutedEventIds.value = [];
+  myMutedWords.value = [];
+  myMutedHashtags.value = [];
   kindMuteByDTag.clear();
+  muteTargetsKind10000 = createEmptyMuteTargets();
+  muteTargetsKind30000 = createEmptyMuteTargets();
   myBlockList.value = [];
   myBlockedEvents.value.clear();
 }
 
-const kindMuteByDTag = new Map<string, { createdAt: number; pubkeys: string[] }>();
+const kindMuteByDTag = new Map<string, KindMuteEntry>();
+let muteTargetsKind10000: MuteTargets = createEmptyMuteTargets();
+let muteTargetsKind30000: MuteTargets = createEmptyMuteTargets();
 
-function getFirstTagValue(tags: string[][], name: string): string {
-  for (let i = 0; i < tags.length; ++i) {
-    const t = tags[i];
-    if (t[0] === name && t[1]) {
-      return t[1];
-    }
-  }
-  return "";
+function syncMuteListsFromTargets(): void {
+  myBlockList.value = rebuildPubkeyMuteList(
+    myBlockListKind10000.value,
+    myBlockListKind30000.value,
+    myBlockListKind30007.value
+  );
+
+  const ext = rebuildExtendedMuteFilters(muteTargetsKind10000, muteTargetsKind30000);
+  myMutedEventIds.value = ext.mutedEventIds;
+  myMutedWords.value = ext.mutedWords;
+  myMutedHashtags.value = ext.mutedHashtags;
 }
 
-function extractPubkeysFromTags(tags: string[][]): string[] {
-  const blocks: string[] = [];
-  for (let i = 0; i < tags.length; ++i) {
-    if (tags[i][0] === "p" && tags[i][1]) {
-      blocks.push(tags[i][1]);
-    }
-  }
-  return [...new Set(blocks)];
-}
-
-function rebuildMyBlockList(): void {
-  myBlockList.value = [...new Set([
-    ...myBlockListKind10000.value,
-    ...myBlockListKind30000.value,
-    ...myBlockListKind30007.value,
-  ])];
-}
-
-function rebuildKind30007BlockList(): void {
-  const blocks: string[] = [];
-  kindMuteByDTag.forEach((entry) => {
-    blocks.push(...entry.pubkeys);
+function isMutedByCurrentLists(ev: NostrEventType): boolean {
+  return isMutedEvent(ev, {
+    blockedPubkeys: myBlockList.value,
+    mutedEventIds: myMutedEventIds.value,
+    mutedWords: myMutedWords.value,
+    mutedHashtags: myMutedHashtags.value,
   });
-  myBlockListKind30007.value = [...new Set(blocks)];
+}
+
+function applyMuteFilterToLoadedEvents(): void {
+  eventsReceived.value.forEach((val, key) => {
+    if (isMutedByCurrentLists(val)) {
+      console.log("Removed event by mute list", val.pubkey, getProfile(val.pubkey).display_name, `kind=${val.kind}`, val.content);
+      eventsReceived.value.delete(key);
+    }
+  });
+  eventsToSearch.value = eventsToSearch.value.filter((e) => (!isMutedByCurrentLists(e)));
 }
 
 async function decryptListContentAsTags(ev: any): Promise<string[][]> {
@@ -1166,22 +1182,17 @@ function collectMyBlockList() {
         }
 
         const privateTags = await decryptListContentAsTags(ev);
-        const blocks = extractPubkeysFromTags([...ev.tags, ...privateTags]);
+        const targets = extractMuteTargetsFromTags([...ev.tags, ...privateTags]);
 
         if (ev.kind === 10000) {
-          myBlockListKind10000.value = [...new Set([...blocks])];
+          muteTargetsKind10000 = targets;
+          myBlockListKind10000.value = [...new Set([...targets.pubkeys])];
         } else if (ev.kind === 30000) {
-          myBlockListKind30000.value = [...new Set([...blocks])];
+          muteTargetsKind30000 = targets;
+          myBlockListKind30000.value = [...new Set([...targets.pubkeys])];
         }
-        rebuildMyBlockList();
-
-        eventsReceived.value.forEach((val, key) => {
-          if (myBlockList.value.includes(val.pubkey)) {
-            console.log("Removed event by blocked pubkey", val.pubkey, getProfile(val.pubkey).display_name, `kind=${val.kind}`, val.content);
-            eventsReceived.value.delete(key);
-          }
-        });
-        eventsToSearch.value = eventsToSearch.value.filter((e) => (!myBlockList.value.includes(e.pubkey)));
+        syncMuteListsFromTargets();
+        applyMuteFilterToLoadedEvents();
       } else if (ev.kind === 30007) {
         const dTag = getFirstTagValue(ev.tags, "d");
         if (!/^\d+$/.test(dTag)) {
@@ -1199,16 +1210,9 @@ function collectMyBlockList() {
           createdAt: ev.created_at,
           pubkeys: blocks,
         });
-        rebuildKind30007BlockList();
-        rebuildMyBlockList();
-
-        eventsReceived.value.forEach((val, key) => {
-          if (myBlockList.value.includes(val.pubkey)) {
-            console.log("Removed event by blocked pubkey", val.pubkey, getProfile(val.pubkey).display_name, `kind=${val.kind}`, val.content);
-            eventsReceived.value.delete(key);
-          }
-        });
-        eventsToSearch.value = eventsToSearch.value.filter((e) => (!myBlockList.value.includes(e.pubkey)));
+        myBlockListKind30007.value = rebuildKind30007Pubkeys(kindMuteByDTag);
+        syncMuteListsFromTargets();
+        applyMuteFilterToLoadedEvents();
       }
     },
     undefined,
@@ -1265,7 +1269,7 @@ function subscribeReactions() {
         if (
           !firstReactionFetching &&
           soundEffect.value &&
-          !myBlockList.value.includes(ev.pubkey) &&
+          !isMutedByCurrentLists(ev) &&
           events.value[events.value.length - 1].created_at < ev.created_at
         ) {
           console.log("reactioned", ev);
@@ -1662,10 +1666,10 @@ function checkSend(event: KeyboardEvent) {
 function searchAndBlockFilter() {
   events.value = eventsToSearch.value.filter((e) => {
     let isBlocked = false;
-    if (myBlockList.value.includes(e.pubkey)) {
+    if (isMutedByCurrentLists(e)) {
       isBlocked = true;
       if (!myBlockedEvents.value.has(e.id)) {
-        console.log("Blocked by pubkey:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
+        console.log("Blocked by mute list:", e.pubkey, getProfile(e.pubkey).display_name, `kind=${e.kind}`, e.content);
         myBlockedEvents.value.add(e.id);
       }
     }

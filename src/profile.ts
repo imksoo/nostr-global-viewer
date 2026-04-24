@@ -12,4 +12,7 @@ export const myBlockListKind10000 = ref<string[]>([]);
 export const myBlockListKind30000 = ref<string[]>([]);
 export const myBlockListKind30007 = ref<string[]>([]);
 export const myBlockList = ref<string[]>([]);
+export const myMutedEventIds = ref<string[]>([]);
+export const myMutedWords = ref<string[]>([]);
+export const myMutedHashtags = ref<string[]>([]);
 export const myBlockedEvents = ref(new Set<string>());
