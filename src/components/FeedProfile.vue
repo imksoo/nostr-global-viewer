@@ -15,6 +15,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  isFollowed: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 function getProfileLink(pubkey: string) {
@@ -71,6 +75,7 @@ async function copyToClipboard(text: string) {
             props.profile.name ||
             props.profile.pubkey.substring(props.profile.pubkey.length - 8)
           }}
+          <span v-if="props.isFollowed" class="c-feed-profile-followed" title="フォロー済み">✅</span>
         </p>
       </div>
       <div class="c-feed-profile-user-name">
@@ -129,6 +134,7 @@ async function copyToClipboard(text: string) {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     overflow: hidden;
   }
 
@@ -136,7 +142,15 @@ async function copyToClipboard(text: string) {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     overflow: hidden;
+  }
+
+  &-followed {
+    font-size: 12px;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+    opacity: 0.85;
   }
 }
 </style>

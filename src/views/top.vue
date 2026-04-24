@@ -91,6 +91,8 @@ let volume = ref("0.5");
 let searchWords = ref("");
 let searchEventType = ref("all");
 let soundEffect = ref(true);
+const publishAckMessage = ref("");
+let publishAckTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
 let countOfDisplayEvents = ref<number>(20);
 
@@ -857,8 +859,70 @@ const nip07Available = ref(isNip07Available());
 
 let firstReactionFetching = true;
 let firstReactionFetchedRelays = 0;
+const myFollowListCreatedAt = ref(0);
+let unsubscribeMyListUpdates: (() => void) | null = null;
+const unsubscribeFollowSubscriptions: Array<() => void> = [];
+
+function stopMyListUpdatesSubscription(): void {
+  if (unsubscribeMyListUpdates) {
+    unsubscribeMyListUpdates();
+    unsubscribeMyListUpdates = null;
+  }
+}
+
+function stopFollowSubscriptions(): void {
+  while (unsubscribeFollowSubscriptions.length > 0) {
+    const unsubscribe = unsubscribeFollowSubscriptions.pop();
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  }
+}
+
+function rebuildFollowSubscriptions(): void {
+  stopFollowSubscriptions();
+
+  if (!loggedIn.value || noteId.value || npubId.value) {
+    return;
+  }
+
+  const subscribeMaxCount = 1000;
+  for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
+    const followList = myFollows.value.slice(begin, begin + subscribeMaxCount);
+    if (followList.length === 0) {
+      continue;
+    }
+
+    const unsub = pool.subscribe(
+      [{ kinds: [1, 5], authors: followList, limit: 20 }],
+      [...new Set(sanitizeRelayUrls(myReadRelays.value))],
+      async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
+        if (!verifyEventSignature(ev)) {
+          console.log('Invalid nostr event, signature invalid', ev);
+          return;
+        }
+
+        switch (ev.kind) {
+          case 1:
+            addEvent(ev);
+            break;
+          case 5:
+            addDeletedEvent(ev);
+            break;
+        }
+      },
+      0
+    );
+    unsubscribeFollowSubscriptions.push(unsub);
+  }
+}
+
 function resetMySessionState(): void {
+  stopMyListUpdatesSubscription();
+  stopFollowSubscriptions();
+  processedMyListEventIds.clear();
   myRelaysCreatedAt.value = 0;
+  myFollowListCreatedAt.value = 0;
   myReadRelays.value = [];
   myWriteRelays.value = [];
   myFollows.value = [];
@@ -878,6 +942,7 @@ function resetMySessionState(): void {
 }
 
 const kindMuteByDTag = new Map<string, KindMuteEntry>();
+const processedMyListEventIds = new Set<string>();
 let muteTargetsKind10000: MuteTargets = createEmptyMuteTargets();
 let muteTargetsKind30000: MuteTargets = createEmptyMuteTargets();
 
@@ -1166,13 +1231,62 @@ function collectMyRelay() {
 }
 
 function collectMyBlockList() {
-  const unsub = pool.subscribe(
+  processedMyListEventIds.clear();
+  console.log("[list-debug][mute] start subscribe my list updates", {
+    pubkey: myPubkey.value,
+    relays: [...new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
+  });
+  stopMyListUpdatesSubscription();
+  unsubscribeMyListUpdates = pool.subscribe(
     [{
-      kinds: [10000, 30000, 30007],
+      kinds: [3, 10000, 30000, 30007],
       authors: [myPubkey.value],
     }],
     [... new Set(sanitizeRelayUrls([...feedRelays, ...profileRelays, ...myReadRelays.value, ...myWriteRelays.value]))],
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
+      if (!verifyEventSignature(ev)) {
+        console.log('Invalid nostr event, signature invalid', ev);
+        return;
+      }
+
+      if (!ev?.id) {
+        return;
+      }
+      if (processedMyListEventIds.has(ev.id)) {
+        console.log("[list-debug][mute] skip duplicate event", {
+          kind: ev.kind,
+          id: ev.id,
+          created_at: ev.created_at,
+        });
+        return;
+      }
+      processedMyListEventIds.add(ev.id);
+
+      console.log("[list-debug][mute] recv event", {
+        kind: ev.kind,
+        created_at: ev.created_at,
+        id: ev.id,
+      });
+
+      if (ev.kind === 3) {
+        if (!(myFollowListCreatedAt.value < ev.created_at)) {
+          return;
+        }
+
+        console.log("[list-debug][follow] apply kind3 update", {
+          prevCreatedAt: myFollowListCreatedAt.value,
+          nextCreatedAt: ev.created_at,
+          tags: ev.tags?.length ?? 0,
+        });
+        myFollowListCreatedAt.value = ev.created_at;
+        myFollows.value = ev.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
+        console.log("[list-debug][follow] follows updated from relay", {
+          count: myFollows.value.length,
+        });
+        rebuildFollowSubscriptions();
+        return;
+      }
+
       if ((myBlockCreatedAtKind10000.value < ev.created_at && ev.kind === 10000) ||
         (myBlockCreatedAtKind30000.value < ev.created_at && (ev.kind === 30000 && getFirstTagValue(ev.tags, "d") === "mute"))) {
         if (ev.kind === 10000) {
@@ -1181,7 +1295,17 @@ function collectMyBlockList() {
           myBlockCreatedAtKind30000.value = ev.created_at;
         }
 
+        console.log("[list-debug][mute] apply replaceable mute list", {
+          kind: ev.kind,
+          createdAt10000: myBlockCreatedAtKind10000.value,
+          createdAt30000: myBlockCreatedAtKind30000.value,
+        });
+
         const privateTags = await decryptListContentAsTags(ev);
+        console.log("[list-debug][mute] decrypted private tags", {
+          kind: ev.kind,
+          privateTags: privateTags.length,
+        });
         const targets = extractMuteTargetsFromTags([...ev.tags, ...privateTags]);
 
         if (ev.kind === 10000) {
@@ -1193,14 +1317,30 @@ function collectMyBlockList() {
         }
         syncMuteListsFromTargets();
         applyMuteFilterToLoadedEvents();
+        searchAndBlockFilter();
+        console.log("[list-debug][mute] applied mute list snapshot", {
+          block10000: myBlockListKind10000.value.length,
+          block30000: myBlockListKind30000.value.length,
+          block30007: myBlockListKind30007.value.length,
+          mergedBlocked: myBlockList.value.length,
+          mutedEvents: myMutedEventIds.value.length,
+          mutedWords: myMutedWords.value.length,
+          mutedHashtags: myMutedHashtags.value.length,
+        });
       } else if (ev.kind === 30007) {
         const dTag = getFirstTagValue(ev.tags, "d");
         if (!/^\d+$/.test(dTag)) {
+          console.log("[list-debug][mute] skip kind30007 invalid d tag", { dTag });
           return;
         }
 
         const prev = kindMuteByDTag.get(dTag);
         if (prev && prev.createdAt >= ev.created_at) {
+          console.log("[list-debug][mute] skip stale kind30007", {
+            dTag,
+            prevCreatedAt: prev.createdAt,
+            nextCreatedAt: ev.created_at,
+          });
           return;
         }
 
@@ -1213,44 +1353,36 @@ function collectMyBlockList() {
         myBlockListKind30007.value = rebuildKind30007Pubkeys(kindMuteByDTag);
         syncMuteListsFromTargets();
         applyMuteFilterToLoadedEvents();
+        searchAndBlockFilter();
+        console.log("[list-debug][mute] applied kind30007", {
+          dTag,
+          blockCountInSet: blocks.length,
+          merged30007: myBlockListKind30007.value.length,
+          mergedBlocked: myBlockList.value.length,
+        });
       }
     },
     undefined,
-    undefined,
-    { unsubscribeOnEose: true }
+    undefined
   );
-  setTimeout(() => { unsub() }, 30 * 1000);
 }
 
 async function collectFollowsAndSubscribe() {
+  console.log("[list-debug][follow] collect start", { pubkey: myPubkey.value });
   const contactList = await pool.fetchAndCacheContactList(myPubkey.value);
   myFollows.value = contactList.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
+  console.log("[list-debug][follow] collect done", {
+    tags: contactList.tags?.length ?? 0,
+    follows: myFollows.value.length,
+    createdAt: (contactList as any)?.created_at,
+  });
 
-  const subscribeMaxCount = 1000;
-  for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
-    const followList = myFollows.value.slice(begin, subscribeMaxCount);
-
-    pool.subscribe(
-      [{ kinds: [1, 5], authors: followList, limit: 20 }],
-      [...new Set(sanitizeRelayUrls(myReadRelays.value))],
-      async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
-        if (!verifyEventSignature(ev)) {
-          console.log('Invalid nostr event, signature invalid', ev);
-          return;
-        }
-
-        switch (ev.kind) {
-          case 1:
-            addEvent(ev);
-            break;
-          case 5:
-            addDeletedEvent(ev);
-            break;
-        }
-      },
-      0
-    );
+  const contactListCreatedAt = (contactList as any)?.created_at;
+  if (typeof contactListCreatedAt === "number") {
+    myFollowListCreatedAt.value = Math.max(myFollowListCreatedAt.value, contactListCreatedAt);
   }
+
+  rebuildFollowSubscriptions();
 }
 
 function subscribeReactions() {
@@ -1513,15 +1645,49 @@ async function postEvent(event: NostrEventType) {
     throw new Error("ログインが必要です");
   }
 
+  if (typeof event.created_at !== "number" || event.created_at < 0) {
+    event.created_at = Math.floor(Date.now() / 1000);
+    console.log("[list-debug][publish] normalized created_at", {
+      kind: event.kind,
+      id: event.id,
+      created_at: event.created_at,
+    });
+  }
+
   event = await signEvent(JSON.parse(JSON.stringify(event)));
 
-  pool.publish(event, getPublishRelays());
+  const publishTargets = getPublishRelays();
+  const ackPromise = pool.publishWithAck(event, publishTargets, 5000);
 
   if (soundEffect.value) {
     playActionSound();
   }
 
   addEvent(event);
+
+  void ackPromise.then((summary) => {
+    if (summary.total === 0) {
+      publishAckMessage.value = "Publish先リレーがありません";
+    } else if (summary.ok > 0) {
+      publishAckMessage.value = `Publish ACK: ${summary.ok}/${summary.total}`;
+      if (summary.failed > 0 || summary.pending > 0) {
+        publishAckMessage.value += ` (failed:${summary.failed} pending:${summary.pending})`;
+      }
+    } else {
+      publishAckMessage.value = `Publish ACKなし: failed:${summary.failed} pending:${summary.pending}`;
+    }
+
+    clearTimeout(publishAckTimeoutId);
+    publishAckTimeoutId = setTimeout(() => {
+      publishAckMessage.value = "";
+    }, 7000);
+  }).catch((err) => {
+    publishAckMessage.value = `Publish ACK error: ${err instanceof Error ? err.message : String(err)}`;
+    clearTimeout(publishAckTimeoutId);
+    publishAckTimeoutId = setTimeout(() => {
+      publishAckMessage.value = "";
+    }, 7000);
+  });
 }
 
 function openReplyPost(reply: NostrEventType): void {
@@ -1948,6 +2114,9 @@ onBeforeUnmount(() => {
   window.removeEventListener('focus', handleWindowFocus);
   document.removeEventListener('visibilitychange', handleVisibilityChange);
   Object.values(items.value).forEach((i) => { observer.unobserve(i as Element) });
+  clearTimeout(publishAckTimeoutId);
+  stopMyListUpdatesSubscription();
+  stopFollowSubscriptions();
   stopNip07AvailabilityPolling();
 })
 
@@ -2074,6 +2243,157 @@ function showMore() {
   countOfDisplayEvents.value += 20;
   searchAndBlockFilter();
 }
+
+function isFollowedUser(pubkey: string): boolean {
+  if (!loggedIn.value || !myPubkey.value) {
+    return false;
+  }
+  if (!pubkey || pubkey === myPubkey.value) {
+    return false;
+  }
+  return myFollows.value.includes(pubkey);
+}
+
+function isMutedUser(pubkey: string): boolean {
+  if (!pubkey) {
+    return false;
+  }
+  return myBlockList.value.includes(pubkey);
+}
+
+function buildMuteDTagForPubkey(pubkey: string): string {
+  const hex = pubkey.slice(0, 16);
+  if (!/^[0-9a-fA-F]+$/.test(hex)) {
+    return `${Date.now()}`;
+  }
+  return BigInt(`0x${hex}`).toString(10);
+}
+
+async function toggleFollowForNpub(targetPubkey: string): Promise<void> {
+  console.log("[list-debug][follow] toggle start", {
+    targetPubkey,
+    myPubkey: myPubkey.value,
+    loggedIn: loggedIn.value,
+  });
+  if (!loggedIn.value || !myPubkey.value || !targetPubkey || targetPubkey === myPubkey.value) {
+    console.log("[list-debug][follow] toggle aborted by guard", {
+      targetPubkey,
+      myPubkey: myPubkey.value,
+      loggedIn: loggedIn.value,
+    });
+    return;
+  }
+
+  const followed = isFollowedUser(targetPubkey);
+  const confirmed = window.confirm(followed ? "このユーザーのフォローを解除しますか？" : "このユーザーをフォローしますか？");
+  if (!confirmed) {
+    console.log("[list-debug][follow] toggle cancelled by user", { targetPubkey, followed });
+    return;
+  }
+
+  let currentFollowTags: any[] = [];
+  try {
+    const contactList = await pool.fetchAndCacheContactList(myPubkey.value);
+    currentFollowTags = (contactList.tags || []).filter((tag: any) => tag[0] === "p" && typeof tag[1] === "string");
+  } catch (err) {
+    console.warn("Failed to fetch latest contact list, fallback to local follows", err);
+  }
+
+  console.log("[list-debug][follow] source tags", {
+    fromRemote: currentFollowTags.length,
+    fromLocal: myFollows.value.length,
+  });
+
+  if (currentFollowTags.length === 0) {
+    currentFollowTags = myFollows.value.map((pubkey) => ["p", pubkey]);
+  }
+
+  const seen = new Set<string>();
+  const dedupedFollowTags = currentFollowTags.filter((tag: any) => {
+    if (!tag[1] || seen.has(tag[1])) {
+      return false;
+    }
+    seen.add(tag[1]);
+    return true;
+  });
+
+  const baseTags = dedupedFollowTags.filter((tag: any) => tag[1] !== targetPubkey);
+  if (!followed) {
+    baseTags.push(["p", targetPubkey]);
+  }
+
+  const ev = createBlankEvent(3);
+  ev.tags = baseTags;
+  ev.content = "";
+  ev.created_at = Math.floor(Date.now() / 1000);
+
+  console.log("[list-debug][follow] publish kind3", {
+    followed,
+    targetPubkey,
+    nextFollowCount: baseTags.length,
+  });
+
+  await postEvent(ev as NostrEventType);
+  myFollows.value = baseTags.filter((tag: any) => tag[0] === "p" && typeof tag[1] === "string").map((tag: any) => tag[1]);
+  myFollowListCreatedAt.value = Math.floor(Date.now() / 1000);
+  rebuildFollowSubscriptions();
+  console.log("[list-debug][follow] toggle applied locally", {
+    follows: myFollows.value.length,
+    createdAt: myFollowListCreatedAt.value,
+  });
+}
+
+async function toggleMuteForNpub(targetPubkey: string): Promise<void> {
+  console.log("[list-debug][mute] toggle start", {
+    targetPubkey,
+    myPubkey: myPubkey.value,
+    loggedIn: loggedIn.value,
+  });
+  if (!loggedIn.value || !myPubkey.value || !targetPubkey || targetPubkey === myPubkey.value) {
+    console.log("[list-debug][mute] toggle aborted by guard", {
+      targetPubkey,
+      myPubkey: myPubkey.value,
+      loggedIn: loggedIn.value,
+    });
+    return;
+  }
+
+  const muted = isMutedUser(targetPubkey);
+  const confirmed = window.confirm(muted ? "このユーザーの pubkey ミュートを解除しますか？" : "このユーザーを pubkey ミュートしますか？");
+  if (!confirmed) {
+    console.log("[list-debug][mute] toggle cancelled by user", { targetPubkey, muted });
+    return;
+  }
+
+  const dTag = buildMuteDTagForPubkey(targetPubkey);
+  const ev = createBlankEvent(30007);
+  ev.tags = muted ? [["d", dTag]] : [["d", dTag], ["p", targetPubkey]];
+  ev.content = "";
+  ev.created_at = Math.floor(Date.now() / 1000);
+
+  console.log("[list-debug][mute] publish kind30007", {
+    targetPubkey,
+    muted,
+    dTag,
+    tags: ev.tags.length,
+  });
+
+  await postEvent(ev as NostrEventType);
+
+  kindMuteByDTag.set(dTag, {
+    createdAt: Math.floor(Date.now() / 1000),
+    pubkeys: muted ? [] : [targetPubkey],
+  });
+  myBlockListKind30007.value = rebuildKind30007Pubkeys(kindMuteByDTag);
+  syncMuteListsFromTargets();
+  applyMuteFilterToLoadedEvents();
+  searchAndBlockFilter();
+  console.log("[list-debug][mute] toggle applied locally", {
+    dTag,
+    block30007: myBlockListKind30007.value.length,
+    mergedBlocked: myBlockList.value.length,
+  });
+}
 </script>
 
 <template>
@@ -2104,6 +2424,7 @@ function showMore() {
           v-on:change="searchAndBlockFilter()"></SearchWordControl>
         <RiverStatus v-bind:data="ryuusokuChanData" v-if="isKirinoRiver"></RiverStatus>
         <RelayStatus v-bind:relays="relayStatus"></RelayStatus>
+        <div class="p-index-publish-ack" v-if="publishAckMessage">{{ publishAckMessage }}</div>
       </div>
     </div>
     <div class="p-index-body">
@@ -2111,7 +2432,20 @@ function showMore() {
         <HeaderProfile :profile="npubProfile" :kind3-follow="npubKind3Follow" :kind3-relay="npubKind3Relay"
           :kind10002="npubKind10002" :get-profile="getProfile"></HeaderProfile>
         <div class="p-index-profile-header">
-          <FeedProfile v-bind:profile="getProfile(npubId)" :avatar-link-as-image="true"></FeedProfile>
+          <div class="p-index-profile-summary">
+            <FeedProfile v-bind:profile="getProfile(npubId)" :avatar-link-as-image="true"
+              :is-followed="isFollowedUser(npubId)"></FeedProfile>
+            <div class="p-index-profile-actions" v-if="loggedIn && myPubkey && npubId !== myPubkey">
+              <span class="p-index-profile-actions__icon" @click="toggleFollowForNpub(npubId)">
+                <mdicon :name="isFollowedUser(npubId) ? 'account-minus-outline' : 'account-plus-outline'" :height="16"
+                  :title="isFollowedUser(npubId) ? 'フォロー解除' : 'フォロー開始'" />
+              </span>
+              <span class="p-index-profile-actions__icon" @click="toggleMuteForNpub(npubId)">
+                <mdicon :name="isMutedUser(npubId) ? 'volume-high' : 'volume-off'" :height="16"
+                  :title="isMutedUser(npubId) ? 'ミュート解除' : 'pubkeyミュート'" />
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       <div class="p-index-header" v-if="npubId">
@@ -2142,7 +2476,8 @@ function showMore() {
           :class="{ 'c-feed-item': true, 'c-feed-item-focused': (showFocusBorder && focusedItemId === e.id) }"
           :ref="(el) => { if (el) { items[e.id] = el as HTMLElement } }"
           @click="{ focusedItemId = e.id; focusItemIndex = events.findIndex((e) => (e.id === focusedItemId)) }">
-          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)">
+          <FeedProfile :key="'profile' + e.id" v-bind:profile="getProfile(e.pubkey)" v-if="getProfile(e.pubkey)"
+            :is-followed="isFollowedUser(e.pubkey)">
           </FeedProfile>
           <FeedReplies :key="'replies' + e.id" v-bind:event="e" :get-profile="getProfile" :get-event="getEvent"
             v-if="e.kind !== 6"></FeedReplies>
@@ -2206,7 +2541,7 @@ function showMore() {
           <span class="c-post-cancel__icon">☓</span>
         </button>
       </div>
-      <FeedProfile v-bind:profile="getProfile(myPubkey)"></FeedProfile>
+      <FeedProfile v-bind:profile="getProfile(myPubkey)" :is-followed="isFollowedUser(myPubkey)"></FeedProfile>
       <div class="c-post-tags">
         <FeedReplies v-bind:event="draftEvent" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
         <FeedReplies v-bind:event="editingTags" :get-profile="getProfile" :get-event="getEvent"></FeedReplies>
@@ -2257,6 +2592,16 @@ function showMore() {
   color: #050a30;
 }
 
+.p-index-publish-ack {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #ffffff;
+  text-shadow: none;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
 .p-index-post__file {
   display: none;
 }
@@ -2284,6 +2629,29 @@ function showMore() {
   &-header {
     padding: 10px 10px 0px;
     background-color: #ffffff;
+    position: relative;
+  }
+
+  &-summary {
+    position: relative;
+  }
+
+  &-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 0 2px 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.95) 30%);
+
+    &__icon {
+      display: inline-flex;
+      align-items: center;
+      color: #0f172a;
+      cursor: pointer;
+    }
   }
 }
 

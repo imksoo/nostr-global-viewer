@@ -26,6 +26,14 @@ export interface SubscribeOptions {
   unsubscribeOnEose?: boolean;
 }
 
+export interface PublishAckSummary {
+  total: number;
+  ok: number;
+  failed: number;
+  pending: number;
+  failedRelays: string[];
+}
+
 export type SubscribeCallback = (
   event: Event,
   isAfterEose: boolean,
@@ -235,6 +243,105 @@ export class RelayPool {
           this.errorHandlers.forEach((cb) => cb(url, message)),
         );
       });
+  }
+
+  async publishWithAck(event: Event, relays: string[], timeoutMs: number = 5000): Promise<PublishAckSummary> {
+    const targets = unique(relays);
+    if (targets.length === 0) {
+      return {
+        total: 0,
+        ok: 0,
+        failed: 0,
+        pending: 0,
+        failedRelays: [],
+      };
+    }
+
+    const okRelays = new Set<string>();
+    const failedRelays = new Set<string>();
+
+    return await new Promise<PublishAckSummary>((resolve) => {
+      let settled = false;
+
+      const settle = () => {
+        if (settled) {
+          return;
+        }
+        settled = true;
+        clearTimeout(timerId);
+        messageSubscription.unsubscribe();
+        errorSubscription.unsubscribe();
+
+        const ok = okRelays.size;
+        const failed = failedRelays.size;
+        const pending = Math.max(targets.length - ok - failed, 0);
+        resolve({
+          total: targets.length,
+          ok,
+          failed,
+          pending,
+          failedRelays: [...failedRelays],
+        });
+      };
+
+      const maybeDone = () => {
+        if (okRelays.size + failedRelays.size >= targets.length) {
+          settle();
+        }
+      };
+
+      const messageSubscription = this.rxNostr
+        .createAllMessageObservable()
+        .subscribe((packet: MessagePacket) => {
+          if (packet.type !== "OK") {
+            return;
+          }
+          if (!targets.includes(packet.from) || packet.eventId !== event.id) {
+            return;
+          }
+
+          if (packet.ok) {
+            okRelays.add(packet.from);
+            failedRelays.delete(packet.from);
+          } else {
+            failedRelays.add(packet.from);
+            okRelays.delete(packet.from);
+          }
+          maybeDone();
+        });
+
+      const errorSubscription = this.rxNostr
+        .createAllErrorObservable()
+        .subscribe(({ from }) => {
+          if (!targets.includes(from)) {
+            return;
+          }
+          failedRelays.add(from);
+          okRelays.delete(from);
+          maybeDone();
+        });
+
+      const timerId = setTimeout(() => {
+        settle();
+      }, timeoutMs);
+
+      void this.rxNostr
+        .cast(event as never, {
+          on: { relays: targets },
+          signer: {
+            async getPublicKey() {
+              return event.pubkey;
+            },
+            async signEvent() {
+              return event as never;
+            },
+          },
+        })
+        .catch(() => {
+          targets.forEach((relay) => failedRelays.add(relay));
+          settle();
+        });
+    });
   }
 
   subscribe(
