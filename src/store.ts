@@ -297,6 +297,7 @@ export function sanitizeRelayUrls(urls: string[]): string[] {
 
 export const pool = new RelayPool(sanitizeRelayUrls(feedRelays), {
   autoReconnect: true,
+  reconnectIntervalMs: 30 * 1000,
   logErrorsAndNotices: true,
   subscriptionCache: true,
   useEventCache: true,

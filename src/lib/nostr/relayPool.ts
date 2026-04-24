@@ -16,6 +16,7 @@ export type RelayStatusTuple = [string, number, RelayStatusDetail?];
 
 export interface RelayPoolOptions {
   autoReconnect?: boolean;
+  reconnectIntervalMs?: number;
   logErrorsAndNotices?: boolean;
   subscriptionCache?: boolean;
   useEventCache?: boolean;
@@ -46,6 +47,7 @@ type RelayNoticeCallback = (url: string, msg: string) => void;
 type RelayDisconnectCallback = (url: string, msg: string) => void;
 
 const RESPONSE_TIMEOUT_MS = 60000;
+const DEFAULT_RECONNECT_INTERVAL_MS = 30000;
 
 export function relayStateToLegacyStatus(state: ConnectionState): number {
   switch (state) {
@@ -101,6 +103,11 @@ export class RelayPool {
 
   constructor(relays: string[] = [], options: RelayPoolOptions = {}) {
     this.options = options;
+    const reconnectIntervalMs =
+      typeof this.options.reconnectIntervalMs === "number" && this.options.reconnectIntervalMs > 0
+        ? this.options.reconnectIntervalMs
+        : DEFAULT_RECONNECT_INTERVAL_MS;
+
     this.rxNostr = createRxNostr({
       verifier: async (event) =>
         verifyEventSignature(event as unknown as Event),
@@ -111,7 +118,7 @@ export class RelayPool {
           : {
               strategy: "exponential",
               maxCount: 1024,
-              initialDelay: 1000,
+              initialDelay: reconnectIntervalMs,
             },
       skipVerify: this.options.skipVerification === true,
     });
