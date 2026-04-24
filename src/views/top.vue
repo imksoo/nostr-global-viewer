@@ -115,6 +115,19 @@ let cutoffMode = ref<boolean>(true);
 let npubRelaysCreatedAt = 0;
 let npubReadRelays: string[] = [];
 let npubWriteRelays: string[] = [];
+
+function isValidPubkeyHex(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
+}
+
+function extractValidPubkeysFromPTags(tags: any[]): string[] {
+  const pubkeys = tags
+    .filter((tag: any) => tag[0] === "p")
+    .map((tag: any) => tag[1])
+    .filter((pubkey: unknown) => isValidPubkeyHex(pubkey));
+  return [...new Set(pubkeys)];
+}
+
 watch(() => route.query, async (newQuery) => {
   const nostrRegex = /(nostr:|@)?(nprofile|nrelay|nevent|naddr|nsec|npub|note)1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
 
@@ -887,8 +900,11 @@ function rebuildFollowSubscriptions(): void {
   }
 
   const subscribeMaxCount = 1000;
-  for (let begin = 0; begin < myFollows.value.length; begin += subscribeMaxCount) {
-    const followList = myFollows.value.slice(begin, begin + subscribeMaxCount);
+  const normalizedFollows = [...new Set(myFollows.value.filter((pubkey) => isValidPubkeyHex(pubkey)))];
+  myFollows.value = normalizedFollows;
+
+  for (let begin = 0; begin < normalizedFollows.length; begin += subscribeMaxCount) {
+    const followList = normalizedFollows.slice(begin, begin + subscribeMaxCount);
     if (followList.length === 0) {
       continue;
     }
@@ -1279,7 +1295,7 @@ function collectMyBlockList() {
           tags: ev.tags?.length ?? 0,
         });
         myFollowListCreatedAt.value = ev.created_at;
-        myFollows.value = ev.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
+        myFollows.value = extractValidPubkeysFromPTags(ev.tags || []);
         console.log("[list-debug][follow] follows updated from relay", {
           count: myFollows.value.length,
         });
@@ -1370,7 +1386,7 @@ function collectMyBlockList() {
 async function collectFollowsAndSubscribe() {
   console.log("[list-debug][follow] collect start", { pubkey: myPubkey.value });
   const contactList = await pool.fetchAndCacheContactList(myPubkey.value);
-  myFollows.value = contactList.tags.filter((t: any) => (t[0] === 'p')).map((t: any) => (t[1]));
+  myFollows.value = extractValidPubkeysFromPTags(contactList.tags || []);
   console.log("[list-debug][follow] collect done", {
     tags: contactList.tags?.length ?? 0,
     follows: myFollows.value.length,
@@ -2334,7 +2350,7 @@ async function toggleFollowForNpub(targetPubkey: string): Promise<void> {
   });
 
   await postEvent(ev as NostrEventType);
-  myFollows.value = baseTags.filter((tag: any) => tag[0] === "p" && typeof tag[1] === "string").map((tag: any) => tag[1]);
+  myFollows.value = extractValidPubkeysFromPTags(baseTags);
   myFollowListCreatedAt.value = Math.floor(Date.now() / 1000);
   rebuildFollowSubscriptions();
   console.log("[list-debug][follow] toggle applied locally", {
