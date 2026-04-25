@@ -875,6 +875,9 @@ let firstReactionFetchedRelays = 0;
 const myFollowListCreatedAt = ref(0);
 let unsubscribeMyListUpdates: (() => void) | null = null;
 const unsubscribeFollowSubscriptions: Array<() => void> = [];
+let unsubscribeReactionSubscription: (() => void) | null = null;
+let unsubscribeDirectMessageSubscription: (() => void) | null = null;
+let unsubscribeNip17DirectMessageSubscription: (() => void) | null = null;
 
 function stopMyListUpdatesSubscription(): void {
   if (unsubscribeMyListUpdates) {
@@ -890,6 +893,43 @@ function stopFollowSubscriptions(): void {
       unsubscribe();
     }
   }
+}
+
+function stopSelfTargetedSubscriptions(): void {
+  if (unsubscribeReactionSubscription) {
+    unsubscribeReactionSubscription();
+    unsubscribeReactionSubscription = null;
+  }
+  if (unsubscribeDirectMessageSubscription) {
+    unsubscribeDirectMessageSubscription();
+    unsubscribeDirectMessageSubscription = null;
+  }
+  if (unsubscribeNip17DirectMessageSubscription) {
+    unsubscribeNip17DirectMessageSubscription();
+    unsubscribeNip17DirectMessageSubscription = null;
+  }
+}
+
+function getSubscriptionReadRelays(): string[] {
+  const preferred = [...new Set(sanitizeRelayUrls(myReadRelays.value))];
+  if (preferred.length > 0) {
+    return preferred;
+  }
+
+  return [...new Set(sanitizeRelayUrls([...myWriteRelays.value, ...feedRelays, ...profileRelays]))];
+}
+
+function restartSelfTargetedSubscriptions(): void {
+  if (!loggedIn.value || noteId.value || npubId.value) {
+    stopSelfTargetedSubscriptions();
+    return;
+  }
+
+  firstReactionFetching = true;
+  firstReactionFetchedRelays = 0;
+  subscribeReactions();
+  subscribeDirectMessages();
+  subscribeNip17DirectMessages();
 }
 
 function rebuildFollowSubscriptions(): void {
@@ -911,7 +951,7 @@ function rebuildFollowSubscriptions(): void {
 
     const unsub = pool.subscribe(
       [{ kinds: [1, 5], authors: followList, limit: 20 }],
-      [...new Set(sanitizeRelayUrls(myReadRelays.value))],
+      getSubscriptionReadRelays(),
       async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
         if (!verifyEventSignature(ev)) {
           console.log('Invalid nostr event, signature invalid', ev);
@@ -936,6 +976,7 @@ function rebuildFollowSubscriptions(): void {
 function resetMySessionState(): void {
   stopMyListUpdatesSubscription();
   stopFollowSubscriptions();
+  stopSelfTargetedSubscriptions();
   processedMyListEventIds.clear();
   myRelaysCreatedAt.value = 0;
   myFollowListCreatedAt.value = 0;
@@ -1058,9 +1099,7 @@ async function finalizeLogin(): Promise<void> {
   if (!noteId.value && !npubId.value) {
     setTimeout(() => {
       collectFollowsAndSubscribe();
-      subscribeReactions();
-      subscribeDirectMessages();
-      subscribeNip17DirectMessages();
+      restartSelfTargetedSubscriptions();
     }, 1000);
   }
 }
@@ -1218,6 +1257,11 @@ function collectMyRelay() {
             myWriteRelays.value.push(r);
           }
         }
+
+        myReadRelays.value = [...new Set(sanitizeRelayUrls(myReadRelays.value))];
+        myWriteRelays.value = [...new Set(sanitizeRelayUrls(myWriteRelays.value))];
+        rebuildFollowSubscriptions();
+        restartSelfTargetedSubscriptions();
       } else if (ev.kind === 10002 && myRelaysCreatedAt.value < ev.created_at) {
         myReadRelays.value = [];
         myWriteRelays.value = [];
@@ -1237,6 +1281,11 @@ function collectMyRelay() {
             }
           }
         }
+
+        myReadRelays.value = [...new Set(sanitizeRelayUrls(myReadRelays.value))];
+        myWriteRelays.value = [...new Set(sanitizeRelayUrls(myWriteRelays.value))];
+        rebuildFollowSubscriptions();
+        restartSelfTargetedSubscriptions();
       }
     },
     undefined,
@@ -1403,12 +1452,18 @@ async function collectFollowsAndSubscribe() {
 
 function subscribeReactions() {
   relayStatus.value = pool.getRelayStatuses();
+  const subscriptionRelays = getSubscriptionReadRelays();
 
-  pool.subscribe([
+  if (unsubscribeReactionSubscription) {
+    unsubscribeReactionSubscription();
+    unsubscribeReactionSubscription = null;
+  }
+
+  unsubscribeReactionSubscription = pool.subscribe([
     { kinds: [1, 6, 7], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 },
     { kinds: [6, 7], authors: [myPubkey.value], limit: countOfDisplayEvents.value * 5 },
   ],
-    [...new Set(sanitizeRelayUrls(myReadRelays.value))],
+    subscriptionRelays,
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       addEvent(ev);
 
@@ -1444,7 +1499,7 @@ function subscribeReactions() {
     undefined,
     async () => {
       firstReactionFetchedRelays++;
-      if (firstReactionFetchedRelays > myReadRelays.value.length / 2) {
+      if (firstReactionFetchedRelays > subscriptionRelays.length / 2) {
         setTimeout(() => {
           firstReactionFetching = false;
         }, 10 * 1000);
@@ -1459,9 +1514,14 @@ function subscribeDirectMessages() {
     return;
   }
 
-  pool.subscribe(
+  if (unsubscribeDirectMessageSubscription) {
+    unsubscribeDirectMessageSubscription();
+    unsubscribeDirectMessageSubscription = null;
+  }
+
+  unsubscribeDirectMessageSubscription = pool.subscribe(
     [{ kinds: [4], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
-    [...new Set(sanitizeRelayUrls(myReadRelays.value))],
+    getSubscriptionReadRelays(),
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
@@ -1588,9 +1648,14 @@ function subscribeNip17DirectMessages() {
     return;
   }
 
-  pool.subscribe(
+  if (unsubscribeNip17DirectMessageSubscription) {
+    unsubscribeNip17DirectMessageSubscription();
+    unsubscribeNip17DirectMessageSubscription = null;
+  }
+
+  unsubscribeNip17DirectMessageSubscription = pool.subscribe(
     [{ kinds: [1059], "#p": [myPubkey.value], limit: countOfDisplayEvents.value * 5 }],
-    [...new Set(sanitizeRelayUrls(myReadRelays.value))],
+    getSubscriptionReadRelays(),
     async (ev: any, _isAfterEose: boolean, _relayURL: string) => {
       if (!verifyEventSignature(ev)) {
         console.log('Invalid nostr event, signature invalid', ev);
