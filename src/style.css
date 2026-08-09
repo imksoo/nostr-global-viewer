@@ -1,9 +1,7 @@
 :root {
-  font-family: YakuHanJP, "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  font-family: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
   line-height: 1.5;
   font-weight: 500;
-  /* font-feature-settings: 'palt', 'kern', 'pkna'; */
-
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background: rgb(14, 36, 121);
