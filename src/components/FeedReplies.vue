@@ -171,7 +171,9 @@ function truncateContent(content: string | undefined): string | undefined {
   font-size: 0.8em;
   white-space: pre-wrap;
   word-wrap: break-word;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  word-break: auto-phrase;
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;

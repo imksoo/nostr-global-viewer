@@ -249,7 +249,9 @@ function getRelativeTimeText(createdAt: number): string {
 .c-feed {
   white-space: pre-wrap;
   word-wrap: break-word;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  word-break: auto-phrase;
   margin: 0;
   text-align: left;
 

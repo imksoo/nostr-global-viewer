@@ -491,7 +491,9 @@ async function getOgp(url: string, ogp: Ref<{}>) {
   font-size: 1.2em;
   white-space: pre-wrap;
   word-wrap: break-word;
-  word-break: break-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  word-break: auto-phrase;
   padding: 0.4rem 0 0 0;
   margin: 0;
   color: #213547;

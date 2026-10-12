@@ -5,6 +5,10 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background: rgb(14, 36, 121);
+  /* Japanese typography: use proportional alternates and stricter kinsoku rules. */
+  font-feature-settings: "palt";
+  line-break: strict;
+  text-autospace: normal;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -28,10 +32,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
 
-  word-break: break-all;
+  /* `auto-phrase` is progressive enhancement; `normal` is the fallback. */
+  word-break: normal;
+  word-break: auto-phrase;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  line-break: anywhere;
   white-space: pre-wrap;
   white-space: break-spaces;
   box-sizing: border-box;
@@ -70,6 +75,8 @@ button:focus-visible {
 #app {
   margin: 0 auto;
   padding: 0;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /*
